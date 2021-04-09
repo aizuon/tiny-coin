@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <memory>
 
-#include "TxOutPoint.h"
+#include "TxOutPoint.hpp"
 
 class TxIn
 {
@@ -13,10 +13,10 @@ public:
 
 	}
 
-	std::shared_ptr<TxOutPoint> ToSpend;
+	const std::shared_ptr<TxOutPoint> ToSpend;
 
-	std::shared_ptr<std::vector<uint8_t>> UnlockSig;
-	std::shared_ptr<std::vector<uint8_t>> UnlockPk;
+	const std::shared_ptr<std::vector<uint8_t>> UnlockSig;
+	const std::shared_ptr<std::vector<uint8_t>> UnlockPk;
 
-	int64_t Sequence;
+	const int64_t Sequence;
 };

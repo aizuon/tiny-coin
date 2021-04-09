@@ -3,8 +3,8 @@
 #include <vector>
 #include <memory>
 
-#include "TxIn.h"
-#include "TxOut.h"
+#include "TxIn.hpp"
+#include "TxOut.hpp"
 
 class Transaction
 {
@@ -15,12 +15,12 @@ public:
 
 	}
 
-	std::shared_ptr<std::vector<std::shared_ptr<TxIn>>> TxIns;
-	std::shared_ptr<std::vector<std::shared_ptr<TxOut>>> TxOuts;
+	const std::shared_ptr<std::vector<std::shared_ptr<TxIn>>> TxIns;
+	const std::shared_ptr<std::vector<std::shared_ptr<TxOut>>> TxOuts;
 
-	int64_t LockTime;
+	const int64_t LockTime;
 
-	bool IsCoinbase();
+	bool IsCoinbase() const;
 
 	static std::shared_ptr<Transaction> CreateCoinbase(const std::string& PayToAddr, uint64_t value, int64_t height);
 };
