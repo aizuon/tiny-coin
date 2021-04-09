@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="NetParams.h" />
+    <ClInclude Include="TxOutPoint.h">
+      <Filter>Tx</Filter>
+    </ClInclude>
+    <ClInclude Include="TxIn.h">
+      <Filter>Tx</Filter>
+    </ClInclude>
+    <ClInclude Include="TxOut.h">
+      <Filter>Tx</Filter>
+    </ClInclude>
+    <ClInclude Include="UnspentTxOut.h">
+      <Filter>Tx</Filter>
+    </ClInclude>
+    <ClInclude Include="Transaction.h">
+      <Filter>Tx</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Transaction.cpp">
+      <Filter>Tx</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Tx">
+      <UniqueIdentifier>{e7c57d4d-7708-49e5-9b03-7a597f8641a0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
