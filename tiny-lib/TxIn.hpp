@@ -7,7 +7,7 @@
 class TxIn
 {
 public:
-	TxIn(std::shared_ptr<TxOutPoint> toSpend, std::shared_ptr<std::vector<uint8_t>> unlockSig, std::shared_ptr<std::vector<uint8_t>> unlockPk, int64_t sequence)
+	TxIn(std::shared_ptr<TxOutPoint> toSpend, const std::vector<uint8_t>& unlockSig, const std::vector<uint8_t>& unlockPk, int64_t sequence)
 		: ToSpend(toSpend), UnlockSig(unlockSig), UnlockPk(unlockPk), Sequence(sequence)
 	{
 
@@ -15,8 +15,8 @@ public:
 
 	const std::shared_ptr<TxOutPoint> ToSpend;
 
-	const std::shared_ptr<std::vector<uint8_t>> UnlockSig;
-	const std::shared_ptr<std::vector<uint8_t>> UnlockPk;
+	const std::vector<uint8_t> UnlockSig;
+	const std::vector<uint8_t> UnlockPk;
 
 	const int64_t Sequence;
 };

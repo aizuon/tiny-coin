@@ -4,7 +4,7 @@
 class TxOutPoint
 {
 public:
-	TxOutPoint(std::string txId, int64_t txOutId)
+	TxOutPoint(const std::string& txId, int64_t txOutId)
 		: TxId(txId), TxOutId(txOutId)
 	{
 

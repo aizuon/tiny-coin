@@ -5,7 +5,7 @@
 class TxOut
 {
 public:
-	TxOut(uint64_t value, std::string toAddress)
+	TxOut(uint64_t value, const std::string& toAddress)
 		: Value(value), ToAddress(toAddress)
 	{
 

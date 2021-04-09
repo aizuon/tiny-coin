@@ -9,18 +9,29 @@
 class BinaryBuffer
 {
 public:
-	BinaryBuffer();
+	BinaryBuffer() = default;
+	BinaryBuffer(const std::vector<uint8_t>& obj);
 	BinaryBuffer(size_t length);
 
-    inline size_t GetLength() const
-    {
-        return buffer->size();
-    }
-
-    inline const std::shared_ptr<std::vector<uint8_t>> GetBuffer() const
+    inline const std::vector<uint8_t>& GetBuffer() const
     {
         return buffer;
     }
+
+	inline size_t GetLength() const
+	{
+		return buffer.size();
+	}
+
+	inline size_t GetWriteOffset() const
+	{
+		return writeOffset;
+	}
+
+	inline size_t GetReadOffset() const
+	{
+		return readOffset;
+	}
 
     template<typename T>
     void Write(T obj)
@@ -32,10 +43,10 @@ public:
 		size_t length = sizeof(T);
 
 		size_t finalLength = writeOffset + length;
-		if (buffer->size() <= finalLength)
-			buffer->resize(finalLength);
+		if (buffer.size() <= finalLength)
+			buffer.resize(finalLength);
 
-		memcpy(buffer->data() + writeOffset, &obj, length);
+		memcpy(buffer.data() + writeOffset, &obj, length);
 		writeOffset = finalLength;
     }
 
@@ -51,11 +62,11 @@ public:
 		size_t length2 = size * sizeof(T);
 
 		size_t finalLength = writeOffset + length1 + length2;
-		if (buffer->size() <= finalLength)
-			buffer->resize(finalLength);
+		if (buffer.size() <= finalLength)
+			buffer.resize(finalLength);
 
-		memcpy(buffer->data() + writeOffset, &size, length1);
-		memcpy(buffer->data() + writeOffset + length1, obj.data(), length2);
+		memcpy(buffer.data() + writeOffset, &size, length1);
+		memcpy(buffer.data() + writeOffset + length1, obj.data(), length2);
 		writeOffset = finalLength;
 	}
 
@@ -71,10 +82,10 @@ public:
 		size_t length = sizeof(T);
 
 		size_t finalOffset = readOffset + length;
-		if (buffer->size() < finalOffset)
+		if (buffer.size() < finalOffset)
 			return false;
 
-		memcpy(&obj, buffer->data() + readOffset, length);
+		memcpy(&obj, buffer.data() + readOffset, length);
 		readOffset = finalOffset;
 
 		return true;
@@ -89,19 +100,19 @@ public:
 
 		size_t size = 0;
 		size_t length1 = sizeof(size);
-		if (buffer->size() < readOffset + length1)
+		if (buffer.size() < readOffset + length1)
 			return false;
 
-		memcpy(&size, buffer->data() + readOffset, length1);
+		memcpy(&size, buffer.data() + readOffset, length1);
 
 		size_t length2 = size * sizeof(T);
 
 		size_t finalOffset = readOffset + length1 + length2;
-		if (buffer->size() < finalOffset)
+		if (buffer.size() < finalOffset)
 			return false;
 
 		obj.resize(size);
-		memcpy(obj.data(), buffer->data() + readOffset + length1, length2);
+		memcpy(obj.data(), buffer.data() + readOffset + length1, length2);
 		readOffset = finalOffset;
 
 		return true;
@@ -110,7 +121,7 @@ public:
 	bool Read(std::string& obj);
 
 private:
-	std::shared_ptr<std::vector<uint8_t>> buffer;
+	std::vector<uint8_t> buffer;
 	size_t writeOffset = 0;
 	size_t readOffset = 0;
 

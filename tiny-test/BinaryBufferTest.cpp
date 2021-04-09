@@ -124,3 +124,18 @@ TEST(BinaryBufferTest, VectorReadWrite)
 	EXPECT_TRUE(buffer.Read(i64_read));
 	EXPECT_EQ(i64, i64_read);
 }
+
+TEST(BinaryBufferTest, VectorConstructor)
+{
+	std::vector<uint8_t> vec{ 2, 3, 4, 5 };
+	BinaryBuffer buffer(vec);
+
+	uint8_t new_value = 6;
+
+	vec.push_back(new_value);
+	EXPECT_NE(vec, buffer.GetBuffer());
+	EXPECT_EQ(vec.size(), buffer.GetWriteOffset() + 1);
+
+	buffer.Write(new_value);
+	EXPECT_EQ(vec, buffer.GetBuffer());
+}

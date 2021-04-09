@@ -9,14 +9,14 @@
 class Transaction
 {
 public:
-	Transaction(std::shared_ptr<std::vector<std::shared_ptr<TxIn>>> txIns, std::shared_ptr <std::vector<std::shared_ptr<TxOut>>> txOuts, int64_t lockTime)
+	Transaction(const std::vector<std::shared_ptr<TxIn>>& txIns, const std::vector<std::shared_ptr<TxOut>>& txOuts, int64_t lockTime)
 		: TxIns(txIns), TxOuts(txOuts), LockTime(lockTime)
 	{
 
 	}
 
-	const std::shared_ptr<std::vector<std::shared_ptr<TxIn>>> TxIns;
-	const std::shared_ptr<std::vector<std::shared_ptr<TxOut>>> TxOuts;
+	const std::vector<std::shared_ptr<TxIn>> TxIns;
+	const std::vector<std::shared_ptr<TxOut>> TxOuts;
 
 	const int64_t LockTime;
 
