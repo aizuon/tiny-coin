@@ -1,8 +1,11 @@
 #pragma once
 #include <cstdint>
+#include <vector>
 #include <string>
 
-class TxOut
+#include "ISerializable.hpp"
+
+class TxOut : public ISerializable
 {
 public:
 	TxOut(uint64_t value, const std::string& toAddress)
@@ -11,7 +14,9 @@ public:
 
 	}
 
-	const uint64_t Value;
+	uint64_t Value;
 
-	const std::string ToAddress;
+	std::string ToAddress;
+
+	std::vector<uint8_t> Serialize() const override;
 };

@@ -10,6 +10,23 @@ bool Transaction::IsCoinbase() const
     return TxIns.size() == 1 && TxIns[0]->ToSpend == nullptr;
 }
 
+std::vector<uint8_t> Transaction::Serialize() const
+{
+    BinaryBuffer buffer;
+
+    buffer.Write(TxIns.size());
+    for (const auto& tx_in : TxIns)
+        buffer.Write(tx_in->Serialize());
+
+    buffer.Write(TxOuts.size());
+    for (const auto& tx_out : TxOuts)
+        buffer.Write(tx_out->Serialize());
+
+    buffer.Write(LockTime);
+
+    return buffer.GetBuffer();
+}
+
 std::shared_ptr<Transaction> Transaction::CreateCoinbase(const std::string& PayToAddr, uint64_t value, int64_t height)
 {
     BinaryBuffer tx_in_unlockSig(sizeof(height));

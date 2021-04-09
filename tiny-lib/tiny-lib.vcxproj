@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BinaryBuffer.hpp" />
+    <ClInclude Include="ISerializable.hpp" />
     <ClInclude Include="NetParams.hpp" />
     <ClInclude Include="Transaction.hpp" />
     <ClInclude Include="TxIn.hpp" />
@@ -32,6 +33,10 @@
     <ClCompile Include="BinaryBuffer.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="Transaction.cpp" />
+    <ClCompile Include="TxIn.cpp" />
+    <ClCompile Include="TxOut.cpp" />
+    <ClCompile Include="TxOutPoint.cpp" />
+    <ClCompile Include="UnspentTxOut.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

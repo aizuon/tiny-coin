@@ -19,6 +19,7 @@
       <Filter>Tx</Filter>
     </ClInclude>
     <ClInclude Include="BinaryBuffer.hpp" />
+    <ClInclude Include="ISerializable.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -26,6 +27,18 @@
       <Filter>Tx</Filter>
     </ClCompile>
     <ClCompile Include="BinaryBuffer.cpp" />
+    <ClCompile Include="UnspentTxOut.cpp">
+      <Filter>Tx</Filter>
+    </ClCompile>
+    <ClCompile Include="TxOutPoint.cpp">
+      <Filter>Tx</Filter>
+    </ClCompile>
+    <ClCompile Include="TxIn.cpp">
+      <Filter>Tx</Filter>
+    </ClCompile>
+    <ClCompile Include="TxOut.cpp">
+      <Filter>Tx</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Tx">
