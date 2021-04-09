@@ -22,6 +22,7 @@
     <ClInclude Include="BinaryBuffer.hpp" />
     <ClInclude Include="ISerializable.hpp" />
     <ClInclude Include="NetParams.hpp" />
+    <ClInclude Include="SHA256d.hpp" />
     <ClInclude Include="Transaction.hpp" />
     <ClInclude Include="TxIn.hpp" />
     <ClInclude Include="TxOut.hpp" />
@@ -32,6 +33,7 @@
   <ItemGroup>
     <ClCompile Include="BinaryBuffer.cpp" />
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="SHA256d.cpp" />
     <ClCompile Include="Transaction.cpp" />
     <ClCompile Include="TxIn.cpp" />
     <ClCompile Include="TxOut.cpp" />

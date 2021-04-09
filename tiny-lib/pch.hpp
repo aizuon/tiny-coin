@@ -5,5 +5,6 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <exception>
 
 #endif //PCH_H

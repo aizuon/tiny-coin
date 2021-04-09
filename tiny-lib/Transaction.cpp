@@ -1,13 +1,37 @@
 #include "pch.hpp"
 
+#include <exception>
 #include <fmt/format.h>
 
 #include "Transaction.hpp"
+#include "NetParams.hpp"
 #include "BinaryBuffer.hpp"
+#include "SHA256d.hpp"
 
 bool Transaction::IsCoinbase() const
 {
     return TxIns.size() == 1 && TxIns[0]->ToSpend == nullptr;
+}
+
+std::string Transaction::Id() const
+{
+    return SHA256d::BinaryHashToString(SHA256d::HashBinary(Serialize()));
+}
+
+void Transaction::Validate(bool coinbase/* = false*/) const
+{
+    if (TxOuts.empty() || (TxIns.empty() && !coinbase))
+        throw std::exception("Missing TxOuts or TxIns");
+
+    if (Serialize().size() > NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES)
+        throw std::exception("Too large");
+
+    uint64_t totalSpent = 0;
+    for (const auto& tx_out : TxOuts)
+        totalSpent += tx_out->Value;
+
+    if (totalSpent > NetParams::MAX_MONEY)
+        throw std::exception("Spent value too high");
 }
 
 std::vector<uint8_t> Transaction::Serialize() const

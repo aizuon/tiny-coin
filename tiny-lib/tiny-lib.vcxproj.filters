@@ -20,6 +20,7 @@
     </ClInclude>
     <ClInclude Include="BinaryBuffer.hpp" />
     <ClInclude Include="ISerializable.hpp" />
+    <ClInclude Include="SHA256d.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -39,6 +40,7 @@
     <ClCompile Include="TxOut.cpp">
       <Filter>Tx</Filter>
     </ClCompile>
+    <ClCompile Include="SHA256d.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Tx">

@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <vector>
+#include <string>
 #include <memory>
 
 #include "ISerializable.hpp"
@@ -22,6 +23,10 @@ public:
 	int64_t LockTime;
 
 	bool IsCoinbase() const;
+
+	std::string Id() const;
+
+	void Validate(bool coinbase = false) const;
 
 	std::vector<uint8_t> Serialize() const override;
 
