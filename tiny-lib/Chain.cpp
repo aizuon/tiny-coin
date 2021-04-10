@@ -13,7 +13,7 @@ std::vector<std::shared_ptr<Block>> Chain::ActiveChain = std::vector<std::shared
 std::vector<std::vector<std::shared_ptr<Block>>> Chain::SideBranches = std::vector<std::vector<std::shared_ptr<Block>>>{ };
 std::vector<std::shared_ptr<Block>> Chain::OrphanBlocks = std::vector<std::shared_ptr<Block>>{ };
 
-std::mutex Chain::ChainLock;
+std::recursive_mutex Chain::ChainLock;
 
 int32_t Chain::ActiveChainIdx;
 

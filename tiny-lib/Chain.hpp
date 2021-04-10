@@ -22,7 +22,7 @@ public:
 
 	static std::vector<std::shared_ptr<Block>> OrphanBlocks;
 
-	static std::mutex ChainLock;
+	static std::recursive_mutex ChainLock;
 
 	static int32_t ActiveChainIdx;
 
