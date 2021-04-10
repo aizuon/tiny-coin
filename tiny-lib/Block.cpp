@@ -5,15 +5,15 @@
 #include "Block.hpp"
 #include "SHA256d.hpp"
 
-Block::Block(uint64_t version, const std::string& prevBlockHash, const std::string& markleHash, int64_t timestamp, uint8_t bits, int64_t nonce,
+Block::Block(uint64_t version, const std::string& prevBlockHash, const std::string& markleHash, int64_t timestamp, uint8_t bits, uint64_t nonce,
 	const std::vector<std::shared_ptr<Tx>>& txs)
 	: Version(version), PrevBlockHash(prevBlockHash), MerkleHash(MerkleHash), Timestamp(timestamp), Bits(bits), Nonce(nonce), Txs(txs)
 {
 }
 
-std::string Block::Header(int64_t nonce /*= -1*/)
+std::string Block::Header(uint64_t nonce /*= 0*/)
 {
-	int64_t used_nonce = nonce == -1 ? Nonce : nonce;
+	int64_t used_nonce = nonce == 0 ? Nonce : nonce;
 
 	return fmt::format("{}{}{}{}{}{}", Version, PrevBlockHash, MerkleHash, Timestamp, Bits, used_nonce);
 }

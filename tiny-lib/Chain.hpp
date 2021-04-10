@@ -2,6 +2,7 @@
 #include <vector>
 #include <memory>
 #include <mutex>
+#include <tuple>
 
 #include "TxIn.hpp"
 #include "TxOut.hpp"
@@ -22,4 +23,11 @@ public:
 	static std::vector<std::shared_ptr<Block>> OrphanBlocks;
 
 	static std::mutex ChainLock;
+
+	static int32_t ActiveChainIdx;
+
+	static int32_t GetCurrentHeight();
+
+	static std::tuple<std::shared_ptr<Block>, int32_t, int32_t> LocateBlockInActiveChain(const std::string& blockHash);
+	static  std::tuple<std::shared_ptr<Block>, int32_t> LocateBlockInChain(const std::string& blockHash, const std::vector<std::shared_ptr<Block>>& chain);
 };

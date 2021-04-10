@@ -56,7 +56,7 @@ std::vector<uint8_t> Tx::Serialize() const
     return buffer.GetBuffer();
 }
 
-std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& PayToAddr, uint64_t value, int64_t height)
+std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& PayToAddr, uint64_t value, int32_t height)
 {
     BinaryBuffer tx_in_unlockSig(sizeof(height));
     tx_in_unlockSig.Write(height);

@@ -9,7 +9,7 @@
 class Block
 {
 public:
-	Block(uint64_t version, const std::string& prevBlockHash, const std::string& markleHash, int64_t timestamp, uint8_t bits, int64_t nonce,
+	Block(uint64_t version, const std::string& prevBlockHash, const std::string& markleHash, int64_t timestamp, uint8_t bits, uint64_t nonce,
 		const std::vector<std::shared_ptr<Tx>>& txs);
 
 	uint64_t Version;
@@ -21,11 +21,11 @@ public:
 
 	uint8_t Bits;
 
-	int64_t Nonce;
+	uint64_t Nonce;
 
 	std::vector<std::shared_ptr<Tx>> Txs;
 
-	std::string Header(int64_t nonce = -1);
+	std::string Header(uint64_t nonce = 0);
 
 	std::string Id();
 };

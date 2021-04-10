@@ -3,7 +3,7 @@
 #include "UnspentTxOut.hpp"
 #include "BinaryBuffer.hpp"
 
-UnspentTxOut::UnspentTxOut(int64_t value, const std::string& toAddress, std::shared_ptr<TxOutPoint> txOut, bool isCoinbase, int64_t height)
+UnspentTxOut::UnspentTxOut(uint64_t value, const std::string& toAddress, std::shared_ptr<TxOutPoint> txOut, bool isCoinbase, int32_t height)
 	: Value(value), ToAddress(toAddress), TxOut(txOut), IsCoinbase(isCoinbase), Height(height)
 {
 }
