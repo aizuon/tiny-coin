@@ -15,16 +15,18 @@
     <ClInclude Include="UnspentTxOut.hpp">
       <Filter>Tx</Filter>
     </ClInclude>
-    <ClInclude Include="Transaction.hpp">
+    <ClInclude Include="Tx.hpp">
       <Filter>Tx</Filter>
     </ClInclude>
     <ClInclude Include="BinaryBuffer.hpp" />
     <ClInclude Include="ISerializable.hpp" />
     <ClInclude Include="SHA256d.hpp" />
+    <ClInclude Include="Block.hpp" />
+    <ClInclude Include="Chain.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="Transaction.cpp">
+    <ClCompile Include="Tx.cpp">
       <Filter>Tx</Filter>
     </ClCompile>
     <ClCompile Include="BinaryBuffer.cpp" />
@@ -41,6 +43,8 @@
       <Filter>Tx</Filter>
     </ClCompile>
     <ClCompile Include="SHA256d.cpp" />
+    <ClCompile Include="Block.cpp" />
+    <ClCompile Include="Chain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Tx">

@@ -3,6 +3,11 @@
 #include "TxOutPoint.hpp"
 #include "BinaryBuffer.hpp"
 
+TxOutPoint::TxOutPoint(const std::string& txId, int64_t txOutId)
+	: TxId(txId), TxOutId(txOutId)
+{
+}
+
 std::vector<uint8_t> TxOutPoint::Serialize() const
 {
 	BinaryBuffer buffer;

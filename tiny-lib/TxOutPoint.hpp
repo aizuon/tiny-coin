@@ -8,11 +8,7 @@
 class TxOutPoint : public ISerializable
 {
 public:
-	TxOutPoint(const std::string& txId, int64_t txOutId)
-		: TxId(txId), TxOutId(txOutId)
-	{
-
-	}
+	TxOutPoint(const std::string& txId, int64_t txOutId);
 
 	std::string TxId;
 	int64_t TxOutId;

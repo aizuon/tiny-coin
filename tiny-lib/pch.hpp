@@ -7,4 +7,6 @@
 #include <memory>
 #include <exception>
 
+#include <fmt/format.h>
+
 #endif //PCH_H

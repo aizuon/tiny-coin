@@ -3,22 +3,27 @@
 #include <exception>
 #include <fmt/format.h>
 
-#include "Transaction.hpp"
+#include "Tx.hpp"
 #include "NetParams.hpp"
 #include "BinaryBuffer.hpp"
 #include "SHA256d.hpp"
 
-bool Transaction::IsCoinbase() const
+Tx::Tx(const std::vector<std::shared_ptr<TxIn>>& txIns, const std::vector<std::shared_ptr<TxOut>>& txOuts, int64_t lockTime)
+    : TxIns(txIns), TxOuts(txOuts), LockTime(lockTime)
+{
+}
+
+bool Tx::IsCoinbase() const
 {
     return TxIns.size() == 1 && TxIns[0]->ToSpend == nullptr;
 }
 
-std::string Transaction::Id() const
+std::string Tx::Id() const
 {
     return SHA256d::BinaryHashToString(SHA256d::HashBinary(Serialize()));
 }
 
-void Transaction::Validate(bool coinbase/* = false*/) const
+void Tx::Validate(bool coinbase /*= false*/) const
 {
     if (TxOuts.empty() || (TxIns.empty() && !coinbase))
         throw std::exception("Missing TxOuts or TxIns");
@@ -34,7 +39,7 @@ void Transaction::Validate(bool coinbase/* = false*/) const
         throw std::exception("Spent value too high");
 }
 
-std::vector<uint8_t> Transaction::Serialize() const
+std::vector<uint8_t> Tx::Serialize() const
 {
     BinaryBuffer buffer;
 
@@ -51,7 +56,7 @@ std::vector<uint8_t> Transaction::Serialize() const
     return buffer.GetBuffer();
 }
 
-std::shared_ptr<Transaction> Transaction::CreateCoinbase(const std::string& PayToAddr, uint64_t value, int64_t height)
+std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& PayToAddr, uint64_t value, int64_t height)
 {
     BinaryBuffer tx_in_unlockSig(sizeof(height));
     tx_in_unlockSig.Write(height);
@@ -61,7 +66,7 @@ std::shared_ptr<Transaction> Transaction::CreateCoinbase(const std::string& PayT
 
     auto tx_ins = std::vector<std::shared_ptr<TxIn>>{ tx_in };
     auto tx_outs = std::vector<std::shared_ptr<TxOut>>{ tx_out };
-    auto tx = std::make_shared<Transaction>(tx_ins, tx_outs, -1);
+    auto tx = std::make_shared<Tx>(tx_ins, tx_outs, -1);
 
     return tx;
 }

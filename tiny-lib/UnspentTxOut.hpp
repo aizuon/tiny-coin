@@ -10,11 +10,7 @@
 class UnspentTxOut : public ISerializable
 {
 public:
-	UnspentTxOut(int64_t value, const std::string& toAddress, std::shared_ptr<TxOutPoint> txOut, bool isCoinbase, int64_t height)
-		: Value(value), ToAddress(toAddress), TxOut(txOut), IsCoinbase(isCoinbase), Height(height)
-	{
-
-	}
+	UnspentTxOut(int64_t value, const std::string& toAddress, std::shared_ptr<TxOutPoint> txOut, bool isCoinbase, int64_t height);
 
 	int64_t Value;
 	std::string ToAddress;

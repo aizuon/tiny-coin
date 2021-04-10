@@ -9,11 +9,7 @@
 class TxIn : public ISerializable
 {
 public:
-	TxIn(std::shared_ptr<TxOutPoint> toSpend, const std::vector<uint8_t>& unlockSig, const std::vector<uint8_t>& unlockPk, int64_t sequence)
-		: ToSpend(toSpend), UnlockSig(unlockSig), UnlockPk(unlockPk), Sequence(sequence)
-	{
-
-	}
+	TxIn(std::shared_ptr<TxOutPoint> toSpend, const std::vector<uint8_t>& unlockSig, const std::vector<uint8_t>& unlockPk, int64_t sequence);
 
 	std::shared_ptr<TxOutPoint> ToSpend;
 

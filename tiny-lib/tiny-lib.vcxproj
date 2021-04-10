@@ -20,10 +20,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BinaryBuffer.hpp" />
+    <ClInclude Include="Block.hpp" />
+    <ClInclude Include="Chain.hpp" />
     <ClInclude Include="ISerializable.hpp" />
     <ClInclude Include="NetParams.hpp" />
     <ClInclude Include="SHA256d.hpp" />
-    <ClInclude Include="Transaction.hpp" />
+    <ClInclude Include="Tx.hpp" />
     <ClInclude Include="TxIn.hpp" />
     <ClInclude Include="TxOut.hpp" />
     <ClInclude Include="TxOutPoint.hpp" />
@@ -32,9 +34,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BinaryBuffer.cpp" />
+    <ClCompile Include="Block.cpp" />
+    <ClCompile Include="Chain.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="SHA256d.cpp" />
-    <ClCompile Include="Transaction.cpp" />
+    <ClCompile Include="Tx.cpp" />
     <ClCompile Include="TxIn.cpp" />
     <ClCompile Include="TxOut.cpp" />
     <ClCompile Include="TxOutPoint.cpp" />

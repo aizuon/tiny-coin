@@ -8,11 +8,7 @@
 class TxOut : public ISerializable
 {
 public:
-	TxOut(uint64_t value, const std::string& toAddress)
-		: Value(value), ToAddress(toAddress)
-	{
-
-	}
+	TxOut(uint64_t value, const std::string& toAddress);
 
 	uint64_t Value;
 
