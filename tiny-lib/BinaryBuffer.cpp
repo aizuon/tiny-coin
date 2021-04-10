@@ -21,8 +21,7 @@ void BinaryBuffer::Write(const std::string& obj)
 	size_t length2 = size * sizeof(std::string::value_type);
 
 	size_t finalLength = writeOffset + length1 + length2;
-	if (buffer.size() <= finalLength)
-		buffer.resize(finalLength);
+	GrowIfNeeded(finalLength);
 
 	memcpy(buffer.data() + writeOffset, &size, length1);
 	memcpy(buffer.data() + writeOffset + length1, obj.data(), length2);
@@ -51,4 +50,16 @@ bool BinaryBuffer::Read(std::string& obj)
 	readOffset = finalOffset;
 
 	return true;
+}
+
+void BinaryBuffer::GrowIfNeeded(size_t finalLength)
+{
+	bool reserve_needed = buffer.capacity() <= finalLength;
+	bool resize_needed = buffer.size() <= finalLength;
+
+	if (reserve_needed)
+		buffer.reserve(finalLength * BUFFER_GROW_FACTOR);
+
+	if (resize_needed)
+		buffer.resize(finalLength);
 }

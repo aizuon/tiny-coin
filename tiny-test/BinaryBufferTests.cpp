@@ -139,3 +139,13 @@ TEST(BinaryBufferTest, VectorConstructor)
 	buffer.Write(new_value);
 	EXPECT_EQ(vec, buffer.GetBuffer());
 }
+
+TEST(BinaryBufferTest, AllocationBenchmark)
+{
+	BinaryBuffer buffer;
+
+	std::string str("this is for allocation benchmark");
+
+	for (int i = 0; i < 1000000; i++)
+		buffer.Write(str);
+}

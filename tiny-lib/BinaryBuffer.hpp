@@ -41,8 +41,7 @@ public:
 		size_t length = sizeof(T);
 
 		size_t finalLength = writeOffset + length;
-		if (buffer.size() <= finalLength)
-			buffer.resize(finalLength);
+		GrowIfNeeded(finalLength);
 
 		memcpy(buffer.data() + writeOffset, &obj, length);
 		writeOffset = finalLength;
@@ -60,8 +59,7 @@ public:
 		size_t length2 = size * sizeof(T);
 
 		size_t finalLength = writeOffset + length1 + length2;
-		if (buffer.size() <= finalLength)
-			buffer.resize(finalLength);
+		GrowIfNeeded(finalLength);
 
 		memcpy(buffer.data() + writeOffset, &size, length1);
 		memcpy(buffer.data() + writeOffset + length1, obj.data(), length2);
@@ -124,4 +122,8 @@ private:
 	size_t readOffset = 0;
 
 	std::mutex mtx;
+
+	static constexpr float BUFFER_GROW_FACTOR = 1.5f;
+
+	void GrowIfNeeded(size_t finalLength);
 };
