@@ -30,8 +30,8 @@ std::tuple<std::shared_ptr<Block>, int32_t, int32_t> Chain::LocateBlockInActiveC
 
 	int32_t chain_idx = 0;
 	auto located_block = LocateBlockInChain(blockHash, ActiveChain);
-	if (std::get<0>(located_block) != nullptr)
-		return std::make_tuple(std::get<0>(located_block), std::get<1>(located_block), chain_idx);
+	if (located_block.first != nullptr)
+		return std::make_tuple(located_block.first, located_block.second, chain_idx);
 
 	for (const auto& side_chain : SideBranches)
 	{
@@ -39,13 +39,13 @@ std::tuple<std::shared_ptr<Block>, int32_t, int32_t> Chain::LocateBlockInActiveC
 
 		located_block = LocateBlockInChain(blockHash, side_chain);
 		if (std::get<0>(located_block) != nullptr)
-			return std::make_tuple(std::get<0>(located_block), std::get<1>(located_block), chain_idx);
+			return std::make_tuple(located_block.first, located_block.second, chain_idx);
 	}
 
 	return std::make_tuple(nullptr, -1, -1);
 }
 
-std::tuple<std::shared_ptr<Block>, int32_t> Chain::LocateBlockInChain(const std::string& blockHash, const std::vector<std::shared_ptr<Block>>& chain)
+std::pair<std::shared_ptr<Block>, int32_t> Chain::LocateBlockInChain(const std::string& blockHash, const std::vector<std::shared_ptr<Block>>& chain)
 {
 	std::lock_guard lock(ChainLock);
 
@@ -54,11 +54,11 @@ std::tuple<std::shared_ptr<Block>, int32_t> Chain::LocateBlockInChain(const std:
 	{
 		if (block->Id() == blockHash)
 		{
-			return std::make_tuple(block, height);
+			return std::make_pair(block, height);
 		}
 
 		height++;
 	}
 
-	return std::make_tuple(nullptr, -1);
+	return std::make_pair(nullptr, -1);
 }

@@ -3,6 +3,7 @@
 #include <memory>
 #include <mutex>
 #include <tuple>
+#include <utility>
 
 #include "TxIn.hpp"
 #include "TxOut.hpp"
@@ -29,5 +30,5 @@ public:
 	static int32_t GetCurrentHeight();
 
 	static std::tuple<std::shared_ptr<Block>, int32_t, int32_t> LocateBlockInActiveChain(const std::string& blockHash);
-	static  std::tuple<std::shared_ptr<Block>, int32_t> LocateBlockInChain(const std::string& blockHash, const std::vector<std::shared_ptr<Block>>& chain);
+	static  std::pair<std::shared_ptr<Block>, int32_t> LocateBlockInChain(const std::string& blockHash, const std::vector<std::shared_ptr<Block>>& chain);
 };
