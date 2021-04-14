@@ -26,17 +26,17 @@ std::string Tx::Id() const
 void Tx::Validate(bool coinbase /*= false*/) const
 {
     if (TxOuts.empty() || (TxIns.empty() && !coinbase))
-        throw std::exception("Missing TxOuts or TxIns");
+        throw std::exception("Tx::Validate --- TxOuts.empty() || (TxIns.empty() && !coinbase)");
 
     if (Serialize().size() > NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES)
-        throw std::exception("Too large");
+        throw std::exception("Tx::Validate --- Serialize().size() > NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES");
 
     uint64_t totalSpent = 0;
     for (const auto& tx_out : TxOuts)
         totalSpent += tx_out->Value;
 
     if (totalSpent > NetParams::MAX_MONEY)
-        throw std::exception("Spent value too high");
+        throw std::exception("Tx::Validate --- totalSpent > NetParams::MAX_MONEY");
 }
 
 std::vector<uint8_t> Tx::Serialize() const

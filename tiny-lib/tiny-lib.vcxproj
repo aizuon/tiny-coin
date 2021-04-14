@@ -23,6 +23,7 @@
     <ClInclude Include="Block.hpp" />
     <ClInclude Include="Chain.hpp" />
     <ClInclude Include="ISerializable.hpp" />
+    <ClInclude Include="MerkleTree.hpp" />
     <ClInclude Include="NetParams.hpp" />
     <ClInclude Include="SHA256d.hpp" />
     <ClInclude Include="Tx.hpp" />
@@ -36,6 +37,7 @@
     <ClCompile Include="BinaryBuffer.cpp" />
     <ClCompile Include="Block.cpp" />
     <ClCompile Include="Chain.cpp" />
+    <ClCompile Include="MerkleTree.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="SHA256d.cpp" />
     <ClCompile Include="Tx.cpp" />

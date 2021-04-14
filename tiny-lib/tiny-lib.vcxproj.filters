@@ -21,8 +21,15 @@
     <ClInclude Include="BinaryBuffer.hpp" />
     <ClInclude Include="ISerializable.hpp" />
     <ClInclude Include="SHA256d.hpp" />
-    <ClInclude Include="Block.hpp" />
-    <ClInclude Include="Chain.hpp" />
+    <ClInclude Include="Chain.hpp">
+      <Filter>BlockChain</Filter>
+    </ClInclude>
+    <ClInclude Include="Block.hpp">
+      <Filter>BlockChain</Filter>
+    </ClInclude>
+    <ClInclude Include="MerkleTree.hpp">
+      <Filter>BlockChain</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -43,12 +50,22 @@
       <Filter>Tx</Filter>
     </ClCompile>
     <ClCompile Include="SHA256d.cpp" />
-    <ClCompile Include="Block.cpp" />
-    <ClCompile Include="Chain.cpp" />
+    <ClCompile Include="Chain.cpp">
+      <Filter>BlockChain</Filter>
+    </ClCompile>
+    <ClCompile Include="Block.cpp">
+      <Filter>BlockChain</Filter>
+    </ClCompile>
+    <ClCompile Include="MerkleTree.cpp">
+      <Filter>BlockChain</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Tx">
       <UniqueIdentifier>{e7c57d4d-7708-49e5-9b03-7a597f8641a0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BlockChain">
+      <UniqueIdentifier>{9e1de725-5690-4d01-92b4-d076cf6a936c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

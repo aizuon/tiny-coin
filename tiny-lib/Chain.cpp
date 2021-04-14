@@ -1,6 +1,10 @@
 #include "pch.hpp"
 
+#include <exception>
+#include <algorithm>
+
 #include "Chain.hpp"
+#include "NetParams.hpp"
 
 const std::shared_ptr<TxIn> Chain::GenesisTxIn = std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{ 0x00 }, std::vector<uint8_t>(), 0);
 const std::shared_ptr<TxOut> Chain::GenesisTxOut = std::make_shared<TxOut>(5000000000, "143UVyz7ooiAv1pMqbwPPpnH4BV9ifJGFF");
@@ -61,4 +65,54 @@ std::pair<std::shared_ptr<Block>, int32_t> Chain::LocateBlockInChain(const std::
 	}
 
 	return std::make_pair(nullptr, -1);
+}
+
+std::shared_ptr<Block> Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg /*= false*/)
+{
+	std::lock_guard lock(ChainLock);
+
+	if (doingReorg)
+	{
+		if (std::get<0>(LocateBlockInActiveChain(block->Id())) != nullptr)
+		{
+			return nullptr;
+		}
+	}
+
+	//TODO: validate block
+}
+
+std::shared_ptr<Block> Chain::ValidateBlock(const std::shared_ptr<Block>& block)
+{
+	if (block->Txs.empty())
+		throw std::exception("Chain::ValidateBlock --- block->Txs.empty()");
+
+	auto now = static_cast<int64_t>(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+	if (block->Timestamp - now > NetParams::MAX_FUTURE_BLOCK_TIME_IN_SECS)
+		throw std::exception("Chain::ValidateBlock --- block->Timestamp - now > NetParams::MAX_FUTURE_BLOCK_TIME_IN_SECS");
+
+	if (std::stoul(block->Id(), nullptr, 16) > (1 << (256 - block->Bits)))
+		throw std::exception("Chain::ValidateBlock --- std::stoul(block->Id(), nullptr, 16) > (1 << (256 - block->Bits)");
+
+	auto coinbase_pred = [](const std::shared_ptr<Tx>& tx)
+	{
+		return tx->IsCoinbase();
+	};
+	auto coinbase_it = std::find_if(block->Txs.begin(), block->Txs.end(), coinbase_pred);
+	if (coinbase_it != block->Txs.begin() || std::find_if(++coinbase_it, block->Txs.end(), coinbase_pred) != block->Txs.end())
+		throw std::exception("Chain::ValidateBlock --- coinbase_it != block->Txs.begin() || std::find_if(++coinbase_it, block->Txs.end(), coinbase_pred) != block->Txs.end()");
+
+	try
+	{
+		for (int i = 0; i < block->Txs.size(); i++)
+		{
+			block->Txs[i]->Validate(i == 0);
+		}
+	}
+	catch (...)
+	{
+		throw std::exception("Chain::ValidateBlock --- block->Txs[i]->Validate(i == 0)");
+	}
+
+	//TODO: check merkle root
 }
