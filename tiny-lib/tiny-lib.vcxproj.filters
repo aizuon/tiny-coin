@@ -30,6 +30,7 @@
     <ClInclude Include="MerkleTree.hpp">
       <Filter>BlockChain</Filter>
     </ClInclude>
+    <ClInclude Include="Utils.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -59,6 +60,7 @@
     <ClCompile Include="MerkleTree.cpp">
       <Filter>BlockChain</Filter>
     </ClCompile>
+    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Tx">

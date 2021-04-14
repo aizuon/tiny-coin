@@ -7,6 +7,7 @@
 #include "NetParams.hpp"
 #include "BinaryBuffer.hpp"
 #include "SHA256d.hpp"
+#include "Utils.hpp"
 
 Tx::Tx(const std::vector<std::shared_ptr<TxIn>>& txIns, const std::vector<std::shared_ptr<TxOut>>& txOuts, int64_t lockTime)
     : TxIns(txIns), TxOuts(txOuts), LockTime(lockTime)
@@ -15,12 +16,12 @@ Tx::Tx(const std::vector<std::shared_ptr<TxIn>>& txIns, const std::vector<std::s
 
 bool Tx::IsCoinbase() const
 {
-    return TxIns.size() == 1 && TxIns[0]->ToSpend == nullptr;
+    return TxIns.size() == 1 && TxIns.front()->ToSpend == nullptr;
 }
 
 std::string Tx::Id() const
 {
-    return SHA256d::BinaryHashToString(SHA256d::HashBinary(Serialize()));
+    return Utils::ByteArrayToHexString(SHA256d::HashBinary(Serialize()));
 }
 
 void Tx::Validate(bool coinbase /*= false*/) const

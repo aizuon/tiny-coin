@@ -32,6 +32,7 @@
     <ClInclude Include="TxOutPoint.hpp" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="UnspentTxOut.hpp" />
+    <ClInclude Include="Utils.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BinaryBuffer.cpp" />
@@ -45,6 +46,7 @@
     <ClCompile Include="TxOut.cpp" />
     <ClCompile Include="TxOutPoint.cpp" />
     <ClCompile Include="UnspentTxOut.cpp" />
+    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

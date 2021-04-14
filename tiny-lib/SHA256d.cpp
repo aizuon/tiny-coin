@@ -23,17 +23,3 @@ std::vector<uint8_t> SHA256d::HashBinary(const std::vector<uint8_t>& buffer)
 
     return hash2;
 }
-
-std::string SHA256d::BinaryHashToString(const std::vector<uint8_t>& buffer)
-{
-    if (buffer.size() != SHA256_DIGEST_LENGTH)
-        throw std::exception("SHA256d::BinaryHashToString --- buffer.size() != SHA256_DIGEST_LENGTH");
-
-    std::string hash;
-    hash.resize(SHA256_DIGEST_LENGTH * 2);
-
-    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-        sprintf_s(hash.data() + (i * 2), 2, "%02x", buffer[i]);
-
-    return hash;
-}
