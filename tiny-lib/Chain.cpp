@@ -111,7 +111,7 @@ std::pair<std::shared_ptr<Block>, int32_t> Chain::ValidateBlock(const std::share
 	{
 		for (int i = 0; i < block->Txs.size(); i++)
 		{
-			block->Txs[i]->Validate(i == 0);
+			block->Txs[i]->ValidateBasics(i == 0);
 		}
 	}
 	catch (...)

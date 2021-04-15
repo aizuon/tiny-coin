@@ -24,7 +24,7 @@ std::string Tx::Id() const
     return Utils::ByteArrayToHexString(SHA256d::HashBinary(Serialize()));
 }
 
-void Tx::Validate(bool coinbase /*= false*/) const
+void Tx::ValidateBasics(bool coinbase /*= false*/) const
 {
     if (TxOuts.empty() || (TxIns.empty() && !coinbase))
         throw std::exception("Tx::Validate --- TxOuts.empty() || (TxIns.empty() && !coinbase)");
@@ -72,9 +72,9 @@ std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& PayToAddr, uint64_t va
     return tx;
 }
 
-std::shared_ptr<Tx> Tx::ValidateTx(const std::shared_ptr<Tx>& tx, const ValidateTxRequest& req)
+std::shared_ptr<Tx> Tx::Validate(const std::shared_ptr<Tx>& tx, const ValidateRequest& req)
 {
-    tx->Validate(req.AsCoinbase);
+    tx->ValidateBasics(req.AsCoinbase);
 
     //TODO: utxo validation
 
