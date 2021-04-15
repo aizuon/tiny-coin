@@ -5,9 +5,11 @@
 
 #include "Tx.hpp"
 #include "NetParams.hpp"
-#include "BinaryBuffer.hpp"
-#include "SHA256d.hpp"
 #include "Utils.hpp"
+#include "SHA256d.hpp"
+#include "BinaryBuffer.hpp"
+#include "UnspentTxOut.hpp"
+#include "Chain.hpp"
 
 Tx::Tx(const std::vector<std::shared_ptr<TxIn>>& txIns, const std::vector<std::shared_ptr<TxOut>>& txOuts, int64_t lockTime)
     : TxIns(txIns), TxOuts(txOuts), LockTime(lockTime)
@@ -65,18 +67,56 @@ std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& PayToAddr, uint64_t va
 
     auto tx_out = std::make_shared<TxOut>(value, PayToAddr);
 
-    auto tx_ins = std::vector<std::shared_ptr<TxIn>>{ tx_in };
-    auto tx_outs = std::vector<std::shared_ptr<TxOut>>{ tx_out };
+    std::vector<std::shared_ptr<TxIn>> tx_ins{ tx_in };
+    std::vector<std::shared_ptr<TxOut>> tx_outs{ tx_out };
     auto tx = std::make_shared<Tx>(tx_ins, tx_outs, -1);
 
     return tx;
 }
 
-std::shared_ptr<Tx> Tx::Validate(const std::shared_ptr<Tx>& tx, const ValidateRequest& req)
+void Tx::Validate(const std::shared_ptr<Tx>& tx, const ValidateRequest& req)
 {
     tx->ValidateBasics(req.AsCoinbase);
 
-    //TODO: utxo validation
+    uint64_t avaliableToSpend = 0;
+    const auto& txIns = tx->TxIns;
+    for (size_t i = 0; i < txIns.size(); i++)
+    {
+        const auto& txIn = txIns[i];
 
-    return nullptr;
+        std::shared_ptr<UnspentTxOut> utxo = nullptr; //TODO: this could be a ref
+        if (!UnspentTxOut::Set.contains(txIn->ToSpend))
+        {
+            utxo = UnspentTxOut::Set[txIn->ToSpend];
+        }
+        else
+        {
+            if (!req.SiblingsInBlock.empty())
+            {
+                utxo = UnspentTxOut::FindInList(txIn, req.SiblingsInBlock);
+            }
+
+            if (req.Allow_UTXO_FromMempool)
+            {
+                //TODO: find utxo in mempool
+            }
+        }
+
+        if (utxo == nullptr)
+            throw std::exception("Tx::Validate --- utxo == nullptr");
+
+        if (utxo->IsCoinbase && (Chain::GetCurrentHeight() - utxo->Height) < NetParams::COINBASE_MATURITY)
+            throw std::exception("Tx::Validate --- utxo->IsCoinbase && (Chain::GetCurrentHeight() - utxo->Height) < NetParams::COINBASE_MATURITY");
+
+        //TODO: verify signature
+
+        avaliableToSpend += utxo->TxOut->Value;
+    }
+
+    uint64_t totalSpent = 0;
+    for (const auto& txOut : tx->TxOuts)
+        totalSpent += txOut->Value;
+
+    if (avaliableToSpend < totalSpent)
+        throw std::exception("Tx::Validate --- avaliableToSpend < totalSpent");
 }

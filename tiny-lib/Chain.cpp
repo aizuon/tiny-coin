@@ -5,6 +5,7 @@
 
 #include "Chain.hpp"
 #include "NetParams.hpp"
+#include "Utils.hpp"
 #include "MerkleTree.hpp"
 #include "PoW.hpp"
 
@@ -96,7 +97,7 @@ std::pair<std::shared_ptr<Block>, int64_t> Chain::ValidateBlock(const std::share
 	if (txs.empty())
 		throw std::exception("Chain::ValidateBlock --- txs.empty()");
 
-	auto now = static_cast<int64_t>(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+	auto now = Utils::GetUnixTimestamp();
 	if (block->Timestamp - now > NetParams::MAX_FUTURE_BLOCK_TIME_IN_SECS)
 		throw std::exception("Chain::ValidateBlock --- block->Timestamp - now > NetParams::MAX_FUTURE_BLOCK_TIME_IN_SECS");
 

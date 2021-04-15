@@ -7,4 +7,5 @@ class Utils
 {
 public:
 	static std::string ByteArrayToHexString(const std::vector<uint8_t>& vec);
+	static int64_t GetUnixTimestamp();
 };

@@ -35,5 +35,5 @@ public:
 		std::vector<std::shared_ptr<Tx>> SiblingsInBlock;
 	};
 
-	static std::shared_ptr<Tx> Validate(const std::shared_ptr<Tx>& tx, const ValidateRequest& req);
+	static void Validate(const std::shared_ptr<Tx>& tx, const ValidateRequest& req);
 };
