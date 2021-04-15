@@ -21,20 +21,20 @@ std::vector<std::shared_ptr<Block>> Chain::OrphanBlocks = std::vector<std::share
 
 std::recursive_mutex Chain::Lock;
 
-int32_t Chain::ActiveChainIdx;
+int64_t Chain::ActiveChainIdx;
 
-int32_t Chain::GetCurrentHeight()
+int64_t Chain::GetCurrentHeight()
 {
 	std::lock_guard lock(Lock);
 
 	return ActiveChain.size();
 }
 
-std::tuple<std::shared_ptr<Block>, int32_t, int32_t> Chain::LocateBlockInActiveChain(const std::string& blockHash)
+std::tuple<std::shared_ptr<Block>, int64_t, int64_t> Chain::LocateBlockInActiveChain(const std::string& blockHash)
 {
 	std::lock_guard lock(Lock);
 
-	int32_t chain_idx = 0;
+	int64_t chain_idx = 0;
 	auto [located_block, located_block_height] = LocateBlockInChain(blockHash, ActiveChain);
 	if (located_block != nullptr)
 		return { located_block, located_block_height, chain_idx };
@@ -51,11 +51,11 @@ std::tuple<std::shared_ptr<Block>, int32_t, int32_t> Chain::LocateBlockInActiveC
 	return { nullptr, -1, -1 };
 }
 
-std::pair<std::shared_ptr<Block>, int32_t> Chain::LocateBlockInChain(const std::string& blockHash, const std::vector<std::shared_ptr<Block>>& chain)
+std::pair<std::shared_ptr<Block>, int64_t> Chain::LocateBlockInChain(const std::string& blockHash, const std::vector<std::shared_ptr<Block>>& chain)
 {
 	std::lock_guard lock(Lock);
 
-	int32_t height = 0;
+	int64_t height = 0;
 	for (const auto& block : chain)
 	{
 		if (block->Id() == blockHash)
@@ -83,14 +83,18 @@ std::shared_ptr<Block> Chain::ConnectBlock(const std::shared_ptr<Block>& block, 
 	}
 
 	//TODO: validate block
+
+	return nullptr;
 }
 
-std::pair<std::shared_ptr<Block>, int32_t> Chain::ValidateBlock(const std::shared_ptr<Block>& block)
+std::pair<std::shared_ptr<Block>, int64_t> Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 {
 	std::lock_guard lock(Lock);
 
-	if (block->Txs.empty())
-		throw std::exception("Chain::ValidateBlock --- block->Txs.empty()");
+	const auto& txs = block->Txs;
+
+	if (txs.empty())
+		throw std::exception("Chain::ValidateBlock --- txs.empty()");
 
 	auto now = static_cast<int64_t>(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 	if (block->Timestamp - now > NetParams::MAX_FUTURE_BLOCK_TIME_IN_SECS)
@@ -103,25 +107,25 @@ std::pair<std::shared_ptr<Block>, int32_t> Chain::ValidateBlock(const std::share
 	{
 		return tx->IsCoinbase();
 	};
-	auto coinbase_it = std::find_if(block->Txs.begin(), block->Txs.end(), coinbase_pred);
-	if (coinbase_it != block->Txs.begin() || std::find_if(++coinbase_it, block->Txs.end(), coinbase_pred) != block->Txs.end())
-		throw std::exception("Chain::ValidateBlock --- coinbase_it != block->Txs.begin() || std::find_if(++coinbase_it, block->Txs.end(), coinbase_pred) != block->Txs.end()");
+	auto coinbase_it = std::find_if(txs.begin(), txs.end(), coinbase_pred);
+	if (coinbase_it != txs.begin() || std::find_if(++coinbase_it, txs.end(), coinbase_pred) != txs.end())
+		throw std::exception("Chain::ValidateBlock --- coinbase_it != txs.begin() || std::find_if(++coinbase_it, txs.end(), coinbase_pred) != txs.end()");
 
 	try
 	{
-		for (int i = 0; i < block->Txs.size(); i++)
+		for (size_t i = 0; i < txs.size(); i++)
 		{
-			block->Txs[i]->ValidateBasics(i == 0);
+			txs[i]->ValidateBasics(i == 0);
 		}
 	}
 	catch (...)
 	{
-		throw std::exception("Chain::ValidateBlock --- block->Txs[i]->Validate(i == 0)");
+		throw std::exception("Chain::ValidateBlock --- txs[i]->Validate(i == 0)");
 	}
 
 	std::vector<std::string> hashes;
-	hashes.reserve(block->Txs.size());
-	for (const auto& tx : block->Txs)
+	hashes.reserve(txs.size());
+	for (const auto& tx : txs)
 	{
 		hashes.push_back(tx->Id());
 	}
@@ -132,7 +136,7 @@ std::pair<std::shared_ptr<Block>, int32_t> Chain::ValidateBlock(const std::share
 	if (block->Timestamp <= GetMedianTimePast(11))
 		throw std::exception("Chain::ValidateBlock --- block->Timestamp <= GetMedianTimePast(11)");
 
-	int32_t prev_block_chain_idx = 0;
+	int64_t prev_block_chain_idx = 0;
 	if (block->PrevBlockHash.empty())
 	{
 		prev_block_chain_idx = ActiveChainIdx;
@@ -153,6 +157,8 @@ std::pair<std::shared_ptr<Block>, int32_t> Chain::ValidateBlock(const std::share
 		throw std::exception("Chain::ValidateBlock --- PoW::GetNextWorkRequired(block->PrevBlockHash) != block->Bits");
 
 	//TODO: validate tx
+
+	return { nullptr, -1 };
 }
 
 int64_t Chain::GetMedianTimePast(size_t numLastBlocks)

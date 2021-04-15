@@ -14,7 +14,7 @@
 class UnspentTxOut : public ISerializable
 {
 public:
-	UnspentTxOut(std::shared_ptr<TxOut> txOut, std::shared_ptr<TxOutPoint> txOutPoint, bool isCoinbase, int32_t height);
+	UnspentTxOut(std::shared_ptr<TxOut> txOut, std::shared_ptr<TxOutPoint> txOutPoint, bool isCoinbase, int64_t height);
 
 	std::shared_ptr<TxOut> TxOut;
 
@@ -22,12 +22,12 @@ public:
 
 	bool IsCoinbase;
 
-	int32_t Height;
+	int64_t Height;
 
 	std::vector<uint8_t> Serialize() const override;
 
 	static std::map<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>> Set;
-	static void AddToSet(std::shared_ptr<::TxOut> txOut, const std::string& txId, uint64_t idx, bool isCoinbase, int32_t height);
-	static void RemoveFromSet(const std::string& txId, uint64_t idx);
+	static void AddToSet(std::shared_ptr<::TxOut> txOut, const std::string& txId, int64_t idx, bool isCoinbase, int64_t height);
+	static void RemoveFromSet(const std::string& txId, int64_t idx);
 	static std::shared_ptr<UnspentTxOut> FindInList(const std::shared_ptr<TxIn>& txIn, const std::vector<std::shared_ptr<Tx>>& txs);
 };

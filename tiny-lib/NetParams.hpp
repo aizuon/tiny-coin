@@ -4,7 +4,7 @@
 class NetParams
 {
 public:
-	static constexpr uint32_t MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES = 1000000;
+	static constexpr uint64_t MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES = 1000000;
 
 	static constexpr uint8_t COINBASE_MATURITY = 2;
 

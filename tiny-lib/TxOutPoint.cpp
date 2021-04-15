@@ -3,7 +3,7 @@
 #include "TxOutPoint.hpp"
 #include "BinaryBuffer.hpp"
 
-TxOutPoint::TxOutPoint(const std::string& txId, uint64_t txOutId)
+TxOutPoint::TxOutPoint(const std::string& txId, int64_t txOutId)
 	: TxId(txId), TxOutId(txOutId)
 {
 }

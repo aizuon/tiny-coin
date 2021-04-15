@@ -26,7 +26,7 @@ public:
 
 	std::vector<uint8_t> Serialize() const override;
 
-	static std::shared_ptr<Tx> CreateCoinbase(const std::string& PayToAddr, uint64_t value, int32_t height);
+	static std::shared_ptr<Tx> CreateCoinbase(const std::string& PayToAddr, uint64_t value, int64_t height);
 
 	struct ValidateRequest
 	{
