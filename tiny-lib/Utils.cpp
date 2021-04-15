@@ -1,18 +1,29 @@
 #include "pch.hpp"
 
 #include <chrono>
+#include <algorithm>
+#include <boost/algorithm/hex.hpp>
 
 #include "Utils.hpp"
 
 std::string Utils::ByteArrayToHexString(const std::vector<uint8_t>& vec)
 {
     std::string hash;
-    hash.resize(vec.size() * 2);
 
-    for (size_t i = 0; i < vec.size(); i++)
-        sprintf_s(hash.data() + (i * 2), 2, "%02x", vec[i]);
+    boost::algorithm::hex_lower(vec.begin(), vec.end(), back_inserter(hash));
 
     return hash;
+}
+
+std::vector<uint8_t> Utils::HexStringToByteArray(const std::string& str)
+{
+    std::string hash = boost::algorithm::unhex(str);
+
+    std::vector<uint8_t> vec(hash.size());
+
+    std::copy(hash.begin(), hash.end(), vec.data());
+
+    return vec;
 }
 
 int64_t Utils::GetUnixTimestamp()

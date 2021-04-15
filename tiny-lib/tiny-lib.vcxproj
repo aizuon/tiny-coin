@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Base58.hpp" />
     <ClInclude Include="BinaryBuffer.hpp" />
     <ClInclude Include="Block.hpp" />
     <ClInclude Include="Chain.hpp" />
@@ -35,8 +36,10 @@
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="UnspentTxOut.hpp" />
     <ClInclude Include="Utils.hpp" />
+    <ClInclude Include="Wallet.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Base58.cpp" />
     <ClCompile Include="BinaryBuffer.cpp" />
     <ClCompile Include="Block.cpp" />
     <ClCompile Include="Chain.cpp" />
@@ -51,6 +54,7 @@
     <ClCompile Include="TxOutPoint.cpp" />
     <ClCompile Include="UnspentTxOut.cpp" />
     <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="Wallet.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

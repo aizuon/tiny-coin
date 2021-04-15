@@ -37,6 +37,8 @@
     <ClInclude Include="Mempool.hpp">
       <Filter>BlockChain</Filter>
     </ClInclude>
+    <ClInclude Include="Wallet.hpp" />
+    <ClInclude Include="Base58.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -73,6 +75,8 @@
     <ClCompile Include="Mempool.cpp">
       <Filter>BlockChain</Filter>
     </ClCompile>
+    <ClCompile Include="Wallet.cpp" />
+    <ClCompile Include="Base58.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Tx">
