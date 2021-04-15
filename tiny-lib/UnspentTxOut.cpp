@@ -22,25 +22,27 @@ std::vector<uint8_t> UnspentTxOut::Serialize() const
 	return buffer.GetBuffer();
 }
 
-void UnspentTxOut::AddToSet(std::shared_ptr<::TxOut> txOut, const std::string& txId, int64_t idx, bool isCoinbase, int64_t height)
+std::map<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>> UnspentTxOut::Map;
+
+void UnspentTxOut::AddToMap(std::shared_ptr<::TxOut> txOut, const std::string& txId, int64_t idx, bool isCoinbase, int64_t height)
 {
 	auto txOutPoint = std::make_shared<::TxOutPoint>(txId, idx);
 
 	auto utxo = std::make_shared<UnspentTxOut>(txOut, txOutPoint, isCoinbase, height);
 
-	Set[utxo->TxOutPoint] = utxo;
+	Map[utxo->TxOutPoint] = utxo;
 }
 
-void UnspentTxOut::RemoveFromSet(const std::string& txId, int64_t idx)
+void UnspentTxOut::RemoveFromMap(const std::string& txId, int64_t idx)
 {
-	auto set_it = std::find_if(Set.begin(), Set.end(),
+	auto map_it = std::find_if(Map.begin(), Map.end(),
 		[&txId, idx](const std::pair<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
 		{
 			auto& [txOutPoint, utxo] = p;
 			return txOutPoint->TxId == txId && txOutPoint->TxOutId == idx;
 		});
-	if (set_it != Set.end())
-		Set.erase(set_it);
+	if (map_it != Map.end())
+		Map.erase(map_it);
 }
 
 std::shared_ptr<UnspentTxOut> UnspentTxOut::FindInList(const std::shared_ptr<TxIn>& txIn, const std::vector<std::shared_ptr<Tx>>& txs)
@@ -54,7 +56,7 @@ std::shared_ptr<UnspentTxOut> UnspentTxOut::FindInList(const std::shared_ptr<TxI
 			if (tx->TxOuts.size() - 1 < toSpend->TxOutId)
 				return nullptr;
 
-			auto matchingTxOut = tx->TxOuts[toSpend->TxOutId];
+			auto& matchingTxOut = tx->TxOuts[toSpend->TxOutId];
 			auto txOutPoint = std::make_shared<::TxOutPoint>(toSpend->TxId, toSpend->TxOutId);
 			return std::make_shared<UnspentTxOut>(matchingTxOut, txOutPoint, false, -1);
 		}

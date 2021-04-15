@@ -34,6 +34,9 @@
     <ClInclude Include="PoW.hpp">
       <Filter>BlockChain</Filter>
     </ClInclude>
+    <ClInclude Include="Mempool.hpp">
+      <Filter>BlockChain</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -64,7 +67,12 @@
       <Filter>BlockChain</Filter>
     </ClCompile>
     <ClCompile Include="Utils.cpp" />
-    <ClCompile Include="PoW.cpp" />
+    <ClCompile Include="PoW.cpp">
+      <Filter>BlockChain</Filter>
+    </ClCompile>
+    <ClCompile Include="Mempool.cpp">
+      <Filter>BlockChain</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Tx">

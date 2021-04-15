@@ -10,6 +10,7 @@
 #include "BinaryBuffer.hpp"
 #include "UnspentTxOut.hpp"
 #include "Chain.hpp"
+#include "Mempool.hpp"
 
 Tx::Tx(const std::vector<std::shared_ptr<TxIn>>& txIns, const std::vector<std::shared_ptr<TxOut>>& txOuts, int64_t lockTime)
     : TxIns(txIns), TxOuts(txOuts), LockTime(lockTime)
@@ -84,10 +85,10 @@ void Tx::Validate(const std::shared_ptr<Tx>& tx, const ValidateRequest& req)
     {
         const auto& txIn = txIns[i];
 
-        std::shared_ptr<UnspentTxOut> utxo = nullptr; //TODO: this could be a ref
-        if (!UnspentTxOut::Set.contains(txIn->ToSpend))
+        std::shared_ptr<UnspentTxOut> utxo = nullptr; //HACK: this should be a ref
+        if (!UnspentTxOut::Map.contains(txIn->ToSpend))
         {
-            utxo = UnspentTxOut::Set[txIn->ToSpend];
+            utxo = UnspentTxOut::Map[txIn->ToSpend];
         }
         else
         {
@@ -98,7 +99,7 @@ void Tx::Validate(const std::shared_ptr<Tx>& tx, const ValidateRequest& req)
 
             if (req.Allow_UTXO_FromMempool)
             {
-                //TODO: find utxo in mempool
+                utxo = Mempool::Find_UTXO_InMempool(txIn->ToSpend);
             }
         }
 

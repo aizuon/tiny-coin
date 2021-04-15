@@ -23,6 +23,7 @@
     <ClInclude Include="Block.hpp" />
     <ClInclude Include="Chain.hpp" />
     <ClInclude Include="ISerializable.hpp" />
+    <ClInclude Include="Mempool.hpp" />
     <ClInclude Include="MerkleTree.hpp" />
     <ClInclude Include="NetParams.hpp" />
     <ClInclude Include="PoW.hpp" />
@@ -39,6 +40,7 @@
     <ClCompile Include="BinaryBuffer.cpp" />
     <ClCompile Include="Block.cpp" />
     <ClCompile Include="Chain.cpp" />
+    <ClCompile Include="Mempool.cpp" />
     <ClCompile Include="MerkleTree.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="PoW.cpp" />
