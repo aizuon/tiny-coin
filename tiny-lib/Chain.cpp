@@ -6,6 +6,7 @@
 #include "Chain.hpp"
 #include "NetParams.hpp"
 #include "MerkleTree.hpp"
+#include "PoW.hpp"
 
 const std::shared_ptr<TxIn> Chain::GenesisTxIn = std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{ 0x00 }, std::vector<uint8_t>(), 0);
 const std::shared_ptr<TxOut> Chain::GenesisTxOut = std::make_shared<TxOut>(5000000000, "143UVyz7ooiAv1pMqbwPPpnH4BV9ifJGFF");
@@ -18,20 +19,20 @@ std::vector<std::shared_ptr<Block>> Chain::ActiveChain = std::vector<std::shared
 std::vector<std::vector<std::shared_ptr<Block>>> Chain::SideBranches = std::vector<std::vector<std::shared_ptr<Block>>>{ };
 std::vector<std::shared_ptr<Block>> Chain::OrphanBlocks = std::vector<std::shared_ptr<Block>>{ };
 
-std::recursive_mutex Chain::ChainLock;
+std::recursive_mutex Chain::Lock;
 
 int32_t Chain::ActiveChainIdx;
 
 int32_t Chain::GetCurrentHeight()
 {
-	std::lock_guard lock(ChainLock);
+	std::lock_guard lock(Lock);
 
 	return ActiveChain.size();
 }
 
 std::tuple<std::shared_ptr<Block>, int32_t, int32_t> Chain::LocateBlockInActiveChain(const std::string& blockHash)
 {
-	std::lock_guard lock(ChainLock);
+	std::lock_guard lock(Lock);
 
 	int32_t chain_idx = 0;
 	auto [located_block, located_block_height] = LocateBlockInChain(blockHash, ActiveChain);
@@ -52,7 +53,7 @@ std::tuple<std::shared_ptr<Block>, int32_t, int32_t> Chain::LocateBlockInActiveC
 
 std::pair<std::shared_ptr<Block>, int32_t> Chain::LocateBlockInChain(const std::string& blockHash, const std::vector<std::shared_ptr<Block>>& chain)
 {
-	std::lock_guard lock(ChainLock);
+	std::lock_guard lock(Lock);
 
 	int32_t height = 0;
 	for (const auto& block : chain)
@@ -70,7 +71,7 @@ std::pair<std::shared_ptr<Block>, int32_t> Chain::LocateBlockInChain(const std::
 
 std::shared_ptr<Block> Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg /*= false*/)
 {
-	std::lock_guard lock(ChainLock);
+	std::lock_guard lock(Lock);
 
 	if (doingReorg)
 	{
@@ -86,7 +87,7 @@ std::shared_ptr<Block> Chain::ConnectBlock(const std::shared_ptr<Block>& block, 
 
 std::pair<std::shared_ptr<Block>, int32_t> Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 {
-	std::lock_guard lock(ChainLock);
+	std::lock_guard lock(Lock);
 
 	if (block->Txs.empty())
 		throw std::exception("Chain::ValidateBlock --- block->Txs.empty()");
@@ -148,7 +149,10 @@ std::pair<std::shared_ptr<Block>, int32_t> Chain::ValidateBlock(const std::share
 			return { block, prev_block_chain_idx + 1 };
 	}
 
-	//TODO: check bits
+	if (PoW::GetNextWorkRequired(block->PrevBlockHash) != block->Bits)
+		throw std::exception("Chain::ValidateBlock --- PoW::GetNextWorkRequired(block->PrevBlockHash) != block->Bits");
+
+	//TODO: validate tx
 }
 
 int64_t Chain::GetMedianTimePast(size_t numLastBlocks)
