@@ -27,4 +27,13 @@ public:
 	std::vector<uint8_t> Serialize() const override;
 
 	static std::shared_ptr<Tx> CreateCoinbase(const std::string& PayToAddr, uint64_t value, int32_t height);
+
+	struct ValidateTxRequest
+	{
+		bool AsCoinbase = false;
+		bool Allow_UTXO_FromMempool = true;
+		std::vector<std::shared_ptr<Tx>> SiblingsInBlock;
+	};
+
+	static std::shared_ptr<Tx> ValidateTx(const std::shared_ptr<Tx>& tx, const ValidateTxRequest& req);
 };

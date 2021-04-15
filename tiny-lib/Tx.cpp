@@ -71,3 +71,12 @@ std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& PayToAddr, uint64_t va
 
     return tx;
 }
+
+std::shared_ptr<Tx> Tx::ValidateTx(const std::shared_ptr<Tx>& tx, const ValidateTxRequest& req)
+{
+    tx->Validate(req.AsCoinbase);
+
+    //TODO: utxo validation
+
+    return nullptr;
+}
