@@ -5,6 +5,7 @@
 
 #include "Chain.hpp"
 #include "NetParams.hpp"
+#include "MerkleTree.hpp"
 
 const std::shared_ptr<TxIn> Chain::GenesisTxIn = std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{ 0x00 }, std::vector<uint8_t>(), 0);
 const std::shared_ptr<TxOut> Chain::GenesisTxOut = std::make_shared<TxOut>(5000000000, "143UVyz7ooiAv1pMqbwPPpnH4BV9ifJGFF");
@@ -33,20 +34,20 @@ std::tuple<std::shared_ptr<Block>, int32_t, int32_t> Chain::LocateBlockInActiveC
 	std::lock_guard lock(ChainLock);
 
 	int32_t chain_idx = 0;
-	auto located_block = LocateBlockInChain(blockHash, ActiveChain);
-	if (located_block.first != nullptr)
-		return std::make_tuple(located_block.first, located_block.second, chain_idx);
+	auto [located_block, located_block_height] = LocateBlockInChain(blockHash, ActiveChain);
+	if (located_block != nullptr)
+		return { located_block, located_block_height, chain_idx };
 
 	for (const auto& side_chain : SideBranches)
 	{
 		chain_idx++;
 
-		located_block = LocateBlockInChain(blockHash, side_chain);
-		if (std::get<0>(located_block) != nullptr)
-			return std::make_tuple(located_block.first, located_block.second, chain_idx);
+		auto [located_block, located_block_height] = LocateBlockInChain(blockHash, side_chain);
+		if (located_block != nullptr)
+			return { located_block, located_block_height, chain_idx };
 	}
 
-	return std::make_tuple(nullptr, -1, -1);
+	return { nullptr, -1, -1 };
 }
 
 std::pair<std::shared_ptr<Block>, int32_t> Chain::LocateBlockInChain(const std::string& blockHash, const std::vector<std::shared_ptr<Block>>& chain)
@@ -58,13 +59,13 @@ std::pair<std::shared_ptr<Block>, int32_t> Chain::LocateBlockInChain(const std::
 	{
 		if (block->Id() == blockHash)
 		{
-			return std::make_pair(block, height);
+			return { block, height };
 		}
 
 		height++;
 	}
 
-	return std::make_pair(nullptr, -1);
+	return { nullptr, -1 };
 }
 
 std::shared_ptr<Block> Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg /*= false*/)
@@ -73,7 +74,8 @@ std::shared_ptr<Block> Chain::ConnectBlock(const std::shared_ptr<Block>& block, 
 
 	if (doingReorg)
 	{
-		if (std::get<0>(LocateBlockInActiveChain(block->Id())) != nullptr)
+		auto [located_block, located_block_height, located_block_chain_idx] = LocateBlockInActiveChain(block->Id());
+		if (located_block != nullptr)
 		{
 			return nullptr;
 		}
@@ -82,8 +84,10 @@ std::shared_ptr<Block> Chain::ConnectBlock(const std::shared_ptr<Block>& block, 
 	//TODO: validate block
 }
 
-std::shared_ptr<Block> Chain::ValidateBlock(const std::shared_ptr<Block>& block)
+std::pair<std::shared_ptr<Block>, int32_t> Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 {
+	std::lock_guard lock(ChainLock);
+
 	if (block->Txs.empty())
 		throw std::exception("Chain::ValidateBlock --- block->Txs.empty()");
 
@@ -114,5 +118,46 @@ std::shared_ptr<Block> Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 		throw std::exception("Chain::ValidateBlock --- block->Txs[i]->Validate(i == 0)");
 	}
 
-	//TODO: check merkle root
+	std::vector<std::string> hashes;
+	hashes.reserve(block->Txs.size());
+	for (const auto& tx : block->Txs)
+	{
+		hashes.push_back(tx->Id());
+	}
+	auto merkleRoot = MerkleTree::GetRoot(hashes);
+	if (merkleRoot->Value != block->MerkleHash)
+		throw std::exception("Chain::ValidateBlock --- merkleRoot->Value != block->MerkleHash");
+
+	if (block->Timestamp <= GetMedianTimePast(11))
+		throw std::exception("Chain::ValidateBlock --- block->Timestamp <= GetMedianTimePast(11)");
+
+	int32_t prev_block_chain_idx = 0;
+	if (block->PrevBlockHash.empty())
+	{
+		prev_block_chain_idx = ActiveChainIdx;
+	}
+	else
+	{
+		auto [prev_block, prev_block_height, prev_block_chain_idx] = LocateBlockInActiveChain(block->PrevBlockHash);
+		if (prev_block == nullptr)
+			throw std::exception("Chain::ValidateBlock --- prev_block == nullptr");
+
+		if (prev_block_chain_idx != ActiveChainIdx)
+			return { block, prev_block_chain_idx };
+		else if (prev_block->Id() != ActiveChain.back()->Id())
+			return { block, prev_block_chain_idx + 1 };
+	}
+
+	//TODO: check bits
+}
+
+int64_t Chain::GetMedianTimePast(size_t numLastBlocks)
+{
+	if (numLastBlocks > ActiveChain.size())
+		return 0;
+
+	size_t first_idx = ActiveChain.size() - numLastBlocks;
+	size_t median_idx = first_idx + (numLastBlocks / 2);
+
+	return ActiveChain[median_idx]->Timestamp;
 }

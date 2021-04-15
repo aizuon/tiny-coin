@@ -35,5 +35,8 @@ public:
 
 	static std::shared_ptr<Block> ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg = false);
 
-	static std::shared_ptr<Block> ValidateBlock(const std::shared_ptr<Block>& block);
+	static std::pair<std::shared_ptr<Block>, int32_t> ValidateBlock(const std::shared_ptr<Block>& block);
+
+private:
+	static int64_t GetMedianTimePast(size_t numLastBlocks);
 };
