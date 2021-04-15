@@ -1,35 +1,23 @@
 #include "pch.hpp"
 
-#include <openssl/sha.h>
-#include <openssl/ripemd.h>
-
 #include "Wallet.hpp"
-#include "SHA256d.hpp"
+#include "SHA256.hpp"
+#include "RIPEMD160.hpp"
 #include "Base58.hpp"
 
 std::string Wallet::PubKeyToAddress(const std::vector<uint8_t>& pubKey)
 {
-    std::vector<uint8_t> hash1(SHA256_DIGEST_LENGTH);
+    auto sha256 = SHA256::HashBinary(pubKey);
 
-    SHA256_CTX sha256;
+    auto ripe = RIPEMD160::HashBinary(sha256);
 
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256, pubKey.data(), pubKey.size());
-    SHA256_Final(hash1.data(), &sha256);
+    ripe.insert(ripe.begin(), 0x00);
 
-    std::vector<uint8_t> hash2(RIPEMD160_DIGEST_LENGTH);
-    RIPEMD160_CTX ripemd160;
-    RIPEMD160_Init(&ripemd160);
-    RIPEMD160_Update(&ripemd160, hash1.data(), hash1.size());
-    RIPEMD160_Final(hash2.data(), &ripemd160);
+    auto sha256d = SHA256::DoubleHashBinary(ripe);
 
-    hash2.insert(hash2.begin(), 0x00);
+    std::vector<uint8_t> checksum(sha256d.begin(), sha256d.begin() + 4);
 
-    auto hash3 = SHA256d::HashBinary(hash2);
+    ripe.insert(ripe.end(), checksum.begin(), checksum.end());
 
-    std::vector<uint8_t> checksum(hash3.begin(), hash3.begin() + 4);
-
-    hash2.insert(hash2.end(), checksum.begin(), checksum.end());
-
-    return PubKeyHashVersion + Base58::Encode(hash2);
+    return PubKeyHashVersion + Base58::Encode(ripe);
 }

@@ -20,7 +20,7 @@
     </ClInclude>
     <ClInclude Include="BinaryBuffer.hpp" />
     <ClInclude Include="ISerializable.hpp" />
-    <ClInclude Include="SHA256d.hpp" />
+    <ClInclude Include="SHA256.hpp" />
     <ClInclude Include="Chain.hpp">
       <Filter>BlockChain</Filter>
     </ClInclude>
@@ -39,6 +39,7 @@
     </ClInclude>
     <ClInclude Include="Wallet.hpp" />
     <ClInclude Include="Base58.hpp" />
+    <ClInclude Include="RIPEMD160.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -58,7 +59,7 @@
     <ClCompile Include="TxOut.cpp">
       <Filter>Tx</Filter>
     </ClCompile>
-    <ClCompile Include="SHA256d.cpp" />
+    <ClCompile Include="SHA256.cpp" />
     <ClCompile Include="Chain.cpp">
       <Filter>BlockChain</Filter>
     </ClCompile>
@@ -77,6 +78,7 @@
     </ClCompile>
     <ClCompile Include="Wallet.cpp" />
     <ClCompile Include="Base58.cpp" />
+    <ClCompile Include="RIPEMD160.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Tx">

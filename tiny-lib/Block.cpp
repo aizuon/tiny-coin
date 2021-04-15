@@ -3,7 +3,7 @@
 #include <fmt/format.h>
 
 #include "Block.hpp"
-#include "SHA256d.hpp"
+#include "SHA256.hpp"
 #include "Utils.hpp"
 #include "BinaryBuffer.hpp"
 
@@ -25,7 +25,7 @@ std::string Block::Id() const
 	std::string header = Header();
 	std::vector<uint8_t> header_vec(header.begin(), header.end());
 
-	return Utils::ByteArrayToHexString(SHA256d::HashBinary(header_vec));
+	return Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(header_vec));
 }
 
 std::vector<uint8_t> Block::Serialize() const

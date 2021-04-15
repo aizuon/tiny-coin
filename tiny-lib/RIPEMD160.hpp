@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <vector>
 
-class SHA256d
+class RIPEMD160
 {
 public:
 	static std::vector<uint8_t> HashBinary(const std::vector<uint8_t>& buffer);

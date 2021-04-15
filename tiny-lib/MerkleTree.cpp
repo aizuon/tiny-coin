@@ -3,7 +3,7 @@
 #include <cstdint>
 
 #include "MerkleTree.hpp"
-#include "SHA256d.hpp"
+#include "SHA256.hpp"
 #include "Utils.hpp"
 
 MerkleNode::MerkleNode(const std::string& value, const std::vector<std::string>& children)
@@ -67,7 +67,7 @@ std::shared_ptr<MerkleNode> MerkleTree::FindRooot(const std::vector<std::shared_
 		std::string combinedId = chunk[0] + chunk[1];
 		std::vector<uint8_t> combinedId_vec(combinedId.begin(), combinedId.end());
 
-		std::string combinedHash = Utils::ByteArrayToHexString(SHA256d::HashBinary(combinedId_vec));
+		std::string combinedHash = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(combinedId_vec));
 
 		auto node = std::make_shared<MerkleNode>(combinedHash, chunk);
 

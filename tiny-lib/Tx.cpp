@@ -6,7 +6,7 @@
 #include "Tx.hpp"
 #include "NetParams.hpp"
 #include "Utils.hpp"
-#include "SHA256d.hpp"
+#include "SHA256.hpp"
 #include "BinaryBuffer.hpp"
 #include "UnspentTxOut.hpp"
 #include "Chain.hpp"
@@ -24,7 +24,7 @@ bool Tx::IsCoinbase() const
 
 std::string Tx::Id() const
 {
-    return Utils::ByteArrayToHexString(SHA256d::HashBinary(Serialize()));
+    return Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Serialize()));
 }
 
 void Tx::ValidateBasics(bool coinbase /*= false*/) const
