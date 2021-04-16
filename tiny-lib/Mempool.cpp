@@ -73,8 +73,9 @@ std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, con
 	}
 
 	auto newBlock = std::make_shared<Block>(*block);
-	std::vector<std::shared_ptr<Tx>> txs(block->Txs.size() + 1);
-	txs.insert(txs.end(), block->Txs.begin(), block->Txs.end());
+	const auto& blockTxs = block->Txs;
+	std::vector<std::shared_ptr<Tx>> txs(blockTxs.size() + 1);
+	txs.insert(txs.end(), blockTxs.begin(), blockTxs.end());
 	txs.push_back(tx);
 	newBlock->Txs = txs;
 

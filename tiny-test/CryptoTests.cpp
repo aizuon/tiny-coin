@@ -42,6 +42,9 @@ TEST(CryptoTest, ECDSA_KeyPairGeneration)
 
 	std::string priv_key_string = Utils::ByteArrayToHexString(priv_key);
 	std::string pub_key_string = Utils::ByteArrayToHexString(pub_key);
+
+	EXPECT_FALSE(priv_key_string.empty());
+	EXPECT_FALSE(pub_key_string.empty());
 }
 
 TEST(CryptoTest, ECDSA_GetPubKeyFromPrivKey)
