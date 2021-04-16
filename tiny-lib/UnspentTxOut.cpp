@@ -22,7 +22,7 @@ std::vector<uint8_t> UnspentTxOut::Serialize() const
 	return buffer.GetBuffer();
 }
 
-std::map<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>> UnspentTxOut::Map;
+std::unordered_map<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>> UnspentTxOut::Map;
 
 void UnspentTxOut::AddToMap(std::shared_ptr<::TxOut> txOut, const std::string& txId, int64_t idx, bool isCoinbase, int64_t height)
 {

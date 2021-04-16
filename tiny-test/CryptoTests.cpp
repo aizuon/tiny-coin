@@ -2,11 +2,11 @@
 
 #include "gtest/gtest.h"
 
-#include "../tiny-lib/ECDSA.hpp"
-#include "../tiny-lib/SHA256.hpp"
-#include "../tiny-lib/RIPEMD160.hpp"
-#include "../tiny-lib/Base58.hpp"
 #include "../tiny-lib/Utils.hpp"
+#include "../tiny-lib/RIPEMD160.hpp"
+#include "../tiny-lib/SHA256.hpp"
+#include "../tiny-lib/Base58.hpp"
+#include "../tiny-lib/ECDSA.hpp"
 
 TEST(CryptoTest, SHA256_Hashing)
 {

@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 #include <set>
-#include <map>
+#include <unordered_map>
 #include <memory>
 
 #include "Tx.hpp"
@@ -13,7 +13,7 @@
 class Mempool
 {
 public:
-	static std::map<std::string, std::shared_ptr<Tx>> Map;
+	static std::unordered_map<std::string, std::shared_ptr<Tx>> Map;
 
 	static std::vector<std::shared_ptr<Tx>> OrphanedTxs;
 

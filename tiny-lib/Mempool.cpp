@@ -7,7 +7,7 @@
 #include "TxOutPoint.hpp"
 #include "UnspentTxOut.hpp"
 
-std::map<std::string, std::shared_ptr<Tx>> Mempool::Map;
+std::unordered_map<std::string, std::shared_ptr<Tx>> Mempool::Map;
 
 std::vector<std::shared_ptr<Tx>> Mempool::OrphanedTxs;
 

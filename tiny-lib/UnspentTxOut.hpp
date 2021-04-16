@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <vector>
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <memory>
 
 #include "ISerializable.hpp"
@@ -26,7 +26,7 @@ public:
 
 	std::vector<uint8_t> Serialize() const override;
 
-	static std::map<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>> Map;
+	static std::unordered_map<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>> Map;
 
 	static void AddToMap(std::shared_ptr<::TxOut> txOut, const std::string& txId, int64_t idx, bool isCoinbase, int64_t height);
 	static void RemoveFromMap(const std::string& txId, int64_t idx);
