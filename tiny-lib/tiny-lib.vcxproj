@@ -23,6 +23,7 @@
     <ClInclude Include="BinaryBuffer.hpp" />
     <ClInclude Include="Block.hpp" />
     <ClInclude Include="Chain.hpp" />
+    <ClInclude Include="ECDSA.hpp" />
     <ClInclude Include="ISerializable.hpp" />
     <ClInclude Include="Mempool.hpp" />
     <ClInclude Include="MerkleTree.hpp" />
@@ -44,6 +45,7 @@
     <ClCompile Include="BinaryBuffer.cpp" />
     <ClCompile Include="Block.cpp" />
     <ClCompile Include="Chain.cpp" />
+    <ClCompile Include="ECDSA.cpp" />
     <ClCompile Include="Mempool.cpp" />
     <ClCompile Include="MerkleTree.cpp" />
     <ClCompile Include="pch.cpp" />

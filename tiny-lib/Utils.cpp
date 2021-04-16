@@ -26,6 +26,13 @@ std::vector<uint8_t> Utils::HexStringToByteArray(const std::string& str)
     return vec;
 }
 
+std::vector<uint8_t> Utils::StringToByteArray(const std::string& str)
+{
+    std::vector<uint8_t> vec(str.begin(), str.end());
+
+    return vec;
+}
+
 int64_t Utils::GetUnixTimestamp()
 {
     return static_cast<int64_t>(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());

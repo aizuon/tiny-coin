@@ -1,5 +1,9 @@
 #include "pch.hpp"
 
+#include <cstdint>
+#include <vector>
+#include "gtest/gtest.h"
+
 #include "../tiny-lib/Wallet.hpp"
 #include "../tiny-lib/Utils.hpp"
 

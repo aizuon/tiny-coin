@@ -20,7 +20,6 @@
     </ClInclude>
     <ClInclude Include="BinaryBuffer.hpp" />
     <ClInclude Include="ISerializable.hpp" />
-    <ClInclude Include="SHA256.hpp" />
     <ClInclude Include="Chain.hpp">
       <Filter>BlockChain</Filter>
     </ClInclude>
@@ -37,9 +36,21 @@
     <ClInclude Include="Mempool.hpp">
       <Filter>BlockChain</Filter>
     </ClInclude>
-    <ClInclude Include="Wallet.hpp" />
-    <ClInclude Include="Base58.hpp" />
-    <ClInclude Include="RIPEMD160.hpp" />
+    <ClInclude Include="Base58.hpp">
+      <Filter>Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="SHA256.hpp">
+      <Filter>Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="RIPEMD160.hpp">
+      <Filter>Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="ECDSA.hpp">
+      <Filter>Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="Wallet.hpp">
+      <Filter>Crypto</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -59,7 +70,6 @@
     <ClCompile Include="TxOut.cpp">
       <Filter>Tx</Filter>
     </ClCompile>
-    <ClCompile Include="SHA256.cpp" />
     <ClCompile Include="Chain.cpp">
       <Filter>BlockChain</Filter>
     </ClCompile>
@@ -76,9 +86,21 @@
     <ClCompile Include="Mempool.cpp">
       <Filter>BlockChain</Filter>
     </ClCompile>
-    <ClCompile Include="Wallet.cpp" />
-    <ClCompile Include="Base58.cpp" />
-    <ClCompile Include="RIPEMD160.cpp" />
+    <ClCompile Include="Base58.cpp">
+      <Filter>Crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="SHA256.cpp">
+      <Filter>Crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="RIPEMD160.cpp">
+      <Filter>Crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="ECDSA.cpp">
+      <Filter>Crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="Wallet.cpp">
+      <Filter>Crypto</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Tx">
@@ -86,6 +108,9 @@
     </Filter>
     <Filter Include="BlockChain">
       <UniqueIdentifier>{9e1de725-5690-4d01-92b4-d076cf6a936c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Crypto">
+      <UniqueIdentifier>{91fcc96a-0943-4f1f-8e07-81f38e2e4780}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
