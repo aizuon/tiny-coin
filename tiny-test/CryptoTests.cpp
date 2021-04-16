@@ -35,10 +35,30 @@ TEST(CryptoTest, Base58_Encode)
 
 	EXPECT_EQ(hash, "8AArJ45Yvcrsr4CB6zUCEPx9NKDyg");
 }
+
 TEST(CryptoTest, ECDSA_KeyPairGeneration)
 {
 	auto [priv_key, pub_key] = ECDSA::Generate();
 
 	std::string priv_key_string = Utils::ByteArrayToHexString(priv_key);
 	std::string pub_key_string = Utils::ByteArrayToHexString(pub_key);
+}
+
+TEST(CryptoTest, ECDSA_GetPubKeyFromPrivKey)
+{
+	auto priv_key = Utils::HexStringToByteArray("18e14a7b6a307f426a94f8114701e7c8e774e7f9a47e2c2035db29a206321725");
+	auto pub_key = Utils::ByteArrayToHexString(ECDSA::GetPubKeyFromPrivKey(priv_key));
+
+	EXPECT_EQ(pub_key, "0250863ad64a87ae8a2fe83c1af1a8403cb53f53e486d8511dad8a04887e5b2352");
+}
+
+TEST(CryptoTest, ECDSA_GenerateKeyPairAndGetPubKeyFromPrivKey)
+{
+	auto [priv_key, pub_key] = ECDSA::Generate();
+
+	std::string pub_key_string = Utils::ByteArrayToHexString(pub_key);
+
+	auto pub_key_string_from_priv_key = Utils::ByteArrayToHexString(ECDSA::GetPubKeyFromPrivKey(priv_key));
+
+	EXPECT_EQ(pub_key_string_from_priv_key, pub_key_string);
 }

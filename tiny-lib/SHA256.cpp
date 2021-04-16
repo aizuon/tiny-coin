@@ -11,9 +11,8 @@ std::vector<uint8_t> SHA256::HashBinary(const std::vector<uint8_t>& buffer)
 
     SHA256_CTX sha256;
 
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256, buffer.data(), buffer.size());
-    SHA256_Final(hash.data(), &sha256);
+    if (!SHA256_Init(&sha256) || !SHA256_Update(&sha256, buffer.data(), buffer.size()) || !SHA256_Final(hash.data(), &sha256))
+        return std::vector<uint8_t>();
 
     return hash;
 }
