@@ -4,8 +4,8 @@
 #include <vector>
 #include "gtest/gtest.h"
 
-#include "../tiny-lib/Wallet.hpp"
 #include "../tiny-lib/Utils.hpp"
+#include "../tiny-lib/Wallet.hpp"
 
 #pragma comment(lib, "crypt32")
 #pragma comment(lib, "ws2_32.lib")

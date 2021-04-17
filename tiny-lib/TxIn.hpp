@@ -15,7 +15,7 @@ public:
 	std::shared_ptr<TxOutPoint> ToSpend;
 
 	std::vector<uint8_t> UnlockSig;
-	std::vector<uint8_t> UnlockPk;
+	std::vector<uint8_t> UnlockPubKey;
 
 	int32_t Sequence;
 

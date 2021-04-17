@@ -51,6 +51,7 @@
     <ClInclude Include="Wallet.hpp">
       <Filter>Crypto</Filter>
     </ClInclude>
+    <ClInclude Include="MessageSerializer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -101,6 +102,7 @@
     <ClCompile Include="Wallet.cpp">
       <Filter>Crypto</Filter>
     </ClCompile>
+    <ClCompile Include="MessageSerializer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Tx">

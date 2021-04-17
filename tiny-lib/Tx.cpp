@@ -9,8 +9,10 @@
 #include "UnspentTxOut.hpp"
 #include "NetParams.hpp"
 #include "Utils.hpp"
+#include "ECDSA.hpp"
 #include "SHA256.hpp"
 #include "BinaryBuffer.hpp"
+#include "MessageSerializer.hpp"
 #include "Chain.hpp"
 #include "Mempool.hpp"
 #include "Wallet.hpp"
@@ -78,15 +80,14 @@ std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& PayToAddr, uint64_t va
     return tx;
 }
 
-void Tx::Validate(const std::shared_ptr<Tx>& tx, const ValidateRequest& req)
+void Tx::Validate(const ValidateRequest& req)
 {
-    tx->ValidateBasics(req.AsCoinbase);
+    ValidateBasics(req.AsCoinbase);
 
     uint64_t avaliableToSpend = 0;
-    const auto& txIns = tx->TxIns;
-    for (size_t i = 0; i < txIns.size(); i++)
+    for (size_t i = 0; i < TxIns.size(); i++)
     {
-        const auto& txIn = txIns[i];
+        const auto& txIn = TxIns[i];
 
         std::shared_ptr<UnspentTxOut> utxo = nullptr; //HACK: this should be a ref
         if (!UnspentTxOut::Map.contains(txIn->ToSpend))
@@ -114,7 +115,7 @@ void Tx::Validate(const std::shared_ptr<Tx>& tx, const ValidateRequest& req)
 
         try
         {
-            ValidateSignatureForSpend(txIn, utxo, tx);
+            ValidateSignatureForSpend(txIn, utxo);
         }
         catch (...)
         {
@@ -125,18 +126,20 @@ void Tx::Validate(const std::shared_ptr<Tx>& tx, const ValidateRequest& req)
     }
 
     uint64_t totalSpent = 0;
-    for (const auto& txOut : tx->TxOuts)
+    for (const auto& txOut : TxOuts)
         totalSpent += txOut->Value;
 
     if (avaliableToSpend < totalSpent)
         throw std::exception("Tx::Validate --- avaliableToSpend < totalSpent");
 }
 
-void Tx::ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UnspentTxOut>& utxo, const std::shared_ptr<Tx>& tx)
+void Tx::ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UnspentTxOut>& utxo)
 {
-    auto pubKeyAsAddr = Wallet::PubKeyToAddress(txIn->UnlockPk);
+    auto pubKeyAsAddr = Wallet::PubKeyToAddress(txIn->UnlockPubKey);
     if (pubKeyAsAddr != utxo->TxOut->ToAddress)
         throw std::exception("Tx::ValidateSignatureForSpend --- pubKeyAsAddr != utxo->TxOut->ToAddress");
 
-    //TODO: build spend msg and verify
+    auto spend_msg = MessageSerializer::BuildSpendMessage(txIn->ToSpend, txIn->UnlockPubKey, txIn->Sequence, TxOuts);
+    if (!ECDSA::VerifySig(txIn->UnlockSig, spend_msg, txIn->UnlockPubKey))
+        throw std::exception("Tx::ValidateSignatureForSpend --- !ECDSA::VerifySig(txIn->UnlockSig, spend_msg, txIn->UnlockPubKey)");
 }

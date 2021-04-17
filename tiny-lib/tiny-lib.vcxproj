@@ -27,6 +27,7 @@
     <ClInclude Include="ISerializable.hpp" />
     <ClInclude Include="Mempool.hpp" />
     <ClInclude Include="MerkleTree.hpp" />
+    <ClInclude Include="MessageSerializer.hpp" />
     <ClInclude Include="NetParams.hpp" />
     <ClInclude Include="PoW.hpp" />
     <ClInclude Include="RIPEMD160.hpp" />
@@ -48,6 +49,7 @@
     <ClCompile Include="ECDSA.cpp" />
     <ClCompile Include="Mempool.cpp" />
     <ClCompile Include="MerkleTree.cpp" />
+    <ClCompile Include="MessageSerializer.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="PoW.cpp" />
     <ClCompile Include="RIPEMD160.cpp" />

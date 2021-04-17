@@ -3,10 +3,10 @@
 #include "gtest/gtest.h"
 
 #include "../tiny-lib/Utils.hpp"
-#include "../tiny-lib/RIPEMD160.hpp"
-#include "../tiny-lib/SHA256.hpp"
 #include "../tiny-lib/Base58.hpp"
 #include "../tiny-lib/ECDSA.hpp"
+#include "../tiny-lib/RIPEMD160.hpp"
+#include "../tiny-lib/SHA256.hpp"
 
 TEST(CryptoTest, SHA256_Hashing)
 {
@@ -64,4 +64,18 @@ TEST(CryptoTest, ECDSA_GenerateKeyPairAndGetPubKeyFromPrivKey)
 	auto pub_key_string_from_priv_key = Utils::ByteArrayToHexString(ECDSA::GetPubKeyFromPrivKey(priv_key));
 
 	EXPECT_EQ(pub_key_string_from_priv_key, pub_key_string);
+}
+
+TEST(CryptoTest, ECDSA_SigningAndVerification)
+{
+	auto [priv_key, pub_key] = ECDSA::Generate();
+
+	std::string msg = "this is a test string";
+
+	auto msg_arr = Utils::StringToByteArray(msg);
+	auto sig = ECDSA::SignMsg(msg_arr, priv_key);
+
+	EXPECT_FALSE(sig.empty());
+
+	EXPECT_TRUE(ECDSA::VerifySig(sig, msg_arr, pub_key));
 }

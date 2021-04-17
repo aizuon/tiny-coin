@@ -161,9 +161,23 @@ std::pair<std::shared_ptr<Block>, int64_t> Chain::ValidateBlock(const std::share
 	if (PoW::GetNextWorkRequired(block->PrevBlockHash) != block->Bits)
 		throw std::exception("Chain::ValidateBlock --- PoW::GetNextWorkRequired(block->PrevBlockHash) != block->Bits");
 
-	//TODO: validate tx
+	std::vector<std::shared_ptr<Tx>> nonCoinbaseTxs(block->Txs.begin() + 1, block->Txs.end());
+	Tx::ValidateRequest req;
+	req.SiblingsInBlock = nonCoinbaseTxs;
+	req.Allow_UTXO_FromMempool = false;
+	for (const auto& nonCoinbaseTx : nonCoinbaseTxs)
+	{
+		try
+		{
+			nonCoinbaseTx->Validate(req);
+		}
+		catch (...)
+		{
+			throw std::exception("Chain::ValidateBlock --- nonCoinbaseTx->Validate(req)");
+		}
+	}
 
-	return { nullptr, -1 };
+	return { block, prev_block_chain_idx };
 }
 
 int64_t Chain::GetMedianTimePast(size_t numLastBlocks)

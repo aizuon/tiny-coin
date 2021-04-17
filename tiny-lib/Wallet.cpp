@@ -4,10 +4,10 @@
 #include <iterator>
 
 #include "Wallet.hpp"
-#include "RIPEMD160.hpp"
-#include "SHA256.hpp"
 #include "Base58.hpp"
 #include "ECDSA.hpp"
+#include "RIPEMD160.hpp"
+#include "SHA256.hpp"
 
 std::string Wallet::PubKeyToAddress(const std::vector<uint8_t>& pubKey)
 {

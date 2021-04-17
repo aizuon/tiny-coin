@@ -37,7 +37,8 @@ public:
 		std::vector<std::shared_ptr<Tx>> SiblingsInBlock;
 	};
 
-	static void Validate(const std::shared_ptr<Tx>& tx, const ValidateRequest& req);
+	void Validate(const ValidateRequest& req);
 
-	static void ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UnspentTxOut>& utxo, const std::shared_ptr<Tx>& tx);
+private:
+	void ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UnspentTxOut>& utxo);
 };
