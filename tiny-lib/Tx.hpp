@@ -5,8 +5,10 @@
 #include <memory>
 
 #include "ISerializable.hpp"
-#include "TxIn.hpp"
-#include "TxOut.hpp"
+
+class TxIn;
+class TxOut;
+class UnspentTxOut;
 
 class Tx : public ISerializable
 {
@@ -36,4 +38,6 @@ public:
 	};
 
 	static void Validate(const std::shared_ptr<Tx>& tx, const ValidateRequest& req);
+
+	static void ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UnspentTxOut>& utxo, const std::shared_ptr<Tx>& tx);
 };

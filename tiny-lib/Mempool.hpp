@@ -5,10 +5,11 @@
 #include <unordered_map>
 #include <memory>
 
-#include "Tx.hpp"
-#include "UnspentTxOut.hpp"
-#include "TxIn.hpp"
-#include "Block.hpp"
+class Tx;
+class TxIn;
+class TxOutPoint;
+class UnspentTxOut;
+class Block;
 
 class Mempool
 {

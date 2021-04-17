@@ -4,6 +4,10 @@
 #include <algorithm>
 
 #include "Chain.hpp"
+#include "Tx.hpp"
+#include "TxIn.hpp"
+#include "TxOut.hpp"
+#include "Block.hpp"
 #include "NetParams.hpp"
 #include "Utils.hpp"
 #include "MerkleTree.hpp"

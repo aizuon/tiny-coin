@@ -4,13 +4,16 @@
 #include <fmt/format.h>
 
 #include "Tx.hpp"
+#include "TxIn.hpp"
+#include "TxOut.hpp"
+#include "UnspentTxOut.hpp"
 #include "NetParams.hpp"
 #include "Utils.hpp"
 #include "SHA256.hpp"
 #include "BinaryBuffer.hpp"
-#include "UnspentTxOut.hpp"
 #include "Chain.hpp"
 #include "Mempool.hpp"
+#include "Wallet.hpp"
 
 Tx::Tx(const std::vector<std::shared_ptr<TxIn>>& txIns, const std::vector<std::shared_ptr<TxOut>>& txOuts, int64_t lockTime)
     : TxIns(txIns), TxOuts(txOuts), LockTime(lockTime)
@@ -109,7 +112,14 @@ void Tx::Validate(const std::shared_ptr<Tx>& tx, const ValidateRequest& req)
         if (utxo->IsCoinbase && (Chain::GetCurrentHeight() - utxo->Height) < NetParams::COINBASE_MATURITY)
             throw std::exception("Tx::Validate --- utxo->IsCoinbase && (Chain::GetCurrentHeight() - utxo->Height) < NetParams::COINBASE_MATURITY");
 
-        //TODO: verify signature
+        try
+        {
+            ValidateSignatureForSpend(txIn, utxo, tx);
+        }
+        catch (...)
+        {
+            throw std::exception("Tx::Validate --- ValidateSignatureForSpend(txIn, utxo, tx)");
+        }
 
         avaliableToSpend += utxo->TxOut->Value;
     }
@@ -120,4 +130,13 @@ void Tx::Validate(const std::shared_ptr<Tx>& tx, const ValidateRequest& req)
 
     if (avaliableToSpend < totalSpent)
         throw std::exception("Tx::Validate --- avaliableToSpend < totalSpent");
+}
+
+void Tx::ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UnspentTxOut>& utxo, const std::shared_ptr<Tx>& tx)
+{
+    auto pubKeyAsAddr = Wallet::PubKeyToAddress(txIn->UnlockPk);
+    if (pubKeyAsAddr != utxo->TxOut->ToAddress)
+        throw std::exception("Tx::ValidateSignatureForSpend --- pubKeyAsAddr != utxo->TxOut->ToAddress");
+
+    //TODO: build spend msg and verify
 }

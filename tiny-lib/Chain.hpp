@@ -6,10 +6,10 @@
 #include <tuple>
 #include <utility>
 
-#include "TxIn.hpp"
-#include "TxOut.hpp"
-#include "Tx.hpp"
-#include "Block.hpp"
+class Tx;
+class TxIn;
+class TxOut;
+class Block;
 
 class Chain
 {

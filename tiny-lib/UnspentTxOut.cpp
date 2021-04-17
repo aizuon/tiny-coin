@@ -3,6 +3,10 @@
 #include <algorithm>
 
 #include "UnspentTxOut.hpp"
+#include "Tx.hpp"
+#include "TxIn.hpp"
+#include "TxOut.hpp"
+#include "TxOutPoint.hpp"
 #include "BinaryBuffer.hpp"
 
 UnspentTxOut::UnspentTxOut(std::shared_ptr<::TxOut> txOut, std::shared_ptr<::TxOutPoint> txOutPoint, bool isCoinbase, int64_t height)

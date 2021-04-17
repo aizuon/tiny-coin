@@ -3,8 +3,8 @@
 #include <cstdint>
 
 #include "MerkleTree.hpp"
-#include "SHA256.hpp"
 #include "Utils.hpp"
+#include "SHA256.hpp"
 
 MerkleNode::MerkleNode(const std::string& value, const std::vector<std::string>& children)
 	: Value(value), Children(children)

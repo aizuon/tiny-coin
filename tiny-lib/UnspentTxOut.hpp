@@ -6,10 +6,11 @@
 #include <memory>
 
 #include "ISerializable.hpp"
-#include "TxOut.hpp"
-#include "TxOutPoint.hpp"
-#include "Tx.hpp"
-#include "TxIn.hpp"
+
+class Tx;
+class TxIn;
+class TxOut;
+class TxOutPoint;
 
 class UnspentTxOut : public ISerializable
 {

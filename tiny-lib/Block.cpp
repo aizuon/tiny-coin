@@ -3,8 +3,9 @@
 #include <fmt/format.h>
 
 #include "Block.hpp"
-#include "SHA256.hpp"
+#include "Tx.hpp"
 #include "Utils.hpp"
+#include "SHA256.hpp"
 #include "BinaryBuffer.hpp"
 
 Block::Block(uint64_t version, const std::string& prevBlockHash, const std::string& markleHash, int64_t timestamp, uint8_t bits, uint64_t nonce,

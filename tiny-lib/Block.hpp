@@ -5,7 +5,8 @@
 #include <memory>
 
 #include "ISerializable.hpp"
-#include "Tx.hpp"
+
+class Tx;
 
 class Block : public ISerializable
 {

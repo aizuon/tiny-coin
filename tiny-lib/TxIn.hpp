@@ -4,7 +4,8 @@
 #include <memory>
 
 #include "ISerializable.hpp"
-#include "TxOutPoint.hpp"
+
+class TxOutPoint;
 
 class TxIn : public ISerializable
 {

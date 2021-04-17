@@ -3,9 +3,12 @@
 #include <ranges>
 
 #include "Mempool.hpp"
-#include "NetParams.hpp"
+#include "Tx.hpp"
+#include "TxIn.hpp"
 #include "TxOutPoint.hpp"
 #include "UnspentTxOut.hpp"
+#include "Block.hpp"
+#include "NetParams.hpp"
 
 std::unordered_map<std::string, std::shared_ptr<Tx>> Mempool::Map;
 

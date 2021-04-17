@@ -4,6 +4,7 @@
 
 #include "PoW.hpp"
 #include "NetParams.hpp"
+#include "Block.hpp"
 #include "Chain.hpp"
 
 uint8_t PoW::GetNextWorkRequired(const std::string& prevBlockHash)
