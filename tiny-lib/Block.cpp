@@ -57,41 +57,41 @@ bool Block::Deserialize(BinaryBuffer& buffer)
 
 	if (!buffer.Read(Version))
 	{
-		*this = copy;
+		*this = std::move(copy);
 
 		return false;
 	}
 
 	if (!buffer.Read(PrevBlockHash))
 	{
-		*this = copy;
+		*this = std::move(copy);
 
 		return false;
 	}
 	if (!buffer.Read(MerkleHash))
 	{
-		*this = copy;
+		*this = std::move(copy);
 
 		return false;
 	}
 
 	if (!buffer.Read(Timestamp))
 	{
-		*this = copy;
+		*this = std::move(copy);
 
 		return false;
 	}
 
 	if (!buffer.Read(Bits))
 	{
-		*this = copy;
+		*this = std::move(copy);
 
 		return false;
 	}
 
 	if (!buffer.Read(Nonce))
 	{
-		*this = copy;
+		*this = std::move(copy);
 
 		return false;
 	}
@@ -99,7 +99,7 @@ bool Block::Deserialize(BinaryBuffer& buffer)
 	size_t txsSize = 0;
 	if (!buffer.Read(txsSize))
 	{
-		*this = copy;
+		*this = std::move(copy);
 
 		return false;
 	}
@@ -110,7 +110,7 @@ bool Block::Deserialize(BinaryBuffer& buffer)
 		auto tx = std::make_shared<Tx>();
 		if (!tx->Deserialize(buffer))
 		{
-			*this = copy;
+			*this = std::move(copy);
 
 			return false;
 		}
