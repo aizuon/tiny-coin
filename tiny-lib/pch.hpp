@@ -2,6 +2,7 @@
 #define PCH_H
 
 #include <cstdint>
+#include <cassert>
 #include <vector>
 #include <string>
 #include <unordered_set>

@@ -43,7 +43,7 @@ void UnspentTxOut::RemoveFromMap(const std::string& txId, int64_t idx)
 		[&txId, idx](const std::pair<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
 		{
 			auto& [txOutPoint, utxo] = p;
-			return txOutPoint->TxId == txId && txOutPoint->TxOutId == idx;
+			return txOutPoint->TxId == txId && txOutPoint->TxOutIdx == idx;
 		});
 	if (map_it != Map.end())
 		Map.erase(map_it);
@@ -57,11 +57,11 @@ std::shared_ptr<UnspentTxOut> UnspentTxOut::FindInList(const std::shared_ptr<TxI
 
 		if (tx->Id() == toSpend->TxId)
 		{
-			if (tx->TxOuts.size() - 1 < toSpend->TxOutId)
+			if (tx->TxOuts.size() - 1 < toSpend->TxOutIdx)
 				return nullptr;
 
-			auto& matchingTxOut = tx->TxOuts[toSpend->TxOutId];
-			auto txOutPoint = std::make_shared<::TxOutPoint>(toSpend->TxId, toSpend->TxOutId);
+			auto& matchingTxOut = tx->TxOuts[toSpend->TxOutIdx];
+			auto txOutPoint = std::make_shared<::TxOutPoint>(toSpend->TxId, toSpend->TxOutIdx);
 			return std::make_shared<UnspentTxOut>(matchingTxOut, txOutPoint, false, -1);
 		}
 	}

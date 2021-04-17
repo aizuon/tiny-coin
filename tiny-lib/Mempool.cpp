@@ -20,10 +20,10 @@ std::shared_ptr<UnspentTxOut> Mempool::Find_UTXO_InMempool(const std::shared_ptr
 		return nullptr;
 
 	const auto& tx = Map[txOutPoint->TxId];
-	if (tx->TxOuts.size() - 1 < txOutPoint->TxOutId)
+	if (tx->TxOuts.size() - 1 < txOutPoint->TxOutIdx)
 		return nullptr;
 
-	const auto& txOut = tx->TxOuts[txOutPoint->TxOutId];
+	const auto& txOut = tx->TxOuts[txOutPoint->TxOutIdx];
 
 	return std::make_shared<UnspentTxOut>(txOut, txOutPoint, false, -1);
 }
@@ -61,7 +61,7 @@ std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, con
 			[&toSpend](const std::pair<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
 			{
 				auto& [txOutPoint, utxo] = p;
-				return txOutPoint->TxId == toSpend->TxId && txOutPoint->TxOutId == toSpend->TxOutId;
+				return txOutPoint->TxId == toSpend->TxId && txOutPoint->TxOutIdx == toSpend->TxOutIdx;
 			});
 		if (map_it != UnspentTxOut::Map.end())
 			continue;

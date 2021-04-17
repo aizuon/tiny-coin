@@ -33,10 +33,20 @@ public:
 	static std::tuple<std::shared_ptr<Block>, int64_t, int64_t> LocateBlockInActiveChain(const std::string& blockHash);
 	static std::pair<std::shared_ptr<Block>, int64_t> LocateBlockInChain(const std::string& blockHash, const std::vector<std::shared_ptr<Block>>& chain);
 
-	static std::shared_ptr<Block> ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg = false);
+	static int64_t ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg = false);
+	static std::shared_ptr<Block> DisconnectBlock(const std::shared_ptr<Block>& block);
 
 	static int64_t ValidateBlock(const std::shared_ptr<Block>& block);
 
 private:
 	static int64_t GetMedianTimePast(size_t numLastBlocks);
+
+	static bool ReorgIfNecessary();
+	static bool TryReorg(const std::vector<std::shared_ptr<Block>>& branch, int64_t branchIdx, int64_t forkIdx);
+	static void RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveChain, const std::shared_ptr<Block>& forkBlock);
+
+	static std::vector<std::shared_ptr<Block>> DisconnectToFork(const std::shared_ptr<Block>& forkBlock);
+
+	static std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> FindTxOutForTxIn(const std::shared_ptr<TxIn>& txIn, const std::vector<std::shared_ptr<Block>>& chain);
+	static std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> FindTxOutForTxInInActiveChain(const std::shared_ptr<TxIn>& txIn);
 };

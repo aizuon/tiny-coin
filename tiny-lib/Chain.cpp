@@ -1,5 +1,6 @@
 #include "pch.hpp"
 
+#include <cassert>
 #include <algorithm>
 #include <fmt/format.h>
 
@@ -76,7 +77,7 @@ std::pair<std::shared_ptr<Block>, int64_t> Chain::LocateBlockInChain(const std::
 	return { nullptr, -1 };
 }
 
-std::shared_ptr<Block> Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg /*= false*/)
+int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg /*= false*/)
 {
 	std::lock_guard lock(Lock);
 
@@ -85,14 +86,14 @@ std::shared_ptr<Block> Chain::ConnectBlock(const std::shared_ptr<Block>& block, 
 		auto [located_block, located_block_height, located_block_chain_idx] = LocateBlockInActiveChain(block->Id());
 		if (located_block != nullptr)
 		{
-			return nullptr;
+			return -1;
 		}
 	}
 
-	int64_t chain_idx = -1;
+	int64_t chainIdx = -1;
 	try
 	{
-		chain_idx = ValidateBlock(block);
+		chainIdx = ValidateBlock(block);
 	}
 	catch (const BlockValidationException& ex)
 	{
@@ -101,18 +102,18 @@ std::shared_ptr<Block> Chain::ConnectBlock(const std::shared_ptr<Block>& block, 
 			OrphanBlocks.push_back(ex.ToOrphan);
 		}
 
-		return nullptr;
+		return -1;
 	}
 
-	if (chain_idx == ActiveChainIdx && SideBranches.size() < chain_idx)
+	if (chainIdx == ActiveChainIdx && SideBranches.size() < chainIdx)
 	{
-		SideBranches.push_back(std::vector<std::shared_ptr<Block>>());
+		SideBranches.emplace_back();
 	}
 
-	auto chain = chain_idx == ActiveChainIdx ? ActiveChain : SideBranches[chain_idx - 1];
+	auto chain = chainIdx == ActiveChainIdx ? ActiveChain : SideBranches[chainIdx - 1];
 	chain.push_back(block);
 
-	if (chain_idx == ActiveChainIdx)
+	if (chainIdx == ActiveChainIdx)
 	{
 		for (const auto& tx : block->Txs)
 		{
@@ -122,7 +123,7 @@ std::shared_ptr<Block> Chain::ConnectBlock(const std::shared_ptr<Block>& block, 
 			{
 				for (const auto& txIn : tx->TxIns)
 				{
-					UnspentTxOut::RemoveFromMap(txIn->ToSpend->TxId, txIn->ToSpend->TxOutId);
+					UnspentTxOut::RemoveFromMap(txIn->ToSpend->TxId, txIn->ToSpend->TxOutIdx);
 				}
 			}
 			for (size_t i = 0; i < tx->TxOuts.size(); i++)
@@ -132,9 +133,45 @@ std::shared_ptr<Block> Chain::ConnectBlock(const std::shared_ptr<Block>& block, 
 		}
 	}
 
-	//TODO: check reorg
+	if (!doingReorg && ReorgIfNecessary() or chainIdx == ActiveChainIdx)
+	{
+		//TODO: interrupt mining
+	}
 
-	return nullptr;
+	//TODO: send block to peers
+
+	return chainIdx;
+}
+
+std::shared_ptr<Block> Chain::DisconnectBlock(const std::shared_ptr<Block>& block)
+{
+	std::lock_guard lock(Lock);
+
+	assert(block->Id() == ActiveChain.back()->Id());
+
+	for (const auto& tx : block->Txs)
+	{
+		Mempool::Map[tx->Id()] = tx;
+
+		for (const auto& txIn : tx->TxIns)
+		{
+			if (txIn->ToSpend != nullptr)
+			{
+				auto [txOut, tx, txOutIdx, isCoinbase, height] = FindTxOutForTxInInActiveChain(txIn);
+
+				UnspentTxOut::AddToMap(txOut, tx->Id(), txOutIdx, isCoinbase, height);
+			}
+		}
+		for (int64_t i = 0; i < tx->TxOuts.size(); i++)
+		{
+			UnspentTxOut::RemoveFromMap(tx->Id(), i);
+		}
+	}
+
+	auto back = ActiveChain.back();
+	ActiveChain.pop_back();
+
+	return back;
 }
 
 int64_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
@@ -235,4 +272,100 @@ int64_t Chain::GetMedianTimePast(size_t numLastBlocks)
 	size_t median_idx = first_idx + (numLastBlocks / 2);
 
 	return ActiveChain[median_idx]->Timestamp;
+}
+
+bool Chain::ReorgIfNecessary()
+{
+	std::lock_guard lock(Lock);
+
+	bool reorged = false;
+
+	auto frozenSideBranches = SideBranches;
+	for (size_t i = 0; i < frozenSideBranches.size(); i++)
+	{
+		const auto& chain = frozenSideBranches[i];
+
+		auto [fork_block, fork_height, fork_idx] = LocateBlockInActiveChain(chain[0]->PrevBlockHash);
+
+		size_t branchHeight = chain.size() + fork_idx;
+		if (branchHeight > GetCurrentHeight())
+		{
+			reorged |= TryReorg(chain, i, fork_idx);
+		}
+	}
+
+	return reorged;
+}
+
+bool Chain::TryReorg(const std::vector<std::shared_ptr<Block>>& branch, int64_t branchIdx, int64_t forkIdx)
+{
+	auto fork_block = ActiveChain[forkIdx];
+
+	auto oldActiveChain = DisconnectToFork(fork_block);
+
+	assert(branch.front()->PrevBlockHash == ActiveChain.back()->Id());
+
+	for (const auto& block : branch)
+	{
+		int64_t connectedBlockIdx = ConnectBlock(block, true);
+		if (connectedBlockIdx != ActiveChainIdx)
+		{
+			RollbackReorg(oldActiveChain, fork_block);
+
+			return false;
+		}
+	}
+
+	SideBranches.erase(SideBranches.begin() + branchIdx - 1);
+	SideBranches.push_back(oldActiveChain);
+
+	return true;
+}
+
+void Chain::RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveChain, const std::shared_ptr<Block>& forkBlock)
+{
+	DisconnectToFork(forkBlock);
+
+	for (const auto& block : oldActiveChain)
+	{
+		auto connectedBlockIdx = ConnectBlock(block, true);
+
+		assert(connectedBlockIdx == ActiveChainIdx);
+	}
+}
+
+std::vector<std::shared_ptr<Block>> Chain::DisconnectToFork(const std::shared_ptr<Block>& forkBlock)
+{
+	std::vector<std::shared_ptr<Block>> disconnected_chain;
+
+	while (ActiveChain.back()->Id() != forkBlock->Id())
+	{
+		disconnected_chain.push_back(DisconnectBlock(ActiveChain.back()));
+	}
+
+	return disconnected_chain;
+}
+
+std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> Chain::FindTxOutForTxIn(const std::shared_ptr<TxIn>& txIn, const std::vector<std::shared_ptr<Block>>& chain)
+{
+	for (int64_t height = 0; height < chain.size(); height++)
+	{
+		for (const auto& tx : chain[height]->Txs)
+		{
+			const auto& toSpend = txIn->ToSpend;
+			if (toSpend->TxId == tx->Id())
+			{
+				const auto& txOut = tx->TxOuts[toSpend->TxOutIdx];
+
+				return { txOut, tx, toSpend->TxOutIdx, tx->IsCoinbase(), height };
+			}
+		}
+	}
+
+	return { nullptr, nullptr, -1, false, -1 };
+}
+
+std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> Chain::FindTxOutForTxInInActiveChain(const std::shared_ptr<TxIn>& txIn)
+{
+	return FindTxOutForTxIn(txIn, ActiveChain);
 }
