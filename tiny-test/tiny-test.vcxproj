@@ -48,14 +48,18 @@
     <ClInclude Include="pch.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BlockChainTests.cpp" />
     <ClCompile Include="BinaryBufferTests.cpp" />
     <ClCompile Include="CryptoTests.cpp" />
+    <ClCompile Include="MerkleTreeTests.cpp" />
+    <ClCompile Include="MsgTests.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="SerializationTests.cpp" />
     <ClCompile Include="UtilsTests.cpp" />
     <ClCompile Include="WalletTests.cpp" />
   </ItemGroup>

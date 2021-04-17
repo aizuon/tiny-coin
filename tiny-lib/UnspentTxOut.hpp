@@ -6,26 +6,29 @@
 #include <memory>
 
 #include "ISerializable.hpp"
+#include "IDeserializable.hpp"
 
 class Tx;
 class TxIn;
 class TxOut;
 class TxOutPoint;
 
-class UnspentTxOut : public ISerializable
+class UnspentTxOut : public ISerializable, public IDeserializable
 {
 public:
+	UnspentTxOut() = default;
 	UnspentTxOut(std::shared_ptr<::TxOut> txOut, std::shared_ptr<::TxOutPoint> txOutPoint, bool isCoinbase, int64_t height);
 
 	std::shared_ptr<::TxOut> TxOut;
 
 	std::shared_ptr<::TxOutPoint> TxOutPoint;
 
-	bool IsCoinbase;
+	bool IsCoinbase = false;
 
-	int64_t Height;
+	int64_t Height = -1;
 
-	std::vector<uint8_t> Serialize() const override;
+	BinaryBuffer Serialize() const override;
+	bool Deserialize(BinaryBuffer& buffer) override;
 
 	static std::unordered_map<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>> Map;
 

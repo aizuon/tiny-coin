@@ -53,6 +53,7 @@
     </ClInclude>
     <ClInclude Include="MessageSerializer.hpp" />
     <ClInclude Include="Exceptions.hpp" />
+    <ClInclude Include="IDeserializable.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -115,6 +116,9 @@
     </Filter>
     <Filter Include="Crypto">
       <UniqueIdentifier>{91fcc96a-0943-4f1f-8e07-81f38e2e4780}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="P2P">
+      <UniqueIdentifier>{2db9a08f-e73f-4a04-be5c-6807dd3d1d35}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

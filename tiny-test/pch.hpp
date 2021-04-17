@@ -2,6 +2,7 @@
 #define PCH_H
 
 #include <cstdint>
+#include <array>
 #include <vector>
 #include <string>
 #include <memory>

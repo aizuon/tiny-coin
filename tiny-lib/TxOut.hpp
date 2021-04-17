@@ -4,14 +4,17 @@
 #include <string>
 
 #include "ISerializable.hpp"
+#include "IDeserializable.hpp"
 
-class TxOut : public ISerializable
+class TxOut : public ISerializable, public IDeserializable
 {
 public:
+	TxOut() = default;
 	TxOut(uint64_t value, const std::string& toAddress);
 
-	uint64_t Value;
+	uint64_t Value = 0;
 	std::string ToAddress;
 
-	std::vector<uint8_t> Serialize() const override;
+	BinaryBuffer Serialize() const override;
+	bool Deserialize(BinaryBuffer& buffer) override;
 };

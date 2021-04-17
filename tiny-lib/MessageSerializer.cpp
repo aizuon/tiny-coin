@@ -9,12 +9,12 @@
 std::vector<uint8_t> MessageSerializer::BuildSpendMessage(const std::shared_ptr<TxOutPoint>& toSpend, const std::vector<uint8_t>& pubKey, int32_t sequence, const std::vector<std::shared_ptr<TxOut>>& txOuts)
 {
     BinaryBuffer spendMessage;
-    spendMessage.Write(toSpend->Serialize());
+    spendMessage.WriteRaw(toSpend->Serialize().GetBuffer());
     spendMessage.Write(sequence);
     spendMessage.Write(pubKey);
     for (const auto& txOut : txOuts)
     {
-        spendMessage.Write(txOut->Serialize());
+        spendMessage.WriteRaw(txOut->Serialize().GetBuffer());
     }
 
     auto buffer = spendMessage.GetBuffer();

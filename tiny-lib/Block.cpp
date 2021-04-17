@@ -29,7 +29,7 @@ std::string Block::Id() const
 	return Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(header_vec));
 }
 
-std::vector<uint8_t> Block::Serialize() const
+BinaryBuffer Block::Serialize() const
 {
 	BinaryBuffer buffer;
 
@@ -46,9 +46,76 @@ std::vector<uint8_t> Block::Serialize() const
 
 	buffer.Write(Txs.size());
 	for (const auto& tx : Txs)
-		buffer.Write(tx->Serialize());
+		buffer.WriteRaw(tx->Serialize().GetBuffer());
 
-	buffer.Write(Id());
+	return buffer;
+}
 
-	return buffer.GetBuffer();
+bool Block::Deserialize(BinaryBuffer& buffer)
+{
+	auto copy = *this;
+
+	if (!buffer.Read(Version))
+	{
+		*this = copy;
+
+		return false;
+	}
+
+	if (!buffer.Read(PrevBlockHash))
+	{
+		*this = copy;
+
+		return false;
+	}
+	if (!buffer.Read(MerkleHash))
+	{
+		*this = copy;
+
+		return false;
+	}
+
+	if (!buffer.Read(Timestamp))
+	{
+		*this = copy;
+
+		return false;
+	}
+
+	if (!buffer.Read(Bits))
+	{
+		*this = copy;
+
+		return false;
+	}
+
+	if (!buffer.Read(Nonce))
+	{
+		*this = copy;
+
+		return false;
+	}
+
+	size_t txsSize = 0;
+	if (!buffer.Read(txsSize))
+	{
+		*this = copy;
+
+		return false;
+	}
+	Txs = std::vector<std::shared_ptr<Tx>>();
+	Txs.reserve(txsSize);
+	for (size_t i = 0; i < txsSize; i++)
+	{
+		auto tx = std::make_shared<Tx>();
+		if (!tx->Deserialize(buffer))
+		{
+			*this = copy;
+
+			return false;
+		}
+		Txs.push_back(tx);
+	}
+
+	return true;
 }

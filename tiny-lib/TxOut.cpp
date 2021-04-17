@@ -8,12 +8,32 @@ TxOut::TxOut(uint64_t value, const std::string& toAddress)
 {
 }
 
-std::vector<uint8_t> TxOut::Serialize() const
+BinaryBuffer TxOut::Serialize() const
 {
 	BinaryBuffer buffer;
 
 	buffer.Write(Value);
 	buffer.Write(ToAddress);
 	
-	return buffer.GetBuffer();
+	return buffer;
+}
+
+bool TxOut::Deserialize(BinaryBuffer& buffer)
+{
+    auto copy = *this;
+
+    if (!buffer.Read(Value))
+    {
+        *this = std::move(copy);
+
+        return false;
+    }
+    if (!buffer.Read(ToAddress))
+    {
+        *this = std::move(copy);
+
+        return false;
+    }
+
+    return true;
 }

@@ -30,3 +30,41 @@ uint8_t PoW::GetNextWorkRequired(const std::string& prevBlockHash)
     else
         return prev_block->Bits;
 }
+
+std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
+{
+    //TODO
+
+    return nullptr;
+}
+
+void PoW::MineForever()
+{
+    //TODO
+}
+
+std::shared_ptr<Block> PoW::AssembleAndSolveBlock()
+{
+    return AssembleAndSolveBlock(std::vector<std::shared_ptr<Tx>>());
+}
+
+std::shared_ptr<Block> PoW::AssembleAndSolveBlock(const std::vector<std::shared_ptr<Tx>>& txs)
+{
+    //TODO
+
+    return nullptr;
+}
+
+uint64_t PoW::CalculateFees(const std::shared_ptr<Block>& block)
+{
+    //TODO
+
+    return 0;
+}
+
+uint64_t PoW::GetBlockSubsidy()
+{
+    //TODO
+
+    return 0;
+}

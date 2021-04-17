@@ -5,25 +5,27 @@
 #include <memory>
 
 #include "ISerializable.hpp"
+#include "IDeserializable.hpp"
 
 class Tx;
 
-class Block : public ISerializable
+class Block : public ISerializable, public IDeserializable
 {
 public:
+	Block() = default;
 	Block(uint64_t version, const std::string& prevBlockHash, const std::string& markleHash, int64_t timestamp, uint8_t bits, uint64_t nonce,
 		const std::vector<std::shared_ptr<Tx>>& txs);
 
-	uint64_t Version;
+	uint64_t Version = 0;
 
 	std::string PrevBlockHash;
 	std::string MerkleHash;
 
-	int64_t Timestamp;
+	int64_t Timestamp = -1;
 
-	uint8_t Bits;
+	uint8_t Bits = 0;
 
-	uint64_t Nonce;
+	uint64_t Nonce = 0;
 
 	std::vector<std::shared_ptr<Tx>> Txs;
 
@@ -31,5 +33,6 @@ public:
 
 	std::string Id() const;
 
-	std::vector<uint8_t> Serialize() const override;
+	BinaryBuffer Serialize() const override;
+	bool Deserialize(BinaryBuffer& buffer) override;
 };

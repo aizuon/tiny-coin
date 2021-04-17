@@ -1,5 +1,6 @@
 #include "pch.hpp"
 
+#include <string>
 #include "gtest/gtest.h"
 
 #include "../tiny-lib/Utils.hpp"
@@ -10,30 +11,30 @@
 
 TEST(CryptoTest, SHA256_Hashing)
 {
-	auto hash = Utils::ByteArrayToHexString(SHA256::HashBinary(Utils::StringToByteArray("this is a test string")));
+	auto hash = Utils::ByteArrayToHexString(SHA256::HashBinary(Utils::StringToByteArray("foo")));
 
-	EXPECT_EQ(hash, "f6774519d1c7a3389ef327e9c04766b999db8cdfb85d1346c471ee86d65885bc");
+	EXPECT_EQ(hash, "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae");
 }
 
 TEST(CryptoTest, SHA256d_Hashing)
 {
-	auto hash = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray("this is a test string")));
+	auto hash = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray("foo")));
 
-	EXPECT_EQ(hash, "ed487d58f41720ec58e798ebcd699ec7149f0f9c90868edb0748d7e4bdd8d134");
+	EXPECT_EQ(hash, "c7ade88fc7a21498a6a5e5c385e1f68bed822b72aa63c4a9a48a02c2466ee29e");
 }
 
 TEST(CryptoTest, RIPEMD160_Hashing)
 {
-	auto hash = Utils::ByteArrayToHexString(RIPEMD160::HashBinary(Utils::StringToByteArray("this is a test string")));
+	auto hash = Utils::ByteArrayToHexString(RIPEMD160::HashBinary(Utils::StringToByteArray("foo")));
 
-	EXPECT_EQ(hash, "5991f4fcb91b7eab340ba5301edabf7b8f8926e8");
+	EXPECT_EQ(hash, "42cfa211018ea492fdee45ac637b7972a0ad6873");
 }
 
 TEST(CryptoTest, Base58_Encode)
 {
-	auto hash = Base58::Encode(Utils::StringToByteArray("this is a test string"));
+	auto hash = Base58::Encode(Utils::StringToByteArray("foo"));
 
-	EXPECT_EQ(hash, "8AArJ45Yvcrsr4CB6zUCEPx9NKDyg");
+	EXPECT_EQ(hash, "bQbp");
 }
 
 TEST(CryptoTest, ECDSA_KeyPairGeneration)
@@ -70,7 +71,7 @@ TEST(CryptoTest, ECDSA_SigningAndVerification)
 {
 	auto [priv_key, pub_key] = ECDSA::Generate();
 
-	std::string msg = "this is a test string";
+	std::string msg = "foo";
 
 	auto msg_arr = Utils::StringToByteArray(msg);
 	auto sig = ECDSA::SignMsg(msg_arr, priv_key);

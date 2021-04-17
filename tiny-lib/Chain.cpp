@@ -1,6 +1,7 @@
 #include "pch.hpp"
 
 #include <cassert>
+#include <exception>
 #include <algorithm>
 #include <fmt/format.h>
 
@@ -38,6 +39,24 @@ int64_t Chain::GetCurrentHeight()
 	return ActiveChain.size();
 }
 
+std::pair<std::shared_ptr<Block>, int64_t> Chain::LocateBlockInChain(const std::string& blockHash, const std::vector<std::shared_ptr<Block>>& chain)
+{
+	std::lock_guard lock(Lock);
+
+	int64_t height = 0;
+	for (const auto& block : chain)
+	{
+		if (block->Id() == blockHash)
+		{
+			return { block, height };
+		}
+
+		height++;
+	}
+
+	return { nullptr, -1 };
+}
+
 std::tuple<std::shared_ptr<Block>, int64_t, int64_t> Chain::LocateBlockInActiveChain(const std::string& blockHash)
 {
 	std::lock_guard lock(Lock);
@@ -57,24 +76,6 @@ std::tuple<std::shared_ptr<Block>, int64_t, int64_t> Chain::LocateBlockInActiveC
 	}
 
 	return { nullptr, -1, -1 };
-}
-
-std::pair<std::shared_ptr<Block>, int64_t> Chain::LocateBlockInChain(const std::string& blockHash, const std::vector<std::shared_ptr<Block>>& chain)
-{
-	std::lock_guard lock(Lock);
-
-	int64_t height = 0;
-	for (const auto& block : chain)
-	{
-		if (block->Id() == blockHash)
-		{
-			return { block, height };
-		}
-
-		height++;
-	}
-
-	return { nullptr, -1 };
 }
 
 int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg /*= false*/)
@@ -126,7 +127,7 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 					UnspentTxOut::RemoveFromMap(txIn->ToSpend->TxId, txIn->ToSpend->TxOutIdx);
 				}
 			}
-			for (size_t i = 0; i < tx->TxOuts.size(); i++)
+			for (int64_t i = 0; i < tx->TxOuts.size(); i++)
 			{
 				UnspentTxOut::AddToMap(tx->TxOuts[i], tx->Id(), i, tx->IsCoinbase(), chain.size());
 			}
@@ -147,7 +148,9 @@ std::shared_ptr<Block> Chain::DisconnectBlock(const std::shared_ptr<Block>& bloc
 {
 	std::lock_guard lock(Lock);
 
-	assert(block->Id() == ActiveChain.back()->Id());
+	auto back = ActiveChain.back();
+	if (block->Id() != back->Id())
+		throw std::exception("Block being disconnected must be the tip");
 
 	for (const auto& tx : block->Txs)
 	{
@@ -168,7 +171,6 @@ std::shared_ptr<Block> Chain::DisconnectBlock(const std::shared_ptr<Block>& bloc
 		}
 	}
 
-	auto back = ActiveChain.back();
 	ActiveChain.pop_back();
 
 	return back;
@@ -263,13 +265,31 @@ int64_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 	return prev_block_chain_idx;
 }
 
+void Chain::SaveToDisk()
+{
+	std::lock_guard lock(Lock);
+
+	//TODO
+}
+
+void Chain::LoadFromDisk()
+{
+	std::lock_guard lock(Lock);
+
+	//TODO
+}
+
 int64_t Chain::GetMedianTimePast(size_t numLastBlocks)
 {
+	std::lock_guard lock(Lock);
+
 	if (numLastBlocks > ActiveChain.size())
 		return 0;
 
 	size_t first_idx = ActiveChain.size() - numLastBlocks;
 	size_t median_idx = first_idx + (numLastBlocks / 2);
+	if (numLastBlocks % 2 == 0)
+		median_idx -= 1;
 
 	return ActiveChain[median_idx]->Timestamp;
 }
@@ -281,7 +301,7 @@ bool Chain::ReorgIfNecessary()
 	bool reorged = false;
 
 	auto frozenSideBranches = SideBranches;
-	for (size_t i = 0; i < frozenSideBranches.size(); i++)
+	for (int64_t i = 0; i < frozenSideBranches.size(); i++)
 	{
 		const auto& chain = frozenSideBranches[i];
 
@@ -299,6 +319,8 @@ bool Chain::ReorgIfNecessary()
 
 bool Chain::TryReorg(const std::vector<std::shared_ptr<Block>>& branch, int64_t branchIdx, int64_t forkIdx)
 {
+	std::lock_guard lock(Lock);
+
 	auto fork_block = ActiveChain[forkIdx];
 
 	auto oldActiveChain = DisconnectToFork(fork_block);
@@ -324,6 +346,8 @@ bool Chain::TryReorg(const std::vector<std::shared_ptr<Block>>& branch, int64_t 
 
 void Chain::RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveChain, const std::shared_ptr<Block>& forkBlock)
 {
+	std::lock_guard lock(Lock);
+
 	DisconnectToFork(forkBlock);
 
 	for (const auto& block : oldActiveChain)
@@ -336,6 +360,8 @@ void Chain::RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveCh
 
 std::vector<std::shared_ptr<Block>> Chain::DisconnectToFork(const std::shared_ptr<Block>& forkBlock)
 {
+	std::lock_guard lock(Lock);
+
 	std::vector<std::shared_ptr<Block>> disconnected_chain;
 
 	while (ActiveChain.back()->Id() != forkBlock->Id())
@@ -348,6 +374,8 @@ std::vector<std::shared_ptr<Block>> Chain::DisconnectToFork(const std::shared_pt
 
 std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> Chain::FindTxOutForTxIn(const std::shared_ptr<TxIn>& txIn, const std::vector<std::shared_ptr<Block>>& chain)
 {
+	std::lock_guard lock(Lock);
+
 	for (int64_t height = 0; height < chain.size(); height++)
 	{
 		for (const auto& tx : chain[height]->Txs)

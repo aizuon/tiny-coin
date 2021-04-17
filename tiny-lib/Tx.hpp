@@ -5,20 +5,22 @@
 #include <memory>
 
 #include "ISerializable.hpp"
+#include "IDeserializable.hpp"
 
 class TxIn;
 class TxOut;
 class UnspentTxOut;
 
-class Tx : public ISerializable
+class Tx : public ISerializable, public IDeserializable
 {
 public:
+	Tx() = default;
 	Tx(const std::vector<std::shared_ptr<TxIn>>& txIns, const std::vector<std::shared_ptr<TxOut>>& txOuts, int64_t lockTime);
 
 	std::vector<std::shared_ptr<TxIn>> TxIns;
 	std::vector<std::shared_ptr<TxOut>> TxOuts;
 
-	int64_t LockTime;
+	int64_t LockTime = -1;
 
 	bool IsCoinbase() const;
 
@@ -26,7 +28,8 @@ public:
 
 	void ValidateBasics(bool coinbase = false) const;
 
-	std::vector<uint8_t> Serialize() const override;
+	BinaryBuffer Serialize() const override;
+	bool Deserialize(BinaryBuffer& buffer) override;
 
 	static std::shared_ptr<Tx> CreateCoinbase(const std::string& PayToAddr, uint64_t value, int64_t height);
 

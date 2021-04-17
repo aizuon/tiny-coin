@@ -9,6 +9,7 @@
 #include "UnspentTxOut.hpp"
 #include "Block.hpp"
 #include "NetParams.hpp"
+#include "BinaryBuffer.hpp"
 
 std::unordered_map<std::string, std::shared_ptr<Tx>> Mempool::Map;
 
@@ -40,7 +41,7 @@ std::shared_ptr<Block> Mempool::SelectFromMempool(std::shared_ptr<Block>& block)
 
 bool Mempool::CheckBlockSize(const std::shared_ptr<Block>& block)
 {
-	return block->Serialize().size() < NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES;
+	return block->Serialize().GetBuffer().size() < NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES;
 }
 
 std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, const std::string& txId, std::set<std::string>& addedToBlock)
@@ -77,7 +78,7 @@ std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, con
 
 	auto newBlock = std::make_shared<Block>(*block);
 	const auto& blockTxs = block->Txs;
-	std::vector<std::shared_ptr<Tx>> txs(blockTxs.size() + 1);
+	std::vector<std::shared_ptr<Tx>> txs;
 	txs.insert(txs.end(), blockTxs.begin(), blockTxs.end());
 	txs.push_back(tx);
 	newBlock->Txs = txs;

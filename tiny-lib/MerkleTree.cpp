@@ -6,7 +6,7 @@
 #include "Utils.hpp"
 #include "SHA256.hpp"
 
-MerkleNode::MerkleNode(const std::string& value, const std::vector<std::string>& children)
+MerkleNode::MerkleNode(const std::string& value, const std::vector<std::shared_ptr<MerkleNode>>& children)
 	: Value(value), Children(children)
 {
 }
@@ -24,7 +24,7 @@ std::shared_ptr<MerkleNode> MerkleTree::GetRoot(std::vector<std::string> leaves)
 	std::vector<std::shared_ptr<MerkleNode>> nodes;
 	for (const auto& l : leaves)
 	{
-		auto node = std::make_shared<MerkleNode>(l);
+		auto node = std::make_shared<MerkleNode>(Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(l))));
 
 		nodes.push_back(node);
 	}
@@ -32,15 +32,15 @@ std::shared_ptr<MerkleNode> MerkleTree::GetRoot(std::vector<std::string> leaves)
 	return FindRooot(nodes);
 }
 
-std::vector<std::vector<std::string>> MerkleTree::Chunk(const std::vector<std::string>& hashes, size_t chunkSize)
+std::vector<std::vector<std::shared_ptr<MerkleNode>>> MerkleTree::Chunk(const std::vector<std::shared_ptr<MerkleNode>>& nodes, size_t chunkSize)
 {
-	std::vector<std::vector<std::string>> chunks;
+	std::vector<std::vector<std::shared_ptr<MerkleNode>>> chunks;
 
-	std::vector<std::string> chunk;
+	std::vector<std::shared_ptr<MerkleNode>> chunk;
 	chunk.reserve(chunkSize);
-	for (const auto& hash : hashes)
+	for (const auto& node : nodes)
 	{
-		chunk.push_back(hash);
+		chunk.push_back(node);
 		if (chunk.size() == chunkSize)
 		{
 			chunks.push_back(chunk);
@@ -53,21 +53,13 @@ std::vector<std::vector<std::string>> MerkleTree::Chunk(const std::vector<std::s
 
 std::shared_ptr<MerkleNode> MerkleTree::FindRooot(const std::vector<std::shared_ptr<MerkleNode>>& nodes)
 {
-	std::vector<std::string> hashes;
-
-	for (const auto& node : nodes)
-	{
-		hashes.push_back(node->Value);
-	}
-
 	std::vector<std::shared_ptr<MerkleNode>> newLevel;
-	auto chunks = Chunk(hashes, 2);
+	auto chunks = Chunk(nodes, 2);
 	for (const auto& chunk : chunks)
 	{
-		std::string combinedId = chunk[0] + chunk[1];
-		std::vector<uint8_t> combinedId_vec(combinedId.begin(), combinedId.end());
+		std::string combinedId = chunk[0]->Value + chunk[1]->Value;
 
-		std::string combinedHash = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(combinedId_vec));
+		std::string combinedHash = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(combinedId)));
 
 		auto node = std::make_shared<MerkleNode>(combinedHash, chunk);
 

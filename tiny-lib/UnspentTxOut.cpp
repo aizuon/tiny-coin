@@ -14,16 +14,53 @@ UnspentTxOut::UnspentTxOut(std::shared_ptr<::TxOut> txOut, std::shared_ptr<::TxO
 {
 }
 
-std::vector<uint8_t> UnspentTxOut::Serialize() const
+BinaryBuffer UnspentTxOut::Serialize() const
 {
 	BinaryBuffer buffer;
 
-	buffer.Write(this->TxOut->Serialize());
-	buffer.Write(this->TxOutPoint->Serialize());
+	buffer.WriteRaw(this->TxOut->Serialize().GetBuffer());
+	buffer.WriteRaw(this->TxOutPoint->Serialize().GetBuffer());
 	buffer.Write(IsCoinbase);
 	buffer.Write(Height);
 
-	return buffer.GetBuffer();
+	return buffer;
+}
+
+bool UnspentTxOut::Deserialize(BinaryBuffer& buffer)
+{
+	auto copy = *this;
+
+	TxOut = std::make_shared<::TxOut>();
+	if (!TxOut->Deserialize(buffer))
+	{
+		*this = std::move(copy);
+
+		return false;
+	}
+
+	TxOutPoint = std::make_shared<::TxOutPoint>();
+	if (!TxOutPoint->Deserialize(buffer))
+	{
+		*this = std::move(copy);
+
+		return false;
+	}
+
+	if (!buffer.Read(IsCoinbase))
+	{
+		*this = std::move(copy);
+
+		return false;
+	}
+
+	if (!buffer.Read(Height))
+	{
+		*this = std::move(copy);
+
+		return false;
+	}
+
+	return true;
 }
 
 std::unordered_map<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>> UnspentTxOut::Map;

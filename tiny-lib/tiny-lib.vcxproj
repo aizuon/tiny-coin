@@ -25,6 +25,7 @@
     <ClInclude Include="Chain.hpp" />
     <ClInclude Include="ECDSA.hpp" />
     <ClInclude Include="Exceptions.hpp" />
+    <ClInclude Include="IDeserializable.hpp" />
     <ClInclude Include="ISerializable.hpp" />
     <ClInclude Include="Mempool.hpp" />
     <ClInclude Include="MerkleTree.hpp" />

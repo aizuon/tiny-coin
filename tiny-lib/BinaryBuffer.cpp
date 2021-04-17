@@ -3,63 +3,79 @@
 #include "BinaryBuffer.hpp"
 
 BinaryBuffer::BinaryBuffer(const std::vector<uint8_t>& obj)
-	: buffer(obj), writeOffset(obj.size())
+	: Buffer(obj), WriteOffset(obj.size())
 {
 }
 
 BinaryBuffer::BinaryBuffer(size_t length)
-	: buffer(length)
 {
+	Buffer.reserve(length);
+}
+
+BinaryBuffer::BinaryBuffer(const BinaryBuffer& obj)
+{
+	Buffer = obj.Buffer;
+	WriteOffset = obj.WriteOffset;
+	ReadOffset = obj.ReadOffset;
+}
+
+BinaryBuffer& BinaryBuffer::operator=(const BinaryBuffer& obj)
+{
+	Buffer = obj.Buffer;
+	WriteOffset = obj.WriteOffset;
+	ReadOffset = obj.ReadOffset;
+
+	return *this;
 }
 
 void BinaryBuffer::Write(const std::string& obj)
 {
-	std::lock_guard<std::mutex> lock(mtx);
+	std::lock_guard<std::mutex> lock(Mutex);
 
 	size_t size = obj.size();
 	size_t length1 = sizeof(size);
 	size_t length2 = size * sizeof(std::string::value_type);
 
-	size_t finalLength = writeOffset + length1 + length2;
+	size_t finalLength = WriteOffset + length1 + length2;
 	GrowIfNeeded(finalLength);
 
-	memcpy(buffer.data() + writeOffset, &size, length1);
-	memcpy(buffer.data() + writeOffset + length1, obj.data(), length2);
-	writeOffset = finalLength;
+	memcpy(Buffer.data() + WriteOffset, &size, length1);
+	memcpy(Buffer.data() + WriteOffset + length1, obj.data(), length2);
+	WriteOffset = finalLength;
 }
 
 bool BinaryBuffer::Read(std::string& obj)
 {
-	std::lock_guard<std::mutex> lock(mtx);
+	std::lock_guard<std::mutex> lock(Mutex);
 
 	size_t size = 0;
 	size_t length1 = sizeof(size);
-	if (buffer.size() < readOffset + length1)
+	if (Buffer.size() < ReadOffset + length1)
 		return false;
 
-	memcpy(&size, buffer.data() + readOffset, length1);
+	memcpy(&size, Buffer.data() + ReadOffset, length1);
 
 	size_t length2 = size * sizeof(std::string::value_type);
 
-	size_t finalOffset = readOffset + length1 + length2;
-	if (buffer.size() < finalOffset)
+	size_t finalOffset = ReadOffset + length1 + length2;
+	if (Buffer.size() < finalOffset)
 		return false;
 
 	obj.resize(size);
-	memcpy(obj.data(), buffer.data() + readOffset + length1, length2);
-	readOffset = finalOffset;
+	memcpy(obj.data(), Buffer.data() + ReadOffset + length1, length2);
+	ReadOffset = finalOffset;
 
 	return true;
 }
 
 void BinaryBuffer::GrowIfNeeded(size_t finalLength)
 {
-	bool reserve_needed = buffer.capacity() <= finalLength;
-	bool resize_needed = buffer.size() <= finalLength;
+	bool reserve_needed = Buffer.capacity() <= finalLength;
+	bool resize_needed = Buffer.size() <= finalLength;
 
 	if (reserve_needed)
-		buffer.reserve(finalLength * BUFFER_GROW_FACTOR);
+		Buffer.reserve(finalLength * BUFFER_GROW_FACTOR);
 
 	if (resize_needed)
-		buffer.resize(finalLength);
+		Buffer.resize(finalLength);
 }

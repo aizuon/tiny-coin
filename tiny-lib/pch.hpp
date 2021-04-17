@@ -2,7 +2,9 @@
 #define PCH_H
 
 #include <cstdint>
+#include <atomic>
 #include <cassert>
+#include <array>
 #include <vector>
 #include <string>
 #include <unordered_set>

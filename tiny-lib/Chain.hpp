@@ -30,16 +30,21 @@ public:
 
 	static int64_t GetCurrentHeight();
 
-	static std::tuple<std::shared_ptr<Block>, int64_t, int64_t> LocateBlockInActiveChain(const std::string& blockHash);
+	static int64_t GetMedianTimePast(size_t numLastBlocks);
+
 	static std::pair<std::shared_ptr<Block>, int64_t> LocateBlockInChain(const std::string& blockHash, const std::vector<std::shared_ptr<Block>>& chain);
+	static std::tuple<std::shared_ptr<Block>, int64_t, int64_t> LocateBlockInActiveChain(const std::string& blockHash);
 
 	static int64_t ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg = false);
 	static std::shared_ptr<Block> DisconnectBlock(const std::shared_ptr<Block>& block);
 
 	static int64_t ValidateBlock(const std::shared_ptr<Block>& block);
 
+	static void SaveToDisk();
+	static void LoadFromDisk();
+
 private:
-	static int64_t GetMedianTimePast(size_t numLastBlocks);
+	static constexpr char ChainPath[] = "chain.dat";
 
 	static bool ReorgIfNecessary();
 	static bool TryReorg(const std::vector<std::shared_ptr<Block>>& branch, int64_t branchIdx, int64_t forkIdx);

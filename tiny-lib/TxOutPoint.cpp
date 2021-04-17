@@ -8,12 +8,32 @@ TxOutPoint::TxOutPoint(const std::string& txId, int64_t txOutIdx)
 {
 }
 
-std::vector<uint8_t> TxOutPoint::Serialize() const
+BinaryBuffer TxOutPoint::Serialize() const
 {
 	BinaryBuffer buffer;
 
 	buffer.Write(TxId);
 	buffer.Write(TxOutIdx);
 
-	return buffer.GetBuffer();
+	return buffer;
+}
+
+bool TxOutPoint::Deserialize(BinaryBuffer& buffer)
+{
+	auto copy = *this;
+
+	if (!buffer.Read(TxId))
+	{
+		*this = std::move(copy);
+
+		return false;
+	}
+	if (!buffer.Read(TxOutIdx))
+	{
+		*this = std::move(copy);
+
+		return false;
+	}
+
+	return true;
 }

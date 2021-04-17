@@ -29,7 +29,7 @@ bool Tx::IsCoinbase() const
 
 std::string Tx::Id() const
 {
-    return Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Serialize()));
+    return Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Serialize().GetBuffer()));
 }
 
 void Tx::ValidateBasics(bool coinbase /*= false*/) const
@@ -37,7 +37,7 @@ void Tx::ValidateBasics(bool coinbase /*= false*/) const
     if (TxOuts.empty() || (TxIns.empty() && !coinbase))
         throw TxValidationException("Missing TxOuts or TxIns");
 
-    if (Serialize().size() > NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES)
+    if (Serialize().GetBuffer().size() > NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES)
         throw TxValidationException("Too large");
 
     uint64_t totalSpent = 0;
@@ -48,21 +48,77 @@ void Tx::ValidateBasics(bool coinbase /*= false*/) const
         throw TxValidationException("Spent value is too high");
 }
 
-std::vector<uint8_t> Tx::Serialize() const
+BinaryBuffer Tx::Serialize() const
 {
     BinaryBuffer buffer;
 
     buffer.Write(TxIns.size());
     for (const auto& tx_in : TxIns)
-        buffer.Write(tx_in->Serialize());
+        buffer.WriteRaw(tx_in->Serialize().GetBuffer());
 
     buffer.Write(TxOuts.size());
     for (const auto& tx_out : TxOuts)
-        buffer.Write(tx_out->Serialize());
+        buffer.WriteRaw(tx_out->Serialize().GetBuffer());
 
     buffer.Write(LockTime);
 
-    return buffer.GetBuffer();
+    return buffer;
+}
+
+bool Tx::Deserialize(BinaryBuffer& buffer)
+{
+    auto copy = *this;
+
+    size_t txInsSize = 0;
+    if (!buffer.Read(txInsSize))
+    {
+        *this = std::move(copy);
+
+        return false;
+    }
+    TxIns = std::vector<std::shared_ptr<TxIn>>();
+    TxIns.reserve(txInsSize);
+    for (size_t i = 0; i < txInsSize; i++)
+    {
+        auto txIn = std::make_shared<TxIn>();
+        if (!txIn->Deserialize(buffer))
+        {
+            *this = std::move(copy);
+
+            return false;
+        }
+        TxIns.push_back(txIn);
+    }
+
+    size_t txOutsSize = 0;
+    if (!buffer.Read(txOutsSize))
+    {
+        *this = std::move(copy);
+
+        return false;
+    }
+    TxOuts = std::vector<std::shared_ptr<TxOut>>();
+    TxOuts.reserve(txOutsSize);
+    for (size_t i = 0; i < txOutsSize; i++)
+    {
+        auto txOut = std::make_shared<TxOut>();
+        if (!txOut->Deserialize(buffer))
+        {
+            *this = std::move(copy);
+
+            return false;
+        }
+        TxOuts.push_back(txOut);
+    }
+
+    if (!buffer.Read(LockTime))
+    {
+        *this = std::move(copy);
+
+        return false;
+    }
+
+    return true;
 }
 
 std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& PayToAddr, uint64_t value, int64_t height)
@@ -89,7 +145,7 @@ void Tx::Validate(const ValidateRequest& req)
     {
         const auto& txIn = TxIns[i];
 
-        std::shared_ptr<UnspentTxOut> utxo = nullptr; //HACK: this should be a ref
+        std::shared_ptr<UnspentTxOut> utxo = nullptr; //HACK: this could be a ref
         if (!UnspentTxOut::Map.contains(txIn->ToSpend))
         {
             utxo = UnspentTxOut::Map[txIn->ToSpend];
@@ -108,7 +164,7 @@ void Tx::Validate(const ValidateRequest& req)
         }
 
         if (utxo == nullptr)
-            throw TxValidationException(fmt::format("Couldn not find any UTXO for TxIn {}, orphaning transaction", i).c_str(), std::make_shared<Tx>(*this));
+            throw TxValidationException(fmt::format("Couldn't not find any UTXO for TxIn {}, orphaning transaction", i).c_str(), std::make_shared<Tx>(*this));
 
         if (utxo->IsCoinbase && (Chain::GetCurrentHeight() - utxo->Height) < NetParams::COINBASE_MATURITY)
             throw TxValidationException("Coinbase UTXO is not ready for spending");
