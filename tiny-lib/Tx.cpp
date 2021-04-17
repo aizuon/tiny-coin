@@ -1,6 +1,5 @@
 #include "pch.hpp"
 
-#include <exception>
 #include <fmt/format.h>
 
 #include "Tx.hpp"
@@ -9,6 +8,7 @@
 #include "UnspentTxOut.hpp"
 #include "NetParams.hpp"
 #include "Utils.hpp"
+#include "Exceptions.hpp"
 #include "ECDSA.hpp"
 #include "SHA256.hpp"
 #include "BinaryBuffer.hpp"
@@ -35,17 +35,17 @@ std::string Tx::Id() const
 void Tx::ValidateBasics(bool coinbase /*= false*/) const
 {
     if (TxOuts.empty() || (TxIns.empty() && !coinbase))
-        throw std::exception("Tx::Validate --- TxOuts.empty() || (TxIns.empty() && !coinbase)");
+        throw TxValidationException("Missing TxOuts or TxIns");
 
     if (Serialize().size() > NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES)
-        throw std::exception("Tx::Validate --- Serialize().size() > NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES");
+        throw TxValidationException("Too large");
 
     uint64_t totalSpent = 0;
     for (const auto& tx_out : TxOuts)
         totalSpent += tx_out->Value;
 
     if (totalSpent > NetParams::MAX_MONEY)
-        throw std::exception("Tx::Validate --- totalSpent > NetParams::MAX_MONEY");
+        throw TxValidationException("Spent value is too high");
 }
 
 std::vector<uint8_t> Tx::Serialize() const
@@ -108,18 +108,18 @@ void Tx::Validate(const ValidateRequest& req)
         }
 
         if (utxo == nullptr)
-            throw std::exception("Tx::Validate --- utxo == nullptr");
+            throw TxValidationException(fmt::format("Couldn not find any UTXO for TxIn {}, orphaning transaction", i).c_str(), std::make_shared<Tx>(*this));
 
         if (utxo->IsCoinbase && (Chain::GetCurrentHeight() - utxo->Height) < NetParams::COINBASE_MATURITY)
-            throw std::exception("Tx::Validate --- utxo->IsCoinbase && (Chain::GetCurrentHeight() - utxo->Height) < NetParams::COINBASE_MATURITY");
+            throw TxValidationException("Coinbase UTXO is not ready for spending");
 
         try
         {
             ValidateSignatureForSpend(txIn, utxo);
         }
-        catch (...)
+        catch (const TxUnlockException&)
         {
-            throw std::exception("Tx::Validate --- ValidateSignatureForSpend(txIn, utxo, tx)");
+            throw TxValidationException(fmt::format("TxIn is not a valid spend of UTXO").c_str());
         }
 
         avaliableToSpend += utxo->TxOut->Value;
@@ -130,16 +130,16 @@ void Tx::Validate(const ValidateRequest& req)
         totalSpent += txOut->Value;
 
     if (avaliableToSpend < totalSpent)
-        throw std::exception("Tx::Validate --- avaliableToSpend < totalSpent");
+        throw TxValidationException("Spend value is more than available");
 }
 
 void Tx::ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UnspentTxOut>& utxo)
 {
     auto pubKeyAsAddr = Wallet::PubKeyToAddress(txIn->UnlockPubKey);
     if (pubKeyAsAddr != utxo->TxOut->ToAddress)
-        throw std::exception("Tx::ValidateSignatureForSpend --- pubKeyAsAddr != utxo->TxOut->ToAddress");
+        throw TxUnlockException("Public key does not match");
 
     auto spend_msg = MessageSerializer::BuildSpendMessage(txIn->ToSpend, txIn->UnlockPubKey, txIn->Sequence, TxOuts);
     if (!ECDSA::VerifySig(txIn->UnlockSig, spend_msg, txIn->UnlockPubKey))
-        throw std::exception("Tx::ValidateSignatureForSpend --- !ECDSA::VerifySig(txIn->UnlockSig, spend_msg, txIn->UnlockPubKey)");
+        throw TxUnlockException("Signature does not match");
 }

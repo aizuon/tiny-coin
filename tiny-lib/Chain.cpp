@@ -1,7 +1,7 @@
 #include "pch.hpp"
 
-#include <exception>
 #include <algorithm>
+#include <fmt/format.h>
 
 #include "Chain.hpp"
 #include "Tx.hpp"
@@ -10,6 +10,7 @@
 #include "Block.hpp"
 #include "NetParams.hpp"
 #include "Utils.hpp"
+#include "Exceptions.hpp"
 #include "MerkleTree.hpp"
 #include "PoW.hpp"
 
@@ -99,14 +100,14 @@ std::pair<std::shared_ptr<Block>, int64_t> Chain::ValidateBlock(const std::share
 	const auto& txs = block->Txs;
 
 	if (txs.empty())
-		throw std::exception("Chain::ValidateBlock --- txs.empty()");
+		throw BlockValidationException("Transactions are empty");
 
 	auto now = Utils::GetUnixTimestamp();
 	if (block->Timestamp - now > NetParams::MAX_FUTURE_BLOCK_TIME_IN_SECS)
-		throw std::exception("Chain::ValidateBlock --- block->Timestamp - now > NetParams::MAX_FUTURE_BLOCK_TIME_IN_SECS");
+		throw BlockValidationException("Block timestamp is too far in future");
 
 	if (std::stoul(block->Id(), nullptr, 16) > (1 << (256 - block->Bits)))
-		throw std::exception("Chain::ValidateBlock --- std::stoul(block->Id(), nullptr, 16) > (1 << (256 - block->Bits)");
+		throw BlockValidationException("Block header does not satisfy bits");
 
 	auto coinbase_pred = [](const std::shared_ptr<Tx>& tx)
 	{
@@ -114,18 +115,19 @@ std::pair<std::shared_ptr<Block>, int64_t> Chain::ValidateBlock(const std::share
 	};
 	auto coinbase_it = std::find_if(txs.begin(), txs.end(), coinbase_pred);
 	if (coinbase_it != txs.begin() || std::find_if(++coinbase_it, txs.end(), coinbase_pred) != txs.end())
-		throw std::exception("Chain::ValidateBlock --- coinbase_it != txs.begin() || std::find_if(++coinbase_it, txs.end(), coinbase_pred) != txs.end()");
+		throw BlockValidationException("First transaction must be coinbase and no more");
 
-	try
+	for (size_t i = 0; i < txs.size(); i++)
 	{
-		for (size_t i = 0; i < txs.size(); i++)
+		try
 		{
 			txs[i]->ValidateBasics(i == 0);
+
 		}
-	}
-	catch (...)
-	{
-		throw std::exception("Chain::ValidateBlock --- txs[i]->Validate(i == 0)");
+		catch (const TxValidationException&)
+		{
+			throw BlockValidationException(fmt::format("Transaction {} is invalid", txs[i]->Id()).c_str());
+		}
 	}
 
 	std::vector<std::string> hashes;
@@ -136,10 +138,10 @@ std::pair<std::shared_ptr<Block>, int64_t> Chain::ValidateBlock(const std::share
 	}
 	auto merkleRoot = MerkleTree::GetRoot(hashes);
 	if (merkleRoot->Value != block->MerkleHash)
-		throw std::exception("Chain::ValidateBlock --- merkleRoot->Value != block->MerkleHash");
+		throw BlockValidationException("Merkle hash is invalid");
 
 	if (block->Timestamp <= GetMedianTimePast(11))
-		throw std::exception("Chain::ValidateBlock --- block->Timestamp <= GetMedianTimePast(11)");
+		throw BlockValidationException("Timestamp is too old");
 
 	int64_t prev_block_chain_idx = 0;
 	if (block->PrevBlockHash.empty())
@@ -150,7 +152,7 @@ std::pair<std::shared_ptr<Block>, int64_t> Chain::ValidateBlock(const std::share
 	{
 		auto [prev_block, prev_block_height, prev_block_chain_idx] = LocateBlockInActiveChain(block->PrevBlockHash);
 		if (prev_block == nullptr)
-			throw std::exception("Chain::ValidateBlock --- prev_block == nullptr");
+			throw BlockValidationException(fmt::format("Previous block {} is not found in any chain", block->PrevBlockHash).c_str(), block);
 
 		if (prev_block_chain_idx != ActiveChainIdx)
 			return { block, prev_block_chain_idx };
@@ -159,7 +161,7 @@ std::pair<std::shared_ptr<Block>, int64_t> Chain::ValidateBlock(const std::share
 	}
 
 	if (PoW::GetNextWorkRequired(block->PrevBlockHash) != block->Bits)
-		throw std::exception("Chain::ValidateBlock --- PoW::GetNextWorkRequired(block->PrevBlockHash) != block->Bits");
+		throw BlockValidationException("Bits are incorrect");
 
 	std::vector<std::shared_ptr<Tx>> nonCoinbaseTxs(block->Txs.begin() + 1, block->Txs.end());
 	Tx::ValidateRequest req;
@@ -171,9 +173,9 @@ std::pair<std::shared_ptr<Block>, int64_t> Chain::ValidateBlock(const std::share
 		{
 			nonCoinbaseTx->Validate(req);
 		}
-		catch (...)
+		catch (const TxValidationException&)
 		{
-			throw std::exception("Chain::ValidateBlock --- nonCoinbaseTx->Validate(req)");
+			throw BlockValidationException(fmt::format("Transaction {} failed to validate", nonCoinbaseTx->Id()).c_str());
 		}
 	}
 

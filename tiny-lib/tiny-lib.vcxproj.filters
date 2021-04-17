@@ -52,6 +52,7 @@
       <Filter>Crypto</Filter>
     </ClInclude>
     <ClInclude Include="MessageSerializer.hpp" />
+    <ClInclude Include="Exceptions.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -103,6 +104,7 @@
       <Filter>Crypto</Filter>
     </ClCompile>
     <ClCompile Include="MessageSerializer.cpp" />
+    <ClCompile Include="Exceptions.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Tx">
