@@ -145,12 +145,15 @@ TEST(BinaryBufferTest, VectorConstructor)
 	EXPECT_EQ(vec, buffer.GetBuffer());
 }
 
-TEST(BinaryBufferTest, AllocationBenchmark)
+TEST(BinaryBufferTest, GrowthPolicy)
 {
 	BinaryBuffer buffer;
 
-	std::string str("foo");
+	std::string str = "foo";
 
-	for (int i = 0; i < 1000000; i++)
-		buffer.Write(str);
+	buffer.Write(str);
+	buffer.Write(str);
+
+	auto& buffer_vec = buffer.GetBuffer();
+	EXPECT_NE(buffer_vec.size(), buffer_vec.max_size());
 }
