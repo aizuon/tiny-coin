@@ -7,7 +7,10 @@
 #include "Tx.hpp"
 #include "TxIn.hpp"
 #include "TxOut.hpp"
+#include "TxOutPoint.hpp"
+#include "UnspentTxOut.hpp"
 #include "Block.hpp"
+#include "Mempool.hpp"
 #include "NetParams.hpp"
 #include "Utils.hpp"
 #include "Exceptions.hpp"
@@ -26,8 +29,6 @@ std::vector<std::vector<std::shared_ptr<Block>>> Chain::SideBranches = std::vect
 std::vector<std::shared_ptr<Block>> Chain::OrphanBlocks = std::vector<std::shared_ptr<Block>>{ };
 
 std::recursive_mutex Chain::Lock;
-
-int64_t Chain::ActiveChainIdx;
 
 int64_t Chain::GetCurrentHeight()
 {
@@ -88,12 +89,55 @@ std::shared_ptr<Block> Chain::ConnectBlock(const std::shared_ptr<Block>& block, 
 		}
 	}
 
-	//TODO: validate block
+	int64_t chain_idx = -1;
+	try
+	{
+		chain_idx = ValidateBlock(block);
+	}
+	catch (const BlockValidationException& ex)
+	{
+		if (ex.ToOrphan != nullptr)
+		{
+			OrphanBlocks.push_back(ex.ToOrphan);
+		}
+
+		return nullptr;
+	}
+
+	if (chain_idx == ActiveChainIdx && SideBranches.size() < chain_idx)
+	{
+		SideBranches.push_back(std::vector<std::shared_ptr<Block>>());
+	}
+
+	auto chain = chain_idx == ActiveChainIdx ? ActiveChain : SideBranches[chain_idx - 1];
+	chain.push_back(block);
+
+	if (chain_idx == ActiveChainIdx)
+	{
+		for (const auto& tx : block->Txs)
+		{
+			Mempool::Map.erase(tx->Id());
+
+			if (!tx->IsCoinbase())
+			{
+				for (const auto& txIn : tx->TxIns)
+				{
+					UnspentTxOut::RemoveFromMap(txIn->ToSpend->TxId, txIn->ToSpend->TxOutId);
+				}
+			}
+			for (size_t i = 0; i < tx->TxOuts.size(); i++)
+			{
+				UnspentTxOut::AddToMap(tx->TxOuts[i], tx->Id(), i, tx->IsCoinbase(), chain.size());
+			}
+		}
+	}
+
+	//TODO: check reorg
 
 	return nullptr;
 }
 
-std::pair<std::shared_ptr<Block>, int64_t> Chain::ValidateBlock(const std::shared_ptr<Block>& block)
+int64_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 {
 	std::lock_guard lock(Lock);
 
@@ -155,9 +199,9 @@ std::pair<std::shared_ptr<Block>, int64_t> Chain::ValidateBlock(const std::share
 			throw BlockValidationException(fmt::format("Previous block {} is not found in any chain", block->PrevBlockHash).c_str(), block);
 
 		if (prev_block_chain_idx != ActiveChainIdx)
-			return { block, prev_block_chain_idx };
+			return prev_block_chain_idx;
 		else if (prev_block->Id() != ActiveChain.back()->Id())
-			return { block, prev_block_chain_idx + 1 };
+			return prev_block_chain_idx + 1;
 	}
 
 	if (PoW::GetNextWorkRequired(block->PrevBlockHash) != block->Bits)
@@ -179,7 +223,7 @@ std::pair<std::shared_ptr<Block>, int64_t> Chain::ValidateBlock(const std::share
 		}
 	}
 
-	return { block, prev_block_chain_idx };
+	return prev_block_chain_idx;
 }
 
 int64_t Chain::GetMedianTimePast(size_t numLastBlocks)

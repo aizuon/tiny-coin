@@ -26,7 +26,7 @@ public:
 
 	static std::recursive_mutex Lock;
 
-	static int64_t ActiveChainIdx;
+	static constexpr int64_t ActiveChainIdx = 0;
 
 	static int64_t GetCurrentHeight();
 
@@ -35,7 +35,7 @@ public:
 
 	static std::shared_ptr<Block> ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg = false);
 
-	static std::pair<std::shared_ptr<Block>, int64_t> ValidateBlock(const std::shared_ptr<Block>& block);
+	static int64_t ValidateBlock(const std::shared_ptr<Block>& block);
 
 private:
 	static int64_t GetMedianTimePast(size_t numLastBlocks);
