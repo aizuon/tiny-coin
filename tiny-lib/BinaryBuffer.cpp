@@ -5,6 +5,7 @@
 BinaryBuffer::BinaryBuffer(const std::vector<uint8_t>& obj)
 	: Buffer(obj), WriteOffset(obj.size())
 {
+
 }
 
 BinaryBuffer::BinaryBuffer(size_t length)

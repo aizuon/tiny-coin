@@ -13,6 +13,7 @@
 UnspentTxOut::UnspentTxOut(std::shared_ptr<::TxOut> txOut, std::shared_ptr<::TxOutPoint> txOutPoint, bool isCoinbase, int64_t height)
 	: TxOut(txOut), TxOutPoint(txOutPoint), IsCoinbase(isCoinbase), Height(height)
 {
+
 }
 
 BinaryBuffer UnspentTxOut::Serialize() const

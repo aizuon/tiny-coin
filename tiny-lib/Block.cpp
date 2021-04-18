@@ -11,6 +11,7 @@ Block::Block(uint64_t version, const std::string& prevBlockHash, const std::stri
 	const std::vector<std::shared_ptr<Tx>>& txs)
 	: Version(version), PrevBlockHash(prevBlockHash), MerkleHash(MerkleHash), Timestamp(timestamp), Bits(bits), Nonce(nonce), Txs(txs)
 {
+
 }
 
 std::string Block::Header(uint64_t nonce /*= 0*/) const

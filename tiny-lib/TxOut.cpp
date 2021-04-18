@@ -6,6 +6,7 @@
 TxOut::TxOut(uint64_t value, const std::string& toAddress)
 	: Value(value), ToAddress(toAddress)
 {
+
 }
 
 BinaryBuffer TxOut::Serialize() const

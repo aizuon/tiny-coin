@@ -7,6 +7,7 @@
 TxIn::TxIn(std::shared_ptr<TxOutPoint> toSpend, const std::vector<uint8_t>& unlockSig, const std::vector<uint8_t>& unlockPk, int32_t sequence)
 	: ToSpend(toSpend), UnlockSig(unlockSig), UnlockPubKey(unlockPk), Sequence(sequence)
 {
+
 }
 
 BinaryBuffer TxIn::Serialize() const

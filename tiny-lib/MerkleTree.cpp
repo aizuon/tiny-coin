@@ -9,11 +9,13 @@
 MerkleNode::MerkleNode(const std::string& value, const std::vector<std::shared_ptr<MerkleNode>>& children)
 	: Value(value), Children(children)
 {
+
 }
 
 MerkleNode::MerkleNode(const std::string& value)
 	: Value(value)
 {
+
 }
 
 std::shared_ptr<MerkleNode> MerkleTree::GetRoot(std::vector<std::string> leaves)
