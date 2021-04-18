@@ -1,8 +1,6 @@
 #include "pch.hpp"
 
 #include "GetActiveChainMsg.hpp"
-#include "BinaryBuffer.hpp"
-#include "Block.hpp"
 
 GetActiveChainMsg::GetActiveChainMsg(const std::vector<std::shared_ptr<Block>>& activeChain)
 	: ActiveChain(activeChain)
@@ -62,4 +60,9 @@ bool GetActiveChainMsg::Deserialize(BinaryBuffer& buffer)
 	}
 
 	return true;
+}
+
+Opcode GetActiveChainMsg::GetOpcode() const
+{
+	return Opcode::GetActiveChainMsg;
 }

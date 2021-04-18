@@ -5,8 +5,7 @@
 
 #include "ISerializable.hpp"
 #include "IDeserializable.hpp"
-
-class TxOutPoint;
+#include "TxOutPoint.hpp"
 
 class TxIn : public ISerializable, public IDeserializable
 {

@@ -8,10 +8,10 @@
 #include "ISerializable.hpp"
 #include "IDeserializable.hpp"
 
-class Tx;
-class TxIn;
-class TxOut;
-class TxOutPoint;
+#include "Tx.hpp"
+#include "TxIn.hpp"
+#include "TxOut.hpp"
+#include "TxOutPoint.hpp"
 
 class UnspentTxOut : public ISerializable, public IDeserializable
 {

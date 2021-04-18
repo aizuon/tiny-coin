@@ -3,11 +3,9 @@
 #include <vector>
 #include <string>
 
-#include "IHandleable.hpp"
-#include "ISerializable.hpp"
-#include "IDeserializable.hpp"
+#include "IMsg.hpp"
 
-class GetMempoolMsg : public IHandleable, public ISerializable, public IDeserializable
+class GetMempoolMsg : public IMsg
 {
 public:
 	GetMempoolMsg() = default;
@@ -18,6 +16,8 @@ public:
 	void Handle(NetClient::ConnectionHandle con_handle) const override;
 	BinaryBuffer Serialize() const override;
 	bool Deserialize(BinaryBuffer& buffer) override;
+
+	Opcode GetOpcode() const;
 
 private:
 

@@ -1,7 +1,6 @@
 #include "pch.hpp"
 
 #include "TxOutPoint.hpp"
-#include "BinaryBuffer.hpp"
 
 TxOutPoint::TxOutPoint(const std::string& txId, int64_t txOutIdx)
 	: TxId(txId), TxOutIdx(txOutIdx)

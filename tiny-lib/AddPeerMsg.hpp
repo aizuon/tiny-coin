@@ -2,11 +2,9 @@
 #include <cstdint>
 #include <string>
 
-#include "IHandleable.hpp"
-#include "ISerializable.hpp"
-#include "IDeserializable.hpp"
+#include "IMsg.hpp"
 
-class AddPeerMsg : public IHandleable, public ISerializable, public IDeserializable
+class AddPeerMsg : public IMsg
 {
 public:
 	AddPeerMsg() = default;
@@ -17,6 +15,8 @@ public:
 	void Handle(NetClient::ConnectionHandle con_handle) const override;
 	BinaryBuffer Serialize() const override;
 	bool Deserialize(BinaryBuffer& buffer) override;
+
+	Opcode GetOpcode() const;
 
 private:
 	static constexpr uint64_t ChunkSize = 50;

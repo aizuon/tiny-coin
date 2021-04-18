@@ -79,6 +79,12 @@
     <ClInclude Include="AddPeerMsg.hpp">
       <Filter>P2P</Filter>
     </ClInclude>
+    <ClInclude Include="Opcodes.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
+    <ClInclude Include="IMsg.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />

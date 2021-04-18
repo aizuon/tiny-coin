@@ -6,9 +6,9 @@
 
 #include "ISerializable.hpp"
 #include "IDeserializable.hpp"
+#include "TxIn.hpp"
+#include "TxOut.hpp"
 
-class TxIn;
-class TxOut;
 class UnspentTxOut;
 
 class Tx : public ISerializable, public IDeserializable

@@ -1,7 +1,6 @@
 #include "pch.hpp"
 
 #include "TxOut.hpp"
-#include "BinaryBuffer.hpp"
 
 TxOut::TxOut(uint64_t value, const std::string& toAddress)
 	: Value(value), ToAddress(toAddress)

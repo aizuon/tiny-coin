@@ -1,7 +1,6 @@
 #include "pch.hpp"
 
 #include "GetBlockMsg.hpp"
-#include "BinaryBuffer.hpp"
 
 GetBlockMsg::GetBlockMsg(const std::string& fromBlockId)
 	: FromBlockId(fromBlockId)
@@ -35,4 +34,9 @@ bool GetBlockMsg::Deserialize(BinaryBuffer& buffer)
 	}
 
 	return true;
+}
+
+Opcode GetBlockMsg::GetOpcode() const
+{
+	return Opcode::GetBlockMsg;
 }

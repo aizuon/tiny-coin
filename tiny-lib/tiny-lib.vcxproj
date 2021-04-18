@@ -31,6 +31,7 @@
     <ClInclude Include="GetMempoolMsg.hpp" />
     <ClInclude Include="GetUTXOsMsg.hpp" />
     <ClInclude Include="IDeserializable.hpp" />
+    <ClInclude Include="IMsg.hpp" />
     <ClInclude Include="InvMsg.hpp" />
     <ClInclude Include="ISerializable.hpp" />
     <ClInclude Include="NetClient.hpp" />
@@ -40,6 +41,7 @@
     <ClInclude Include="MsgSerializer.hpp" />
     <ClInclude Include="NetParams.hpp" />
     <ClInclude Include="IHandleable.hpp" />
+    <ClInclude Include="Opcodes.hpp" />
     <ClInclude Include="PoW.hpp" />
     <ClInclude Include="RIPEMD160.hpp" />
     <ClInclude Include="SHA256.hpp" />

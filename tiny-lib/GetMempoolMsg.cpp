@@ -1,7 +1,6 @@
 #include "pch.hpp"
 
 #include "GetMempoolMsg.hpp"
-#include "BinaryBuffer.hpp"
 
 GetMempoolMsg::GetMempoolMsg(const std::vector<std::string>& mempool)
 	: Mempool(mempool)
@@ -53,4 +52,9 @@ bool GetMempoolMsg::Deserialize(BinaryBuffer& buffer)
 	}
 
 	return true;
+}
+
+Opcode GetMempoolMsg::GetOpcode() const
+{
+	return Opcode::GetMempoolMsg;
 }

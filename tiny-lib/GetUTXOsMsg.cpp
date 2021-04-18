@@ -3,9 +3,6 @@
 #include <algorithm>
 
 #include "GetUTXOsMsg.hpp"
-#include "BinaryBuffer.hpp"
-#include "TxOutPoint.hpp"
-#include "UnspentTxOut.hpp"
 
 GetUTXOsMsg::GetUTXOsMsg(const std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>>& utxoMap)
 	: UTXO_Map(utxoMap)
@@ -74,4 +71,9 @@ bool GetUTXOsMsg::Deserialize(BinaryBuffer& buffer)
 	}
 
 	return true;
+}
+
+Opcode GetUTXOsMsg::GetOpcode() const
+{
+	return Opcode::GetUTXOsMsg;
 }

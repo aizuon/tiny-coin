@@ -9,7 +9,6 @@ class BinaryBuffer
 public:
 	BinaryBuffer() = default;
 	BinaryBuffer(const std::vector<uint8_t>& obj);
-	BinaryBuffer(size_t length);
 
 	BinaryBuffer(const BinaryBuffer& obj);
 	BinaryBuffer& operator=(const BinaryBuffer& obj);
@@ -18,6 +17,11 @@ public:
     {
         return Buffer;
     }
+
+	inline std::vector<uint8_t>& GetWritableBuffer()
+	{
+		return Buffer;
+	}
 
 	inline size_t GetLength() const
 	{
@@ -32,6 +36,19 @@ public:
 	inline size_t GetReadOffset() const
 	{
 		return ReadOffset;
+	}
+
+	inline void GrowTo(size_t size)
+	{
+		if (size < Buffer.size())
+			return;
+
+		Buffer.resize(size);
+	}
+
+	inline void Reserve(size_t size)
+	{
+		Buffer.reserve(size);
 	}
 
     template<typename T>

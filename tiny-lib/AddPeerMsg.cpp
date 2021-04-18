@@ -1,7 +1,6 @@
 #include "pch.hpp"
 
 #include "AddPeerMsg.hpp"
-#include "BinaryBuffer.hpp"
 
 AddPeerMsg::AddPeerMsg(const std::string& peerHostname)
 	: PeerHostname(peerHostname)
@@ -35,4 +34,9 @@ bool AddPeerMsg::Deserialize(BinaryBuffer& buffer)
 	}
 
 	return true;
+}
+
+Opcode AddPeerMsg::GetOpcode() const
+{
+	return Opcode::AddPeerMsg;
 }

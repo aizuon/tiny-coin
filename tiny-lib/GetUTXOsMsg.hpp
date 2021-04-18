@@ -5,14 +5,11 @@
 #include <memory>
 #include <unordered_map>
 
-#include "IHandleable.hpp"
-#include "ISerializable.hpp"
-#include "IDeserializable.hpp"
+#include "IMsg.hpp"
+#include "TxOutPoint.hpp"
+#include "UnspentTxOut.hpp"
 
-class TxOutPoint;
-class UnspentTxOut;
-
-class GetUTXOsMsg : public IHandleable, public ISerializable, public IDeserializable
+class GetUTXOsMsg : public IMsg
 {
 public:
 	GetUTXOsMsg() = default;
@@ -23,6 +20,8 @@ public:
 	void Handle(NetClient::ConnectionHandle con_handle) const override;
 	BinaryBuffer Serialize() const override;
 	bool Deserialize(BinaryBuffer& buffer) override;
+
+	Opcode GetOpcode() const;
 
 private:
 

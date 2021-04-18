@@ -1,7 +1,6 @@
 #include "pch.hpp"
 
 #include "InvMsg.hpp"
-#include "BinaryBuffer.hpp"
 
 InvMsg::InvMsg(const std::vector<std::string>& blocks)
 	: Blocks(blocks)
@@ -53,4 +52,9 @@ bool InvMsg::Deserialize(BinaryBuffer& buffer)
 	}
 
 	return true;
+}
+
+Opcode InvMsg::GetOpcode() const
+{
+	return Opcode::InvMsg;
 }

@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <vector>
 
-class BinaryBuffer;
+#include "BinaryBuffer.hpp"
 
 class IDeserializable
 {

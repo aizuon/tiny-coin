@@ -3,8 +3,6 @@
 #include <fmt/format.h>
 
 #include "Tx.hpp"
-#include "TxIn.hpp"
-#include "TxOut.hpp"
 #include "UnspentTxOut.hpp"
 #include "NetParams.hpp"
 #include "Log.hpp"
@@ -12,7 +10,6 @@
 #include "Exceptions.hpp"
 #include "ECDSA.hpp"
 #include "SHA256.hpp"
-#include "BinaryBuffer.hpp"
 #include "MsgSerializer.hpp"
 #include "Chain.hpp"
 #include "Mempool.hpp"
@@ -124,7 +121,8 @@ bool Tx::Deserialize(BinaryBuffer& buffer)
 
 std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& PayToAddr, uint64_t value, int64_t height)
 {
-    BinaryBuffer tx_in_unlockSig(sizeof(height));
+    BinaryBuffer tx_in_unlockSig;
+    tx_in_unlockSig.Reserve(sizeof(height));
     tx_in_unlockSig.Write(height);
     auto tx_in = std::make_shared<TxIn>(nullptr, tx_in_unlockSig.GetBuffer(), std::vector<uint8_t>(), -1);
 

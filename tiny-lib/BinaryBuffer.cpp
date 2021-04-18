@@ -8,11 +8,6 @@ BinaryBuffer::BinaryBuffer(const std::vector<uint8_t>& obj)
 
 }
 
-BinaryBuffer::BinaryBuffer(size_t length)
-{
-	Buffer.reserve(length);
-}
-
 BinaryBuffer::BinaryBuffer(const BinaryBuffer& obj)
 {
 	Buffer = obj.Buffer;
