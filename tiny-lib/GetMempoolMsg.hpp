@@ -8,12 +8,7 @@
 class GetMempoolMsg : public IMsg
 {
 public:
-	GetMempoolMsg() = default;
-	GetMempoolMsg(const std::vector<std::string>& mempool);
-
-	std::vector<std::string> Mempool;
-
-	void Handle(const std::shared_ptr<NetClient::Connection>& con) const override;
+	void Handle(const std::shared_ptr<NetClient::Connection>& con) override;
 	BinaryBuffer Serialize() const override;
 	bool Deserialize(BinaryBuffer& buffer) override;
 

@@ -8,7 +8,7 @@ AddPeerMsg::AddPeerMsg(const std::string& peerHostname)
 
 }
 
-void AddPeerMsg::Handle(const std::shared_ptr<NetClient::Connection>& con) const
+void AddPeerMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
 {
 	//TODO
 }

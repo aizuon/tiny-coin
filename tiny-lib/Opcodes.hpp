@@ -11,6 +11,9 @@ enum class Opcode : uint8_t
 	GetMempoolMsg,
 	GetUTXOsMsg,
 	InvMsg,
+	SendActiveChainMsg,
+	SendMempoolMsg,
+	SendUTXOsMsg,
 	TxInfoMsg
 };
 

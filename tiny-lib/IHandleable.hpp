@@ -5,7 +5,7 @@
 class IHandleable
 {
 public:
-	virtual void Handle(const std::shared_ptr<NetClient::Connection>& con) const = 0;
+	virtual void Handle(const std::shared_ptr<NetClient::Connection>& con) = 0;
 
 	virtual Opcode GetOpcode() const = 0;
 

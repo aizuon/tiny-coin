@@ -1,17 +1,14 @@
 #pragma once
 #include <cstdint>
-#include <memory>
+#include <vector>
+#include <string>
 
 #include "IMsg.hpp"
-#include "Tx.hpp"
 
-class TxInfoMsg : public IMsg
+class SendMempoolMsg : public IMsg
 {
 public:
-	TxInfoMsg() = default;
-	TxInfoMsg(const std::shared_ptr<Tx>& tx);
-
-	std::shared_ptr<Tx> Tx;
+	std::vector<std::string> Mempool;
 
 	void Handle(const std::shared_ptr<NetClient::Connection>& con) override;
 	BinaryBuffer Serialize() const override;

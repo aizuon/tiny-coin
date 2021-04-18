@@ -37,3 +37,5 @@ public:
 
 	static std::shared_ptr<UnspentTxOut> FindInList(const std::shared_ptr<TxIn>& txIn, const std::vector<std::shared_ptr<Tx>>& txs);
 };
+
+typedef UnspentTxOut UTXO;

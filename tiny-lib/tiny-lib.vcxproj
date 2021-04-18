@@ -45,7 +45,11 @@
     <ClInclude Include="IHandleable.hpp" />
     <ClInclude Include="Opcodes.hpp" />
     <ClInclude Include="PoW.hpp" />
+    <ClInclude Include="Random.hpp" />
     <ClInclude Include="RIPEMD160.hpp" />
+    <ClInclude Include="SendActiveChainMsg.hpp" />
+    <ClInclude Include="SendMempoolMsg.hpp" />
+    <ClInclude Include="SendUTXOsMsg.hpp" />
     <ClInclude Include="SHA256.hpp" />
     <ClInclude Include="Tx.hpp" />
     <ClInclude Include="TxIn.hpp" />
@@ -79,7 +83,11 @@
     <ClCompile Include="MsgSerializer.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="PoW.cpp" />
+    <ClCompile Include="Random.cpp" />
     <ClCompile Include="RIPEMD160.cpp" />
+    <ClCompile Include="SendActiveChainMsg.cpp" />
+    <ClCompile Include="SendMempoolMsg.cpp" />
+    <ClCompile Include="SendUTXOsMsg.cpp" />
     <ClCompile Include="SHA256.cpp" />
     <ClCompile Include="Tx.cpp" />
     <ClCompile Include="TxIn.cpp" />

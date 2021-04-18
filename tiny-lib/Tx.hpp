@@ -40,8 +40,8 @@ public:
 		std::vector<std::shared_ptr<Tx>> SiblingsInBlock;
 	};
 
-	void Validate(const ValidateRequest& req);
+	void Validate(const ValidateRequest& req) const;
 
 private:
-	void ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UnspentTxOut>& utxo);
+	void ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UnspentTxOut>& utxo) const;
 };

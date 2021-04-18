@@ -1,7 +1,5 @@
 #pragma once
 #include <cstdint>
-#include <list>
-#include <set>
 #include <memory>
 #include <boost/asio.hpp>
 
@@ -21,7 +19,7 @@ public:
 		boost::asio::streambuf ReadBuffer;
 	};
 
-	static std::list<std::shared_ptr<Connection>> Connections;
+	static std::vector<std::shared_ptr<Connection>> Connections;
 
 	static void Run();
 
@@ -29,7 +27,10 @@ public:
 
 	static void Listen(uint16_t port);
 
+	static std::shared_ptr<Connection> GetRandomConnection();
+
 	static void SendMsgAsync(const std::shared_ptr<Connection>& con, const IMsg& msg);
+	static void SendMsgRandomAsync(const IMsg& msg);
 
 private:
 	static boost::asio::io_service IO_Service;

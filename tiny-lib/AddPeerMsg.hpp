@@ -12,7 +12,7 @@ public:
 
 	std::string PeerHostname;
 
-	void Handle(const std::shared_ptr<NetClient::Connection>& con) const override;
+	void Handle(const std::shared_ptr<NetClient::Connection>& con) override;
 	BinaryBuffer Serialize() const override;
 	bool Deserialize(BinaryBuffer& buffer) override;
 

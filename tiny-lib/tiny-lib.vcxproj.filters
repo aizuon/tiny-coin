@@ -94,6 +94,16 @@
     <ClInclude Include="HashChecker.hpp">
       <Filter>Crypto</Filter>
     </ClInclude>
+    <ClInclude Include="Random.hpp" />
+    <ClInclude Include="SendActiveChainMsg.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
+    <ClInclude Include="SendMempoolMsg.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
+    <ClInclude Include="SendUTXOsMsg.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -176,6 +186,16 @@
     </ClCompile>
     <ClCompile Include="HashChecker.cpp">
       <Filter>Crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="Random.cpp" />
+    <ClCompile Include="SendUTXOsMsg.cpp">
+      <Filter>P2P</Filter>
+    </ClCompile>
+    <ClCompile Include="SendActiveChainMsg.cpp">
+      <Filter>P2P</Filter>
+    </ClCompile>
+    <ClCompile Include="SendMempoolMsg.cpp">
+      <Filter>P2P</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

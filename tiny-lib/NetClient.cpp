@@ -14,6 +14,7 @@ using namespace boost::placeholders;
 #include "InvMsg.hpp"
 #include "TxInfoMsg.hpp"
 #include "Log.hpp"
+#include "Random.hpp"
 
 NetClient::Connection::Connection(boost::asio::io_service& io_service)
 	: Socket(io_service), ReadBuffer()
@@ -21,7 +22,7 @@ NetClient::Connection::Connection(boost::asio::io_service& io_service)
 
 }
 
-std::list<std::shared_ptr<NetClient::Connection>> NetClient::Connections;
+std::vector<std::shared_ptr<NetClient::Connection>> NetClient::Connections;
 
 void NetClient::Run()
 {
@@ -58,6 +59,18 @@ void NetClient::SendMsgAsync(const std::shared_ptr<Connection>& con, const IMsg&
 	msgBuffer->Write(serializedMsg);
 
 	DoAsyncWrite(con, msgBuffer);
+}
+
+void NetClient::SendMsgRandomAsync(const IMsg& msg)
+{
+	auto con = GetRandomConnection();
+	SendMsgAsync(con, msg);
+}
+
+std::shared_ptr<NetClient::Connection> NetClient::GetRandomConnection()
+{
+	auto randomIdx = Random::GetInt(0, Connections.size() - 1);
+	return Connections[randomIdx];
 }
 
 boost::asio::io_service NetClient::IO_Service;

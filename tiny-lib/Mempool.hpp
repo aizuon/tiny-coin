@@ -22,7 +22,7 @@ public:
 
 	static std::shared_ptr<Block> SelectFromMempool(const std::shared_ptr<Block>& block);
 
-	static void AddTxToMempool(std::shared_ptr<Tx>& tx);
+	static void AddTxToMempool(const std::shared_ptr<Tx>& tx);
 
 private:
 	static bool CheckBlockSize(const std::shared_ptr<Block>& block);

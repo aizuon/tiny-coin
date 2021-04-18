@@ -4,16 +4,17 @@
 #include <string>
 
 #include "IMsg.hpp"
+#include "Block.hpp"
 
 class InvMsg : public IMsg
 {
 public:
 	InvMsg() = default;
-	InvMsg(const std::vector<std::string>& blocks);
+	InvMsg(const std::vector<std::shared_ptr<Block>>& blocks);
 
-	std::vector<std::string> Blocks;
+	std::vector<std::shared_ptr<Block>> Blocks;
 
-	void Handle(const std::shared_ptr<NetClient::Connection>& con) const override;
+	void Handle(const std::shared_ptr<NetClient::Connection>& con) override;
 	BinaryBuffer Serialize() const override;
 	bool Deserialize(BinaryBuffer& buffer) override;
 

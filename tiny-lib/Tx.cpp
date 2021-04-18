@@ -135,7 +135,7 @@ std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& PayToAddr, uint64_t va
     return tx;
 }
 
-void Tx::Validate(const ValidateRequest& req)
+void Tx::Validate(const ValidateRequest& req) const
 {
     ValidateBasics(req.AsCoinbase);
 
@@ -145,15 +145,15 @@ void Tx::Validate(const ValidateRequest& req)
         const auto& txIn = TxIns[i];
 
         std::shared_ptr<UnspentTxOut> utxo = nullptr; //HACK: this could be a ref
-        if (!UnspentTxOut::Map.contains(txIn->ToSpend))
+        if (!UTXO::Map.contains(txIn->ToSpend))
         {
-            utxo = UnspentTxOut::Map[txIn->ToSpend];
+            utxo = UTXO::Map[txIn->ToSpend];
         }
         else
         {
             if (!req.SiblingsInBlock.empty())
             {
-                utxo = UnspentTxOut::FindInList(txIn, req.SiblingsInBlock);
+                utxo = UTXO::FindInList(txIn, req.SiblingsInBlock);
             }
 
             if (req.Allow_UTXO_FromMempool)
@@ -188,7 +188,7 @@ void Tx::Validate(const ValidateRequest& req)
         throw TxValidationException("Spend value is more than available");
 }
 
-void Tx::ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UnspentTxOut>& utxo)
+void Tx::ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UnspentTxOut>& utxo) const
 {
     auto pubKeyAsAddr = Wallet::PubKeyToAddress(txIn->UnlockPubKey);
     if (pubKeyAsAddr != utxo->TxOut->ToAddress)

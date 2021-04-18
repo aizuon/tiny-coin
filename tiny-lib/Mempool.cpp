@@ -43,7 +43,7 @@ std::shared_ptr<Block> Mempool::SelectFromMempool(const std::shared_ptr<Block>& 
 	return newBlock;
 }
 
-void Mempool::AddTxToMempool(std::shared_ptr<Tx>& tx)
+void Mempool::AddTxToMempool(const std::shared_ptr<Tx>& tx)
 {
 	const auto txId = tx->Id();
 	if (Map.contains(txId))

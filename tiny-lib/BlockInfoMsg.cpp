@@ -1,6 +1,8 @@
 #include "pch.hpp"
 
 #include "BlockInfoMsg.hpp"
+#include "Chain.hpp"
+#include "Log.hpp"
 
 BlockInfoMsg::BlockInfoMsg(const std::shared_ptr<::Block>& block)
 	: Block(block)
@@ -8,9 +10,11 @@ BlockInfoMsg::BlockInfoMsg(const std::shared_ptr<::Block>& block)
 
 }
 
-void BlockInfoMsg::Handle(const std::shared_ptr<NetClient::Connection>& con) const
+void BlockInfoMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
 {
-	//TODO
+	LOG_INFO("Recieved block {} from peer {}", Block->Id(), con->Socket.remote_endpoint().address().to_string());
+
+	Chain::ConnectBlock(Block);
 }
 
 BinaryBuffer BlockInfoMsg::Serialize() const

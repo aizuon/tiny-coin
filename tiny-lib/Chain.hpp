@@ -1,4 +1,6 @@
 #pragma once
+#include <cstdint>
+#include <atomic>
 #include <vector>
 #include <string>
 #include <memory>
@@ -27,6 +29,8 @@ public:
 	static std::recursive_mutex Lock;
 
 	static constexpr int64_t ActiveChainIdx = 0;
+
+	static std::atomic_bool InitialBlockDownloadComplete;
 
 	static int64_t GetCurrentHeight();
 

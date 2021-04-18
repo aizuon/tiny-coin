@@ -26,11 +26,13 @@ const std::shared_ptr<Tx> Chain::GenesisTx = std::make_shared<Tx>(std::vector<st
 const std::shared_ptr<Block> Chain::GenesisBlock = std::make_shared<Block>(0, "", "7118894203235a955a908c0abfc6d8fe6edec47b0a04ce1bf7263da3b4366d22",
 	1501821412, 24, 10126761, std::vector<std::shared_ptr<Tx>>{ GenesisTx });
 
-std::vector<std::shared_ptr<Block>> Chain::ActiveChain = std::vector<std::shared_ptr<Block>>{ GenesisBlock };
-std::vector<std::vector<std::shared_ptr<Block>>> Chain::SideBranches = std::vector<std::vector<std::shared_ptr<Block>>>{ };
-std::vector<std::shared_ptr<Block>> Chain::OrphanBlocks = std::vector<std::shared_ptr<Block>>{ };
+std::vector<std::shared_ptr<Block>> Chain::ActiveChain{ GenesisBlock };
+std::vector<std::vector<std::shared_ptr<Block>>> Chain::SideBranches{ };
+std::vector<std::shared_ptr<Block>> Chain::OrphanBlocks{ };
 
 std::recursive_mutex Chain::Lock;
+
+std::atomic_bool Chain::InitialBlockDownloadComplete = false;
 
 int64_t Chain::GetCurrentHeight()
 {
@@ -137,12 +139,12 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 			{
 				for (const auto& txIn : tx->TxIns)
 				{
-					UnspentTxOut::RemoveFromMap(txIn->ToSpend->TxId, txIn->ToSpend->TxOutIdx);
+					UTXO::RemoveFromMap(txIn->ToSpend->TxId, txIn->ToSpend->TxOutIdx);
 				}
 			}
 			for (int64_t i = 0; i < tx->TxOuts.size(); i++)
 			{
-				UnspentTxOut::AddToMap(tx->TxOuts[i], txId, i, tx->IsCoinbase(), chain.size());
+				UTXO::AddToMap(tx->TxOuts[i], txId, i, tx->IsCoinbase(), chain.size());
 			}
 		}
 	}
@@ -185,12 +187,12 @@ std::shared_ptr<Block> Chain::DisconnectBlock(const std::shared_ptr<Block>& bloc
 			{
 				auto [txOut, tx, txOutIdx, isCoinbase, height] = FindTxOutForTxInInActiveChain(txIn);
 
-				UnspentTxOut::AddToMap(txOut, txId, txOutIdx, isCoinbase, height);
+				UTXO::AddToMap(txOut, txId, txOutIdx, isCoinbase, height);
 			}
 		}
 		for (int64_t i = 0; i < tx->TxOuts.size(); i++)
 		{
-			UnspentTxOut::RemoveFromMap(txId, i);
+			UTXO::RemoveFromMap(txId, i);
 		}
 	}
 

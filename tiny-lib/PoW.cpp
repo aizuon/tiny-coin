@@ -26,7 +26,7 @@ uint8_t PoW::GetNextWorkRequired(const std::string& prevBlockHash)
     if ((prev_block_height + 1) % NetParams::DIFFICULTY_PERIOD_IN_BLOCKS != 0)
         return prev_block->Bits;
 
-    std::shared_ptr<Block> period_start_block = nullptr; //HACK: this chould be a ref
+    std::shared_ptr<Block> period_start_block = nullptr; //HACK: this could be a ref
     {
         std::lock_guard lock(Chain::Lock);
 
@@ -129,7 +129,7 @@ std::shared_ptr<TxOut> PoW::UTXO_FromBlock(const std::shared_ptr<Block>& block, 
 
 std::shared_ptr<TxOut> PoW::Find_UTXO(const std::shared_ptr<Block>& block, const std::shared_ptr<TxIn>& txIn)
 {
-    for (const auto& [txOutPoint, utxo] : UnspentTxOut::Map)
+    for (const auto& [txOutPoint, utxo] : UTXO::Map)
     {
         if (txIn->ToSpend->TxId == utxo->TxOutPoint->TxId && txIn->ToSpend->TxOutIdx == utxo->TxOutPoint->TxOutIdx)
         {

@@ -1,17 +1,18 @@
 #pragma once
 #include <cstdint>
+#include <vector>
+#include <string>
 #include <memory>
+#include <unordered_map>
 
 #include "IMsg.hpp"
-#include "Tx.hpp"
+#include "TxOutPoint.hpp"
+#include "UnspentTxOut.hpp"
 
-class TxInfoMsg : public IMsg
+class SendUTXOsMsg : public IMsg
 {
 public:
-	TxInfoMsg() = default;
-	TxInfoMsg(const std::shared_ptr<Tx>& tx);
-
-	std::shared_ptr<Tx> Tx;
+	std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>> UTXO_Map;
 
 	void Handle(const std::shared_ptr<NetClient::Connection>& con) override;
 	BinaryBuffer Serialize() const override;
