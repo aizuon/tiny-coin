@@ -7,12 +7,13 @@
 #include "TxOut.hpp"
 #include "UnspentTxOut.hpp"
 #include "NetParams.hpp"
+#include "Log.hpp"
 #include "Utils.hpp"
 #include "Exceptions.hpp"
 #include "ECDSA.hpp"
 #include "SHA256.hpp"
 #include "BinaryBuffer.hpp"
-#include "MessageSerializer.hpp"
+#include "MsgSerializer.hpp"
 #include "Chain.hpp"
 #include "Mempool.hpp"
 #include "Wallet.hpp"
@@ -195,7 +196,11 @@ void Tx::ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std:
     if (pubKeyAsAddr != utxo->TxOut->ToAddress)
         throw TxUnlockException("Public key does not match");
 
-    auto spend_msg = MessageSerializer::BuildSpendMessage(txIn->ToSpend, txIn->UnlockPubKey, txIn->Sequence, TxOuts);
+    auto spend_msg = MsgSerializer::BuildSpendMsg(txIn->ToSpend, txIn->UnlockPubKey, txIn->Sequence, TxOuts);
     if (!ECDSA::VerifySig(txIn->UnlockSig, spend_msg, txIn->UnlockPubKey))
+    {
+        LOG_ERROR("Key verification failed");
+
         throw TxUnlockException("Signature does not match");
+    }
 }

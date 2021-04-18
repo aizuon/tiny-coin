@@ -6,7 +6,7 @@
 #include <memory>
 #include "gtest/gtest.h"
 
-#include "../tiny-lib/MessageSerializer.hpp"
+#include "../tiny-lib/MsgSerializer.hpp"
 #include "../tiny-lib/Tx.hpp"
 #include "../tiny-lib/TxIn.hpp"
 #include "../tiny-lib/TxOut.hpp"
@@ -26,7 +26,7 @@ TEST(MsgTest, SpendMsg)
 
 	auto tx = std::make_shared<Tx>(txIns, txOuts, 0);
 
-	auto spendMsg = MessageSerializer::BuildSpendMessage(txIn->ToSpend, txIn->UnlockPubKey, txIn->Sequence, tx->TxOuts);
+	auto spendMsg = MsgSerializer::BuildSpendMsg(txIn->ToSpend, txIn->UnlockPubKey, txIn->Sequence, tx->TxOuts);
 	auto spendMsg_str = Utils::ByteArrayToHexString(spendMsg);
 
 	EXPECT_EQ(spendMsg_str, "b67cdaca8720b583489bde0a8ea45ae83cd5f6b2623fbf182ddbce88429b744b");
@@ -34,7 +34,7 @@ TEST(MsgTest, SpendMsg)
 	auto txOut2 = std::make_shared<TxOut>(0, "foo");
 	tx->TxOuts.push_back(txOut2);
 
-	auto spendMsg2 = MessageSerializer::BuildSpendMessage(txIn->ToSpend, txIn->UnlockPubKey, txIn->Sequence, tx->TxOuts);
+	auto spendMsg2 = MsgSerializer::BuildSpendMsg(txIn->ToSpend, txIn->UnlockPubKey, txIn->Sequence, tx->TxOuts);
 	auto spendMsg2_str = Utils::ByteArrayToHexString(spendMsg2);
 
 	EXPECT_NE(spendMsg2_str, spendMsg_str);

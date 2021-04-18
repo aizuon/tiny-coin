@@ -4,7 +4,6 @@
 
 #include "PoW.hpp"
 #include "NetParams.hpp"
-#include "Block.hpp"
 #include "Chain.hpp"
 
 uint8_t PoW::GetNextWorkRequired(const std::string& prevBlockHash)
@@ -16,7 +15,7 @@ uint8_t PoW::GetNextWorkRequired(const std::string& prevBlockHash)
     if ((prev_block_height + 1) % NetParams::DIFFICULTY_PERIOD_IN_BLOCKS != 0)
         return prev_block->Bits;
 
-    std::shared_ptr<Block> period_start_block = nullptr;
+    std::shared_ptr<Block> period_start_block = nullptr; //HACK: this chould be a ref
     {
         std::lock_guard lock(Chain::Lock);
 

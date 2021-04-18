@@ -7,6 +7,7 @@
 #include <array>
 #include <vector>
 #include <string>
+#include <list>
 #include <unordered_set>
 #include <set>
 #include <unordered_map>
@@ -20,5 +21,7 @@
 #include <iterator>
 
 #include <fmt/format.h>
+
+#include "Log.hpp"
 
 #endif //PCH_H

@@ -3,7 +3,6 @@
 #include <fmt/format.h>
 
 #include "Block.hpp"
-#include "Tx.hpp"
 #include "Utils.hpp"
 #include "SHA256.hpp"
 #include "BinaryBuffer.hpp"

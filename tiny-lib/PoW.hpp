@@ -5,8 +5,8 @@
 #include <string>
 #include <memory>
 
-class Block;
-class Tx;
+#include "Tx.hpp"
+#include "Block.hpp"
 
 class PoW
 {

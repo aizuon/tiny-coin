@@ -51,9 +51,34 @@
     <ClInclude Include="Wallet.hpp">
       <Filter>Crypto</Filter>
     </ClInclude>
-    <ClInclude Include="MessageSerializer.hpp" />
+    <ClInclude Include="MsgSerializer.hpp" />
     <ClInclude Include="Exceptions.hpp" />
     <ClInclude Include="IDeserializable.hpp" />
+    <ClInclude Include="GetBlockMsg.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
+    <ClInclude Include="IHandleable.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
+    <ClInclude Include="NetClient.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
+    <ClInclude Include="Log.hpp" />
+    <ClInclude Include="InvMsg.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
+    <ClInclude Include="GetUTXOsMsg.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
+    <ClInclude Include="GetMempoolMsg.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
+    <ClInclude Include="GetActiveChainMsg.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
+    <ClInclude Include="AddPeerMsg.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -104,8 +129,30 @@
     <ClCompile Include="Wallet.cpp">
       <Filter>Crypto</Filter>
     </ClCompile>
-    <ClCompile Include="MessageSerializer.cpp" />
+    <ClCompile Include="MsgSerializer.cpp" />
     <ClCompile Include="Exceptions.cpp" />
+    <ClCompile Include="Log.cpp" />
+    <ClCompile Include="NetClient.cpp">
+      <Filter>P2P</Filter>
+    </ClCompile>
+    <ClCompile Include="GetBlockMsg.cpp">
+      <Filter>P2P</Filter>
+    </ClCompile>
+    <ClCompile Include="InvMsg.cpp">
+      <Filter>P2P</Filter>
+    </ClCompile>
+    <ClCompile Include="GetUTXOsMsg.cpp">
+      <Filter>P2P</Filter>
+    </ClCompile>
+    <ClCompile Include="GetMempoolMsg.cpp">
+      <Filter>P2P</Filter>
+    </ClCompile>
+    <ClCompile Include="GetActiveChainMsg.cpp">
+      <Filter>P2P</Filter>
+    </ClCompile>
+    <ClCompile Include="AddPeerMsg.cpp">
+      <Filter>P2P</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Tx">

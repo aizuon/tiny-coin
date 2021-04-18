@@ -6,8 +6,7 @@
 
 #include "ISerializable.hpp"
 #include "IDeserializable.hpp"
-
-class Tx;
+#include "Tx.hpp"
 
 class Block : public ISerializable, public IDeserializable
 {

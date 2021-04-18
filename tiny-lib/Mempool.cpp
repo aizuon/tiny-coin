@@ -3,12 +3,8 @@
 #include <ranges>
 
 #include "Mempool.hpp"
-#include "Tx.hpp"
-#include "TxIn.hpp"
-#include "TxOutPoint.hpp"
-#include "UnspentTxOut.hpp"
-#include "Block.hpp"
 #include "NetParams.hpp"
+#include "Log.hpp"
 #include "BinaryBuffer.hpp"
 
 std::unordered_map<std::string, std::shared_ptr<Tx>> Mempool::Map;
@@ -22,7 +18,11 @@ std::shared_ptr<UnspentTxOut> Mempool::Find_UTXO_InMempool(const std::shared_ptr
 
 	const auto& tx = Map[txOutPoint->TxId];
 	if (tx->TxOuts.size() - 1 < txOutPoint->TxOutIdx)
+	{
+		LOG_TRACE("Couldn't find UTXO in mempool for {}", txOutPoint->TxId);
+
 		return nullptr;
+	}
 
 	const auto& txOut = tx->TxOuts[txOutPoint->TxOutIdx];
 
@@ -37,6 +37,11 @@ std::shared_ptr<Block> Mempool::SelectFromMempool(std::shared_ptr<Block>& block)
 		block = TryAddToBlock(block, txId, addedToBlock);
 
 	return block;
+}
+
+void Mempool::AddTxToMempool(std::shared_ptr<Tx> tx)
+{
+	//TODO
 }
 
 bool Mempool::CheckBlockSize(const std::shared_ptr<Block>& block)
@@ -69,11 +74,19 @@ std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, con
 
 		const auto& inMempool = Find_UTXO_InMempool(toSpend);
 		if (inMempool == nullptr)
+		{
+			LOG_TRACE("Couldn't find UTXO for {}", txIn->ToSpend->TxId);
+
 			return nullptr;
+		}
 
 		block = TryAddToBlock(block, inMempool->TxOutPoint->TxId, addedToBlock);
 		if (block == nullptr)
+		{
+			LOG_TRACE("Couldn't add parent");
+
 			return nullptr;
+		}
 	}
 
 	auto newBlock = std::make_shared<Block>(*block);
@@ -85,6 +98,8 @@ std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, con
 
 	if (CheckBlockSize(newBlock))
 	{
+		LOG_TRACE("Added tx {} to block {}", tx->Id(), block->Id());
+
 		addedToBlock.insert(txId);
 
 		return newBlock;

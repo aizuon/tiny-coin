@@ -5,11 +5,11 @@
 #include <unordered_map>
 #include <memory>
 
-class Tx;
-class TxIn;
-class TxOutPoint;
-class UnspentTxOut;
-class Block;
+#include "Tx.hpp"
+#include "TxIn.hpp"
+#include "TxOutPoint.hpp"
+#include "UnspentTxOut.hpp"
+#include "Block.hpp"
 
 class Mempool
 {
@@ -21,6 +21,8 @@ public:
 	static std::shared_ptr<UnspentTxOut> Find_UTXO_InMempool(const std::shared_ptr<TxOutPoint>& txOutPoint);
 
 	static std::shared_ptr<Block> SelectFromMempool(std::shared_ptr<Block>& block);
+
+	static void AddTxToMempool(std::shared_ptr<Tx> tx);
 
 private:
 	static bool CheckBlockSize(const std::shared_ptr<Block>& block);

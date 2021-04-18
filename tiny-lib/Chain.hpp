@@ -6,10 +6,10 @@
 #include <tuple>
 #include <utility>
 
-class Tx;
-class TxIn;
-class TxOut;
-class Block;
+#include "Tx.hpp"
+#include "TxIn.hpp"
+#include "TxOut.hpp"
+#include "Block.hpp"
 
 class Chain
 {
@@ -48,7 +48,7 @@ private:
 
 	static bool ReorgIfNecessary();
 	static bool TryReorg(const std::vector<std::shared_ptr<Block>>& branch, int64_t branchIdx, int64_t forkIdx);
-	static void RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveChain, const std::shared_ptr<Block>& forkBlock);
+	static void RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveChain, const std::shared_ptr<Block>& forkBlock, int64_t branchIdx);
 
 	static std::vector<std::shared_ptr<Block>> DisconnectToFork(const std::shared_ptr<Block>& forkBlock);
 

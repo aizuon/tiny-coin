@@ -6,14 +6,11 @@
 #include <fmt/format.h>
 
 #include "Chain.hpp"
-#include "Tx.hpp"
-#include "TxIn.hpp"
-#include "TxOut.hpp"
 #include "TxOutPoint.hpp"
 #include "UnspentTxOut.hpp"
-#include "Block.hpp"
 #include "Mempool.hpp"
 #include "NetParams.hpp"
+#include "Log.hpp"
 #include "Utils.hpp"
 #include "Exceptions.hpp"
 #include "MerkleTree.hpp"
@@ -87,6 +84,8 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 		auto [located_block, located_block_height, located_block_chain_idx] = LocateBlockInActiveChain(block->Id());
 		if (located_block != nullptr)
 		{
+			LOG_TRACE("Ignore block already seen: {}", block->Id());
+
 			return -1;
 		}
 	}
@@ -98,8 +97,11 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 	}
 	catch (const BlockValidationException& ex)
 	{
+		LOG_ERROR("Block {} failed validation", block->Id());
 		if (ex.ToOrphan != nullptr)
 		{
+			LOG_INFO("Saw orphan block {}", block->Id());
+
 			OrphanBlocks.push_back(ex.ToOrphan);
 		}
 
@@ -108,8 +110,12 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 
 	if (chainIdx == ActiveChainIdx && SideBranches.size() < chainIdx)
 	{
+		LOG_INFO("Creating a new side branch {} for block {}", chainIdx, block->Id());
+
 		SideBranches.emplace_back();
 	}
+
+	LOG_INFO("Connecting block {} to chain {}", block->Id(), chainIdx);
 
 	auto chain = chainIdx == ActiveChainIdx ? ActiveChain : SideBranches[chainIdx - 1];
 	chain.push_back(block);
@@ -173,6 +179,8 @@ std::shared_ptr<Block> Chain::DisconnectBlock(const std::shared_ptr<Block>& bloc
 
 	ActiveChain.pop_back();
 
+	LOG_INFO("Block {} disconnected", block->Id());
+
 	return back;
 }
 
@@ -209,6 +217,8 @@ int64_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 		}
 		catch (const TxValidationException&)
 		{
+			LOG_ERROR("Transaction {} in block {} failed to validate", txs[i]->Id(), block->Id());
+
 			throw BlockValidationException(fmt::format("Transaction {} is invalid", txs[i]->Id()).c_str());
 		}
 	}
@@ -258,7 +268,11 @@ int64_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 		}
 		catch (const TxValidationException&)
 		{
-			throw BlockValidationException(fmt::format("Transaction {} failed to validate", nonCoinbaseTx->Id()).c_str());
+			std::string msg = fmt::format("Transaction {} failed to validate", nonCoinbaseTx->Id());
+
+			LOG_ERROR(msg);
+
+			throw BlockValidationException(msg.c_str());
 		}
 	}
 
@@ -301,7 +315,7 @@ bool Chain::ReorgIfNecessary()
 	bool reorged = false;
 
 	auto frozenSideBranches = SideBranches;
-	for (int64_t i = 0; i < frozenSideBranches.size(); i++)
+	for (int64_t i = 1; i < frozenSideBranches.size(); i++)
 	{
 		const auto& chain = frozenSideBranches[i];
 
@@ -310,6 +324,8 @@ bool Chain::ReorgIfNecessary()
 		size_t branchHeight = chain.size() + fork_idx;
 		if (branchHeight > GetCurrentHeight())
 		{
+			LOG_INFO("Attempting reorg of idx {} to active chain, new height of {} vs. {}", i, branchHeight, fork_idx);
+
 			reorged |= TryReorg(chain, i, fork_idx);
 		}
 	}
@@ -332,7 +348,7 @@ bool Chain::TryReorg(const std::vector<std::shared_ptr<Block>>& branch, int64_t 
 		int64_t connectedBlockIdx = ConnectBlock(block, true);
 		if (connectedBlockIdx != ActiveChainIdx)
 		{
-			RollbackReorg(oldActiveChain, fork_block);
+			RollbackReorg(oldActiveChain, fork_block, branchIdx);
 
 			return false;
 		}
@@ -341,12 +357,16 @@ bool Chain::TryReorg(const std::vector<std::shared_ptr<Block>>& branch, int64_t 
 	SideBranches.erase(SideBranches.begin() + branchIdx - 1);
 	SideBranches.push_back(oldActiveChain);
 
+	LOG_INFO("Chain reorg -> new height {}, tip {}", ActiveChain.size(), ActiveChain.back()->Id());
+
 	return true;
 }
 
-void Chain::RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveChain, const std::shared_ptr<Block>& forkBlock)
+void Chain::RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveChain, const std::shared_ptr<Block>& forkBlock, int64_t branchIdx)
 {
 	std::lock_guard lock(Lock);
+
+	LOG_INFO("Reorg of idx {} to active chain failed", branchIdx);
 
 	DisconnectToFork(forkBlock);
 

@@ -8,6 +8,7 @@
 #include "TxOut.hpp"
 #include "TxOutPoint.hpp"
 #include "BinaryBuffer.hpp"
+#include "Log.hpp"
 
 UnspentTxOut::UnspentTxOut(std::shared_ptr<::TxOut> txOut, std::shared_ptr<::TxOutPoint> txOutPoint, bool isCoinbase, int64_t height)
 	: TxOut(txOut), TxOutPoint(txOutPoint), IsCoinbase(isCoinbase), Height(height)
@@ -70,6 +71,8 @@ void UnspentTxOut::AddToMap(std::shared_ptr<::TxOut> txOut, const std::string& t
 	auto txOutPoint = std::make_shared<::TxOutPoint>(txId, idx);
 
 	auto utxo = std::make_shared<UnspentTxOut>(txOut, txOutPoint, isCoinbase, height);
+
+	LOG_INFO("Adding TxOutPoint {} to UTXO map", utxo->TxOutPoint->TxId);
 
 	Map[utxo->TxOutPoint] = utxo;
 }

@@ -19,18 +19,27 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AddPeerMsg.hpp" />
     <ClInclude Include="Base58.hpp" />
     <ClInclude Include="BinaryBuffer.hpp" />
     <ClInclude Include="Block.hpp" />
     <ClInclude Include="Chain.hpp" />
     <ClInclude Include="ECDSA.hpp" />
     <ClInclude Include="Exceptions.hpp" />
+    <ClInclude Include="GetActiveChainMsg.hpp" />
+    <ClInclude Include="GetBlockMsg.hpp" />
+    <ClInclude Include="GetMempoolMsg.hpp" />
+    <ClInclude Include="GetUTXOsMsg.hpp" />
     <ClInclude Include="IDeserializable.hpp" />
+    <ClInclude Include="InvMsg.hpp" />
     <ClInclude Include="ISerializable.hpp" />
+    <ClInclude Include="NetClient.hpp" />
+    <ClInclude Include="Log.hpp" />
     <ClInclude Include="Mempool.hpp" />
     <ClInclude Include="MerkleTree.hpp" />
-    <ClInclude Include="MessageSerializer.hpp" />
+    <ClInclude Include="MsgSerializer.hpp" />
     <ClInclude Include="NetParams.hpp" />
+    <ClInclude Include="IHandleable.hpp" />
     <ClInclude Include="PoW.hpp" />
     <ClInclude Include="RIPEMD160.hpp" />
     <ClInclude Include="SHA256.hpp" />
@@ -44,15 +53,23 @@
     <ClInclude Include="Wallet.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AddPeerMsg.cpp" />
     <ClCompile Include="Base58.cpp" />
     <ClCompile Include="BinaryBuffer.cpp" />
     <ClCompile Include="Block.cpp" />
     <ClCompile Include="Chain.cpp" />
     <ClCompile Include="ECDSA.cpp" />
     <ClCompile Include="Exceptions.cpp" />
+    <ClCompile Include="GetActiveChainMsg.cpp" />
+    <ClCompile Include="GetBlockMsg.cpp" />
+    <ClCompile Include="GetMempoolMsg.cpp" />
+    <ClCompile Include="GetUTXOsMsg.cpp" />
+    <ClCompile Include="InvMsg.cpp" />
+    <ClCompile Include="NetClient.cpp" />
+    <ClCompile Include="Log.cpp" />
     <ClCompile Include="Mempool.cpp" />
     <ClCompile Include="MerkleTree.cpp" />
-    <ClCompile Include="MessageSerializer.cpp" />
+    <ClCompile Include="MsgSerializer.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="PoW.cpp" />
     <ClCompile Include="RIPEMD160.cpp" />
