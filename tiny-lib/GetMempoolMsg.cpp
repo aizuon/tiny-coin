@@ -8,7 +8,7 @@ GetMempoolMsg::GetMempoolMsg(const std::vector<std::string>& mempool)
 
 }
 
-void GetMempoolMsg::Handle(NetClient::ConnectionHandle con_handle) const
+void GetMempoolMsg::Handle(const std::shared_ptr<NetClient::Connection>& con) const
 {
 	//TODO
 }

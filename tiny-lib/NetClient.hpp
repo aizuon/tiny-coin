@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <list>
+#include <set>
 #include <memory>
 #include <boost/asio.hpp>
 
@@ -20,7 +21,7 @@ public:
 		boost::asio::streambuf ReadBuffer;
 	};
 
-	using ConnectionHandle = std::list<Connection>::iterator;
+	static std::list<std::shared_ptr<Connection>> Connections;
 
 	static void Run();
 
@@ -28,23 +29,24 @@ public:
 
 	static void Listen(uint16_t port);
 
-	static void SendMsgAsync(ConnectionHandle con_handle, const IMsg& msg);
+	static void SendMsgAsync(const std::shared_ptr<Connection>& con, const IMsg& msg);
 
 private:
 	static boost::asio::io_service IO_Service;
 	static boost::asio::ip::tcp::acceptor Acceptor;
-	static std::list<Connection> Connections;
 
-	static void HandleConnect(ConnectionHandle con_handle, const boost::system::error_code& err);
+	static void HandleConnect(const std::shared_ptr<Connection>& con, const boost::system::error_code& err);
 
 	static void StartAccept();
-	static void HandleAccept(ConnectionHandle con_handle, const boost::system::error_code& err);
+	static void HandleAccept(const std::shared_ptr<Connection>& con, const boost::system::error_code& err);
 
-	static void DoAsyncRead(ConnectionHandle con_handle);
-	static void HandleRead(ConnectionHandle con_handle, const boost::system::error_code& err, size_t bytes_transfered);
+	static void DoAsyncRead(const std::shared_ptr<Connection>& con);
+	static void HandleRead(const std::shared_ptr<Connection>& con, const boost::system::error_code& err, size_t bytes_transfered);
 
-	static void HandleMsg(ConnectionHandle con_handle, BinaryBuffer& msg_buffer);
+	static void HandleMsg(const std::shared_ptr<Connection>& con, BinaryBuffer& msg_buffer);
 
-	static void DoAsyncWrite(ConnectionHandle con_handle, const std::shared_ptr<BinaryBuffer> msg_buffer);
-	static void HandleWrite(ConnectionHandle con_handle, const std::shared_ptr<BinaryBuffer> msg_buffer, const boost::system::error_code& err);
+	static void DoAsyncWrite(const std::shared_ptr<Connection>& con, const std::shared_ptr<BinaryBuffer>& msg_buffer);
+	static void HandleWrite(const std::shared_ptr<Connection>& con, const std::shared_ptr<BinaryBuffer> msg_buffer, const boost::system::error_code& err);
+
+	static void RemoveConnection(const std::shared_ptr<Connection>& con);
 };

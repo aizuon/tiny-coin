@@ -6,6 +6,9 @@
 #include "NetParams.hpp"
 #include "Log.hpp"
 #include "BinaryBuffer.hpp"
+#include "Exceptions.hpp"
+#include "NetClient.hpp"
+#include "TxInfoMsg.hpp"
 
 std::unordered_map<std::string, std::shared_ptr<Tx>> Mempool::Map;
 
@@ -29,24 +32,64 @@ std::shared_ptr<UnspentTxOut> Mempool::Find_UTXO_InMempool(const std::shared_ptr
 	return std::make_shared<UnspentTxOut>(txOut, txOutPoint, false, -1);
 }
 
-std::shared_ptr<Block> Mempool::SelectFromMempool(std::shared_ptr<Block>& block)
+std::shared_ptr<Block> Mempool::SelectFromMempool(const std::shared_ptr<Block>& block)
 {
+	auto newBlock = std::make_shared<Block>(*block);
+
 	std::set<std::string> addedToBlock;
-
 	for (const auto& [txId, tx] : Map)
-		block = TryAddToBlock(block, txId, addedToBlock);
+		newBlock = TryAddToBlock(newBlock, txId, addedToBlock);
 
-	return block;
+	return newBlock;
 }
 
-void Mempool::AddTxToMempool(std::shared_ptr<Tx> tx)
+void Mempool::AddTxToMempool(std::shared_ptr<Tx>& tx)
 {
-	//TODO
+	const auto txId = tx->Id();
+	if (Map.contains(txId))
+	{
+		LOG_INFO("Transaction {} already seen", txId);
+
+		return;
+	}
+
+	try
+	{
+		Tx::ValidateRequest req;
+		tx->Validate(req);
+	}
+	catch (const TxValidationException& ex)
+	{
+		if (ex.ToOrphan != nullptr)
+		{
+			LOG_INFO("Transaction {} submitted as orphan", ex.ToOrphan->Id());
+
+			OrphanedTxs.push_back(ex.ToOrphan);
+
+			return;
+		}
+		else
+		{
+			LOG_ERROR("Transaction {} rejected", txId);
+
+			return;
+		}
+	}
+
+	Map[txId] = tx;
+
+	LOG_INFO("Transaction {} added to mempool", txId);
+
+	TxInfoMsg txInfoMsg(tx);
+	for (const auto& peer : NetClient::Connections)
+	{
+		NetClient::SendMsgAsync(peer, txInfoMsg);
+	}
 }
 
 bool Mempool::CheckBlockSize(const std::shared_ptr<Block>& block)
 {
-	return block->Serialize().GetBuffer().size() < NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES;
+	return block->Serialize().GetLength() < NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES;
 }
 
 std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, const std::string& txId, std::set<std::string>& addedToBlock)
@@ -98,7 +141,7 @@ std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, con
 
 	if (CheckBlockSize(newBlock))
 	{
-		LOG_TRACE("Added tx {} to block {}", tx->Id(), block->Id());
+		LOG_TRACE("Added tx {} to block {}", txId, block->Id());
 
 		addedToBlock.insert(txId);
 

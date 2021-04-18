@@ -1,18 +1,17 @@
 #pragma once
 #include <cstdint>
-#include <vector>
-#include <string>
+#include <memory>
 
 #include "IMsg.hpp"
 #include "Block.hpp"
 
-class GetActiveChainMsg : public IMsg
+class BlockInfoMsg : public IMsg
 {
 public:
-	GetActiveChainMsg() = default;
-	GetActiveChainMsg(const std::vector<std::shared_ptr<Block>>& activeChain);
+	BlockInfoMsg() = default;
+	BlockInfoMsg(const std::shared_ptr<Block>& block);
 
-	std::vector<std::shared_ptr<Block>> ActiveChain;
+	std::shared_ptr<Block> Block;
 
 	void Handle(const std::shared_ptr<NetClient::Connection>& con) const override;
 	BinaryBuffer Serialize() const override;

@@ -20,9 +20,9 @@ public:
 
 	static std::shared_ptr<UnspentTxOut> Find_UTXO_InMempool(const std::shared_ptr<TxOutPoint>& txOutPoint);
 
-	static std::shared_ptr<Block> SelectFromMempool(std::shared_ptr<Block>& block);
+	static std::shared_ptr<Block> SelectFromMempool(const std::shared_ptr<Block>& block);
 
-	static void AddTxToMempool(std::shared_ptr<Tx> tx);
+	static void AddTxToMempool(std::shared_ptr<Tx>& tx);
 
 private:
 	static bool CheckBlockSize(const std::shared_ptr<Block>& block);

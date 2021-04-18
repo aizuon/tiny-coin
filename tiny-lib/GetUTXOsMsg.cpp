@@ -10,7 +10,7 @@ GetUTXOsMsg::GetUTXOsMsg(const std::unordered_map<std::shared_ptr<TxOutPoint>, s
 
 }
 
-void GetUTXOsMsg::Handle(NetClient::ConnectionHandle con_handle) const
+void GetUTXOsMsg::Handle(const std::shared_ptr<NetClient::Connection>& con) const
 {
 	//TODO
 }

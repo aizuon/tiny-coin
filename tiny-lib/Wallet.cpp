@@ -39,6 +39,7 @@ std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::Init
         privKey = std::vector<uint8_t>(std::istreambuf_iterator<char>(wallet_in), {});
         pubKey = ECDSA::GetPubKeyFromPrivKey(privKey);
         address = PubKeyToAddress(pubKey);
+        wallet_in.close();
     }
     else
     {

@@ -17,7 +17,7 @@ public:
 
 	std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>> UTXO_Map;
 
-	void Handle(NetClient::ConnectionHandle con_handle) const override;
+	void Handle(const std::shared_ptr<NetClient::Connection>& con) const override;
 	BinaryBuffer Serialize() const override;
 	bool Deserialize(BinaryBuffer& buffer) override;
 

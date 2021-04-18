@@ -3,6 +3,8 @@
 #include <string>
 #include <memory>
 
+#include "Tx.hpp"
+
 class MerkleNode
 {
 public:
@@ -17,6 +19,8 @@ class MerkleTree
 {
 public:
 	static std::shared_ptr<MerkleNode> GetRoot(std::vector<std::string> leaves);
+
+	static std::shared_ptr<MerkleNode> GetRootOfTxs(const std::vector<std::shared_ptr<Tx>>& txs);
 
 private:
 	static std::vector<std::vector<std::shared_ptr<MerkleNode>>> Chunk(const std::vector<std::shared_ptr<MerkleNode>>& nodes, size_t chunkSize);

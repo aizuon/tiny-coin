@@ -34,6 +34,17 @@ std::shared_ptr<MerkleNode> MerkleTree::GetRoot(std::vector<std::string> leaves)
 	return FindRooot(nodes);
 }
 
+std::shared_ptr<MerkleNode> MerkleTree::GetRootOfTxs(const std::vector<std::shared_ptr<Tx>>& txs)
+{
+	std::vector<std::string> hashes;
+	hashes.reserve(txs.size());
+	for (const auto& tx : txs)
+	{
+		hashes.emplace_back(tx->Id());
+	}
+	return MerkleTree::GetRoot(hashes);
+}
+
 std::vector<std::vector<std::shared_ptr<MerkleNode>>> MerkleTree::Chunk(const std::vector<std::shared_ptr<MerkleNode>>& nodes, size_t chunkSize)
 {
 	std::vector<std::vector<std::shared_ptr<MerkleNode>>> chunks;

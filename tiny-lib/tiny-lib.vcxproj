@@ -23,6 +23,7 @@
     <ClInclude Include="Base58.hpp" />
     <ClInclude Include="BinaryBuffer.hpp" />
     <ClInclude Include="Block.hpp" />
+    <ClInclude Include="BlockInfoMsg.hpp" />
     <ClInclude Include="Chain.hpp" />
     <ClInclude Include="ECDSA.hpp" />
     <ClInclude Include="Exceptions.hpp" />
@@ -30,6 +31,7 @@
     <ClInclude Include="GetBlockMsg.hpp" />
     <ClInclude Include="GetMempoolMsg.hpp" />
     <ClInclude Include="GetUTXOsMsg.hpp" />
+    <ClInclude Include="HashChecker.hpp" />
     <ClInclude Include="IDeserializable.hpp" />
     <ClInclude Include="IMsg.hpp" />
     <ClInclude Include="InvMsg.hpp" />
@@ -47,6 +49,7 @@
     <ClInclude Include="SHA256.hpp" />
     <ClInclude Include="Tx.hpp" />
     <ClInclude Include="TxIn.hpp" />
+    <ClInclude Include="TxInfoMsg.hpp" />
     <ClInclude Include="TxOut.hpp" />
     <ClInclude Include="TxOutPoint.hpp" />
     <ClInclude Include="pch.hpp" />
@@ -59,6 +62,7 @@
     <ClCompile Include="Base58.cpp" />
     <ClCompile Include="BinaryBuffer.cpp" />
     <ClCompile Include="Block.cpp" />
+    <ClCompile Include="BlockInfoMsg.cpp" />
     <ClCompile Include="Chain.cpp" />
     <ClCompile Include="ECDSA.cpp" />
     <ClCompile Include="Exceptions.cpp" />
@@ -66,6 +70,7 @@
     <ClCompile Include="GetBlockMsg.cpp" />
     <ClCompile Include="GetMempoolMsg.cpp" />
     <ClCompile Include="GetUTXOsMsg.cpp" />
+    <ClCompile Include="HashChecker.cpp" />
     <ClCompile Include="InvMsg.cpp" />
     <ClCompile Include="NetClient.cpp" />
     <ClCompile Include="Log.cpp" />
@@ -78,6 +83,7 @@
     <ClCompile Include="SHA256.cpp" />
     <ClCompile Include="Tx.cpp" />
     <ClCompile Include="TxIn.cpp" />
+    <ClCompile Include="TxInfoMsg.cpp" />
     <ClCompile Include="TxOut.cpp" />
     <ClCompile Include="TxOutPoint.cpp" />
     <ClCompile Include="UnspentTxOut.cpp" />

@@ -8,6 +8,11 @@ BinaryBuffer::BinaryBuffer(const std::vector<uint8_t>& obj)
 
 }
 
+BinaryBuffer::BinaryBuffer(std::vector<uint8_t>&& obj)
+	: Buffer(obj), WriteOffset(obj.size())
+{
+}
+
 BinaryBuffer::BinaryBuffer(const BinaryBuffer& obj)
 {
 	Buffer = obj.Buffer;

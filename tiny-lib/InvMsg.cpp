@@ -8,7 +8,7 @@ InvMsg::InvMsg(const std::vector<std::string>& blocks)
 
 }
 
-void InvMsg::Handle(NetClient::ConnectionHandle con_handle) const
+void InvMsg::Handle(const std::shared_ptr<NetClient::Connection>& con) const
 {
 	//TODO
 }

@@ -3,6 +3,7 @@
 #include <cassert>
 #include <exception>
 #include <algorithm>
+#include <fstream>
 #include <fmt/format.h>
 
 #include "Chain.hpp"
@@ -15,6 +16,8 @@
 #include "Exceptions.hpp"
 #include "MerkleTree.hpp"
 #include "PoW.hpp"
+#include "NetClient.hpp"
+#include "BlockInfoMsg.hpp"
 
 const std::shared_ptr<TxIn> Chain::GenesisTxIn = std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{ 0x00 }, std::vector<uint8_t>(), 0);
 const std::shared_ptr<TxOut> Chain::GenesisTxOut = std::make_shared<TxOut>(5000000000, "143UVyz7ooiAv1pMqbwPPpnH4BV9ifJGFF");
@@ -79,12 +82,14 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 {
 	std::lock_guard lock(Lock);
 
+	const auto blockId = block->Id();
+
 	if (doingReorg)
 	{
 		auto [located_block, located_block_height, located_block_chain_idx] = LocateBlockInActiveChain(block->Id());
 		if (located_block != nullptr)
 		{
-			LOG_TRACE("Ignore block already seen: {}", block->Id());
+			LOG_TRACE("Ignore block already seen: {}", blockId);
 
 			return -1;
 		}
@@ -97,10 +102,10 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 	}
 	catch (const BlockValidationException& ex)
 	{
-		LOG_ERROR("Block {} failed validation", block->Id());
+		LOG_ERROR("Block {} failed validation", blockId);
 		if (ex.ToOrphan != nullptr)
 		{
-			LOG_INFO("Saw orphan block {}", block->Id());
+			LOG_INFO("Saw orphan block {}", blockId);
 
 			OrphanBlocks.push_back(ex.ToOrphan);
 		}
@@ -110,12 +115,12 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 
 	if (chainIdx == ActiveChainIdx && SideBranches.size() < chainIdx)
 	{
-		LOG_INFO("Creating a new side branch {} for block {}", chainIdx, block->Id());
+		LOG_INFO("Creating a new side branch {} for block {}", chainIdx, blockId);
 
 		SideBranches.emplace_back();
 	}
 
-	LOG_INFO("Connecting block {} to chain {}", block->Id(), chainIdx);
+	LOG_INFO("Connecting block {} to chain {}", blockId, chainIdx);
 
 	auto chain = chainIdx == ActiveChainIdx ? ActiveChain : SideBranches[chainIdx - 1];
 	chain.push_back(block);
@@ -124,7 +129,9 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 	{
 		for (const auto& tx : block->Txs)
 		{
-			Mempool::Map.erase(tx->Id());
+			const auto txId = tx->Id();
+
+			Mempool::Map.erase(txId);
 
 			if (!tx->IsCoinbase())
 			{
@@ -135,17 +142,23 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 			}
 			for (int64_t i = 0; i < tx->TxOuts.size(); i++)
 			{
-				UnspentTxOut::AddToMap(tx->TxOuts[i], tx->Id(), i, tx->IsCoinbase(), chain.size());
+				UnspentTxOut::AddToMap(tx->TxOuts[i], txId, i, tx->IsCoinbase(), chain.size());
 			}
 		}
 	}
 
 	if (!doingReorg && ReorgIfNecessary() or chainIdx == ActiveChainIdx)
 	{
-		//TODO: interrupt mining
+		PoW::MineInterrupt = true;
+
+		LOG_INFO("Block accepted with height {} and txs {}", ActiveChain.size() - 1, block->Txs.size());
 	}
 
-	//TODO: send block to peers
+	BlockInfoMsg blockInfoMsg(block);
+	for (const auto& peer : NetClient::Connections)
+	{
+		NetClient::SendMsgAsync(peer, blockInfoMsg);
+	}
 
 	return chainIdx;
 }
@@ -154,13 +167,17 @@ std::shared_ptr<Block> Chain::DisconnectBlock(const std::shared_ptr<Block>& bloc
 {
 	std::lock_guard lock(Lock);
 
+	const auto blockId = block->Id();
+
 	auto back = ActiveChain.back();
-	if (block->Id() != back->Id())
+	if (blockId != back->Id())
 		throw std::exception("Block being disconnected must be the tip");
 
 	for (const auto& tx : block->Txs)
 	{
-		Mempool::Map[tx->Id()] = tx;
+		const auto txId = tx->Id();
+
+		Mempool::Map[txId] = tx;
 
 		for (const auto& txIn : tx->TxIns)
 		{
@@ -168,18 +185,18 @@ std::shared_ptr<Block> Chain::DisconnectBlock(const std::shared_ptr<Block>& bloc
 			{
 				auto [txOut, tx, txOutIdx, isCoinbase, height] = FindTxOutForTxInInActiveChain(txIn);
 
-				UnspentTxOut::AddToMap(txOut, tx->Id(), txOutIdx, isCoinbase, height);
+				UnspentTxOut::AddToMap(txOut, txId, txOutIdx, isCoinbase, height);
 			}
 		}
 		for (int64_t i = 0; i < tx->TxOuts.size(); i++)
 		{
-			UnspentTxOut::RemoveFromMap(tx->Id(), i);
+			UnspentTxOut::RemoveFromMap(txId, i);
 		}
 	}
 
 	ActiveChain.pop_back();
 
-	LOG_INFO("Block {} disconnected", block->Id());
+	LOG_INFO("Block {} disconnected", blockId);
 
 	return back;
 }
@@ -223,14 +240,7 @@ int64_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 		}
 	}
 
-	std::vector<std::string> hashes;
-	hashes.reserve(txs.size());
-	for (const auto& tx : txs)
-	{
-		hashes.push_back(tx->Id());
-	}
-	auto merkleRoot = MerkleTree::GetRoot(hashes);
-	if (merkleRoot->Value != block->MerkleHash)
+	if (MerkleTree::GetRootOfTxs(txs)->Value != block->MerkleHash)
 		throw BlockValidationException("Merkle hash is invalid");
 
 	if (block->Timestamp <= GetMedianTimePast(11))
@@ -283,14 +293,55 @@ void Chain::SaveToDisk()
 {
 	std::lock_guard lock(Lock);
 
-	//TODO
+	LOG_INFO("Saving chain with {} blocks", ActiveChain.size());
+
+	std::ofstream chain_out(ChainPath, std::ios::binary | std::ios::trunc);
+	BinaryBuffer chainData;
+	chainData.Write(ActiveChain.size());
+	for (const auto& block : ActiveChain)
+	{
+		chainData.Write(block->Serialize().GetWritableBuffer());
+	}
+	auto& chainDataBuffer = chainData.GetBuffer();
+	chain_out.write((const char*)chainDataBuffer.data(), chainDataBuffer.size());
+	chain_out.flush();
+	chain_out.close();
 }
 
 void Chain::LoadFromDisk()
 {
 	std::lock_guard lock(Lock);
 
-	//TODO
+	std::ifstream chain_in(ChainPath, std::ios::binary);
+	if (chain_in.good())
+	{
+		BinaryBuffer chainData(std::vector<uint8_t>(std::istreambuf_iterator<char>(chain_in), {}));
+		size_t blockSize = 0;
+		if (!chainData.Read(blockSize))
+		{
+			LOG_ERROR("Load chain failed, starting from genesis");
+
+			return;
+		}
+		for (size_t i = 0; i < blockSize; i++)
+		{
+			auto block = std::make_shared<Block>();
+			if (!block->Deserialize(chainData))
+			{
+				LOG_ERROR("Load chain failed, starting from genesis");
+				ActiveChain.clear();
+
+				return;
+			}
+			ActiveChain.push_back(block);
+		}
+		ActiveChain.clear();
+		chain_in.close();
+	}
+	else
+	{
+		LOG_ERROR("Load chain failed, starting from genesis");
+	}
 }
 
 int64_t Chain::GetMedianTimePast(size_t numLastBlocks)
@@ -384,7 +435,8 @@ std::vector<std::shared_ptr<Block>> Chain::DisconnectToFork(const std::shared_pt
 
 	std::vector<std::shared_ptr<Block>> disconnected_chain;
 
-	while (ActiveChain.back()->Id() != forkBlock->Id())
+	const auto forkBlockId = forkBlock->Id();
+	while (ActiveChain.back()->Id() != forkBlockId)
 	{
 		disconnected_chain.push_back(DisconnectBlock(ActiveChain.back()));
 	}

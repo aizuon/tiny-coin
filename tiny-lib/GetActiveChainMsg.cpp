@@ -8,7 +8,7 @@ GetActiveChainMsg::GetActiveChainMsg(const std::vector<std::shared_ptr<Block>>& 
 
 }
 
-void GetActiveChainMsg::Handle(NetClient::ConnectionHandle con_handle) const
+void GetActiveChainMsg::Handle(const std::shared_ptr<NetClient::Connection>& con) const
 {
 	//TODO
 }

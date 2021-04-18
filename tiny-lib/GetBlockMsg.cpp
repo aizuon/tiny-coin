@@ -8,7 +8,7 @@ GetBlockMsg::GetBlockMsg(const std::string& fromBlockId)
 
 }
 
-void GetBlockMsg::Handle(NetClient::ConnectionHandle con_handle) const
+void GetBlockMsg::Handle(const std::shared_ptr<NetClient::Connection>& con) const
 {
 	//TODO
 }

@@ -9,6 +9,7 @@ class BinaryBuffer
 public:
 	BinaryBuffer() = default;
 	BinaryBuffer(const std::vector<uint8_t>& obj);
+	BinaryBuffer(std::vector<uint8_t>&& obj);
 
 	BinaryBuffer(const BinaryBuffer& obj);
 	BinaryBuffer& operator=(const BinaryBuffer& obj);

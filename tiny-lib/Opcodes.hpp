@@ -5,11 +5,13 @@
 enum class Opcode : uint8_t
 {
 	AddPeerMsg,
+	BlockInfoMsg,
 	GetActiveChainMsg,
 	GetBlockMsg,
 	GetMempoolMsg,
 	GetUTXOsMsg,
-	InvMsg
+	InvMsg,
+	TxInfoMsg
 };
 
 typedef std::underlying_type<Opcode>::type OpcodeType;

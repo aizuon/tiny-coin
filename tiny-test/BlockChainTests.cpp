@@ -25,10 +25,10 @@ TEST(BlockChainTest, MedianTimePast)
 		Chain::ActiveChain.push_back(dummyBlock);
 	}
 
-	EXPECT_TRUE(Chain::GetMedianTimePast(1), 400);
-	EXPECT_TRUE(Chain::GetMedianTimePast(3), 90);
-	EXPECT_TRUE(Chain::GetMedianTimePast(2), 90);
-	EXPECT_TRUE(Chain::GetMedianTimePast(5), 60);
+	EXPECT_EQ(Chain::GetMedianTimePast(1), 400);
+	EXPECT_EQ(Chain::GetMedianTimePast(3), 90);
+	EXPECT_EQ(Chain::GetMedianTimePast(2), 90);
+	EXPECT_EQ(Chain::GetMedianTimePast(5), 60);
 }
 
 TEST(BlockChainTest, DependentTxsInSingleBlock)

@@ -48,9 +48,6 @@
     <ClInclude Include="ECDSA.hpp">
       <Filter>Crypto</Filter>
     </ClInclude>
-    <ClInclude Include="Wallet.hpp">
-      <Filter>Crypto</Filter>
-    </ClInclude>
     <ClInclude Include="MsgSerializer.hpp" />
     <ClInclude Include="Exceptions.hpp" />
     <ClInclude Include="IDeserializable.hpp" />
@@ -84,6 +81,18 @@
     </ClInclude>
     <ClInclude Include="IMsg.hpp">
       <Filter>P2P</Filter>
+    </ClInclude>
+    <ClInclude Include="TxInfoMsg.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
+    <ClInclude Include="BlockInfoMsg.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
+    <ClInclude Include="Wallet.hpp">
+      <Filter>Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="HashChecker.hpp">
+      <Filter>Crypto</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -132,9 +141,6 @@
     <ClCompile Include="ECDSA.cpp">
       <Filter>Crypto</Filter>
     </ClCompile>
-    <ClCompile Include="Wallet.cpp">
-      <Filter>Crypto</Filter>
-    </ClCompile>
     <ClCompile Include="MsgSerializer.cpp" />
     <ClCompile Include="Exceptions.cpp" />
     <ClCompile Include="Log.cpp" />
@@ -158,6 +164,18 @@
     </ClCompile>
     <ClCompile Include="AddPeerMsg.cpp">
       <Filter>P2P</Filter>
+    </ClCompile>
+    <ClCompile Include="TxInfoMsg.cpp">
+      <Filter>P2P</Filter>
+    </ClCompile>
+    <ClCompile Include="BlockInfoMsg.cpp">
+      <Filter>P2P</Filter>
+    </ClCompile>
+    <ClCompile Include="Wallet.cpp">
+      <Filter>Crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="HashChecker.cpp">
+      <Filter>Crypto</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "Tx.hpp"
+#include "UnspentTxOut.hpp"
 #include "Block.hpp"
 
 class PoW
@@ -21,6 +22,9 @@ public:
 private:
 	static std::shared_ptr<Block> AssembleAndSolveBlock();
 	static std::shared_ptr<Block> AssembleAndSolveBlock(const std::vector<std::shared_ptr<Tx>>& txs);
+
+	static std::shared_ptr<TxOut> UTXO_FromBlock(const std::shared_ptr<Block>& block, const std::shared_ptr<TxIn>& txIn);
+	static std::shared_ptr<TxOut> Find_UTXO(const std::shared_ptr<Block>& block, const std::shared_ptr<TxIn>& txIn);
 
 	static uint64_t CalculateFees(const std::shared_ptr<Block>& block);
 	static uint64_t GetBlockSubsidy();
