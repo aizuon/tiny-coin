@@ -37,7 +37,8 @@ public:
 	static int64_t GetMedianTimePast(size_t numLastBlocks);
 
 	static std::pair<std::shared_ptr<Block>, int64_t> LocateBlockInChain(const std::string& blockHash, const std::vector<std::shared_ptr<Block>>& chain);
-	static std::tuple<std::shared_ptr<Block>, int64_t, int64_t> LocateBlockInActiveChain(const std::string& blockHash);
+	static std::tuple<std::shared_ptr<Block>, int64_t> LocateBlockInActiveChain(const std::string& blockHash);
+	static std::tuple<std::shared_ptr<Block>, int64_t, int64_t> LocateBlockInAllChains(const std::string& blockHash);
 
 	static int64_t ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg = false);
 	static std::shared_ptr<Block> DisconnectBlock(const std::shared_ptr<Block>& block);
@@ -47,10 +48,11 @@ public:
 	static void SaveToDisk();
 	static void LoadFromDisk();
 
+	static bool ReorgIfNecessary();
+
 private:
 	static constexpr char ChainPath[] = "chain.dat";
 
-	static bool ReorgIfNecessary();
 	static bool TryReorg(const std::vector<std::shared_ptr<Block>>& branch, int64_t branchIdx, int64_t forkIdx);
 	static void RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveChain, const std::shared_ptr<Block>& forkBlock, int64_t branchIdx);
 

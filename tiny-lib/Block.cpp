@@ -8,7 +8,7 @@
 
 Block::Block(uint64_t version, const std::string& prevBlockHash, const std::string& markleHash, int64_t timestamp, uint8_t bits, uint64_t nonce,
 	const std::vector<std::shared_ptr<Tx>>& txs)
-	: Version(version), PrevBlockHash(prevBlockHash), MerkleHash(MerkleHash), Timestamp(timestamp), Bits(bits), Nonce(nonce), Txs(txs)
+	: Version(version), PrevBlockHash(prevBlockHash), MerkleHash(markleHash), Timestamp(timestamp), Bits(bits), Nonce(nonce), Txs(txs)
 {
 
 }
@@ -22,10 +22,7 @@ std::string Block::Header(uint64_t nonce /*= 0*/) const
 
 std::string Block::Id() const
 {
-	std::string header = Header();
-	std::vector<uint8_t> header_vec(header.begin(), header.end());
-
-	return Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(header_vec));
+	return Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(Header())));
 }
 
 BinaryBuffer Block::Serialize() const
@@ -114,6 +111,29 @@ bool Block::Deserialize(BinaryBuffer& buffer)
 			return false;
 		}
 		Txs.push_back(tx);
+	}
+
+	return true;
+}
+
+bool Block::operator==(const Block& obj) const
+{
+	if (this == &obj)
+	{
+		return true;
+	}
+
+	if (tied() != obj.tied())
+		return false;
+
+	if (Txs.size() != obj.Txs.size())
+		return false;
+	for (size_t i = 0; i < Txs.size(); i++)
+	{
+		if (*Txs[i] != *obj.Txs[i])
+		{
+			return false;
+		}
 	}
 
 	return true;

@@ -16,7 +16,7 @@ void GetBlockMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
 {
 	LOG_TRACE("Recieved GetBlockMsg from {}", con->Socket.remote_endpoint().address().to_string());
 
-	auto [block, height, idx] = Chain::LocateBlockInActiveChain(FromBlockId);
+	auto [block, height] = Chain::LocateBlockInActiveChain(FromBlockId);
 	if (height == -1)
 		height = 1;
 

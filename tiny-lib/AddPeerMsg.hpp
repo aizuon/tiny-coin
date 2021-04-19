@@ -8,9 +8,10 @@ class AddPeerMsg : public IMsg
 {
 public:
 	AddPeerMsg() = default;
-	AddPeerMsg(const std::string& peerHostname);
+	AddPeerMsg(const std::string& gostname, uint16_t port);
 
-	std::string PeerHostname;
+	std::string Hostname;
+	uint16_t Port;
 
 	void Handle(const std::shared_ptr<NetClient::Connection>& con) override;
 	BinaryBuffer Serialize() const override;

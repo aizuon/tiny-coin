@@ -36,6 +36,7 @@
     <ClInclude Include="IMsg.hpp" />
     <ClInclude Include="InvMsg.hpp" />
     <ClInclude Include="ISerializable.hpp" />
+    <ClInclude Include="MsgCache.hpp" />
     <ClInclude Include="NetClient.hpp" />
     <ClInclude Include="Log.hpp" />
     <ClInclude Include="Mempool.hpp" />
@@ -76,6 +77,7 @@
     <ClCompile Include="GetUTXOsMsg.cpp" />
     <ClCompile Include="HashChecker.cpp" />
     <ClCompile Include="InvMsg.cpp" />
+    <ClCompile Include="MsgCache.cpp" />
     <ClCompile Include="NetClient.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="Mempool.cpp" />

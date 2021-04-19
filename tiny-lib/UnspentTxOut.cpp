@@ -5,7 +5,7 @@
 #include "UnspentTxOut.hpp"
 #include "Log.hpp"
 
-UnspentTxOut::UnspentTxOut(std::shared_ptr<::TxOut> txOut, std::shared_ptr<::TxOutPoint> txOutPoint, bool isCoinbase, int64_t height)
+UnspentTxOut::UnspentTxOut(const std::shared_ptr<::TxOut>& txOut, const std::shared_ptr<::TxOutPoint>& txOutPoint, bool isCoinbase, int64_t height)
 	: TxOut(txOut), TxOutPoint(txOutPoint), IsCoinbase(isCoinbase), Height(height)
 {
 
@@ -103,4 +103,14 @@ std::shared_ptr<UnspentTxOut> UnspentTxOut::FindInList(const std::shared_ptr<TxI
 	}
 
 	return nullptr;
+}
+
+bool UnspentTxOut::operator==(const UnspentTxOut& obj) const
+{
+	if (this == &obj)
+	{
+		return true;
+	}
+
+	return tied() == obj.tied() && *TxOut == *obj.TxOut && *TxOutPoint == *obj.TxOutPoint;
 }

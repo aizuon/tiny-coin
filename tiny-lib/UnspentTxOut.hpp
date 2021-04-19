@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include <tuple>
 
 #include "ISerializable.hpp"
 #include "IDeserializable.hpp"
@@ -17,7 +18,7 @@ class UnspentTxOut : public ISerializable, public IDeserializable
 {
 public:
 	UnspentTxOut() = default;
-	UnspentTxOut(std::shared_ptr<::TxOut> txOut, std::shared_ptr<::TxOutPoint> txOutPoint, bool isCoinbase, int64_t height);
+	UnspentTxOut(const std::shared_ptr<::TxOut>& txOut, const std::shared_ptr<::TxOutPoint>& txOutPoint, bool isCoinbase, int64_t height);
 
 	std::shared_ptr<::TxOut> TxOut;
 
@@ -36,6 +37,14 @@ public:
 	static void RemoveFromMap(const std::string& txId, int64_t idx);
 
 	static std::shared_ptr<UnspentTxOut> FindInList(const std::shared_ptr<TxIn>& txIn, const std::vector<std::shared_ptr<Tx>>& txs);
+
+	bool operator==(const UnspentTxOut& obj) const;
+
+private:
+	auto tied() const
+	{
+		return std::tie(IsCoinbase, Height);
+	}
 };
 
 typedef UnspentTxOut UTXO;

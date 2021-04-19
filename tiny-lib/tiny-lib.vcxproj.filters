@@ -104,6 +104,9 @@
     <ClInclude Include="SendUTXOsMsg.hpp">
       <Filter>P2P</Filter>
     </ClInclude>
+    <ClInclude Include="MsgCache.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -195,6 +198,9 @@
       <Filter>P2P</Filter>
     </ClCompile>
     <ClCompile Include="SendMempoolMsg.cpp">
+      <Filter>P2P</Filter>
+    </ClCompile>
+    <ClCompile Include="MsgCache.cpp">
       <Filter>P2P</Filter>
     </ClCompile>
   </ItemGroup>

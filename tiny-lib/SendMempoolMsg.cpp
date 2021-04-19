@@ -1,11 +1,12 @@
 #include "pch.hpp"
 
 #include "SendMempoolMsg.hpp"
+#include "MsgCache.hpp"
 #include "Mempool.hpp"
 
 void SendMempoolMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
 {
-	//TODO
+	MsgCache::SendMempoolMsg = std::make_shared<SendMempoolMsg>(*this);
 }
 
 BinaryBuffer SendMempoolMsg::Serialize() const

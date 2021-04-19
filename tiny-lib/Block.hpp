@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <tuple>
 
 #include "ISerializable.hpp"
 #include "IDeserializable.hpp"
@@ -34,4 +35,12 @@ public:
 
 	BinaryBuffer Serialize() const override;
 	bool Deserialize(BinaryBuffer& buffer) override;
+
+	bool operator==(const Block& obj) const;
+
+private:
+	auto tied() const
+	{
+		return std::tie(Version, PrevBlockHash, MerkleHash, Timestamp, Bits, Nonce);
+	}
 };

@@ -19,7 +19,7 @@ void InvMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
 	std::vector<std::shared_ptr<Block>> newBlocks;
 	for (const auto& block : Blocks)
 	{
-		auto [found_block, found_height, found_idx] = Chain::LocateBlockInActiveChain(block->Id());
+		auto [found_block, found_height, found_idx] = Chain::LocateBlockInAllChains(block->Id());
 		if (found_block == nullptr)
 		{
 			newBlocks.push_back(block);

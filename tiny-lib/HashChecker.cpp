@@ -37,7 +37,7 @@ bool HashChecker::IsValid(const std::string& hash, const BIGNUM* target_bn)
 		return false;
 	}
 
-	auto res = BN_cmp(target_bn, hash_bn);
+	int res = BN_cmp(hash_bn, target_bn);
 
 	BN_free(hash_bn);
 

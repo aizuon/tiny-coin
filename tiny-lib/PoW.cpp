@@ -22,7 +22,7 @@ uint8_t PoW::GetNextWorkRequired(const std::string& prevBlockHash)
     if (prevBlockHash.empty())
         return NetParams::INITIAL_DIFFICULTY_BITS;
 
-    auto [prev_block, prev_block_height, prev_block_chain_idx] = Chain::LocateBlockInActiveChain(prevBlockHash);
+    auto [prev_block, prev_block_height, prev_block_chain_idx] = Chain::LocateBlockInAllChains(prevBlockHash);
     if ((prev_block_height + 1) % NetParams::DIFFICULTY_PERIOD_IN_BLOCKS != 0)
         return prev_block->Bits;
 
@@ -41,6 +41,7 @@ uint8_t PoW::GetNextWorkRequired(const std::string& prevBlockHash)
         return prev_block->Bits;
 }
 
+//TODO: multithreading
 std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
 {
     auto newBlock = std::make_shared<Block>(*block);
@@ -48,10 +49,8 @@ std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
     auto start = Utils::GetUnixTimestamp();
     uint64_t nonce = 0;
     BIGNUM* target_bn = HashChecker::TargetBitsToBN(newBlock->Bits);
-
     while (!HashChecker::IsValid(Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(newBlock->Header(nonce)))), target_bn))
     {
-        nonce++;
         if (nonce % 10000 == 0 && MineInterrupt)
         {
             LOG_INFO("Mining interrupted");
@@ -62,11 +61,15 @@ std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
 
             return nullptr;
         }
+        nonce++;
     }
+    BN_free(target_bn);
 
     newBlock->Nonce = nonce;
     auto duration = Utils::GetUnixTimestamp() - start;
-    auto khs = (block->Nonce / duration) / 1000;
+    if (duration == 0)
+        duration = 1;
+    auto khs = (newBlock->Nonce / duration) / 1000;
     LOG_INFO("Block found => {} s, {} KH/s, {}", duration, khs, newBlock->Id());
 
     return newBlock;

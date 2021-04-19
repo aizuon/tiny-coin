@@ -188,6 +188,39 @@ void Tx::Validate(const ValidateRequest& req) const
         throw TxValidationException("Spend value is more than available");
 }
 
+bool Tx::operator==(const Tx& obj) const
+{
+    if (this == &obj)
+    {
+        return true;
+    }
+
+    if (tied() != obj.tied())
+        return false;
+
+    if (TxIns.size() != obj.TxIns.size())
+        return false;
+    for (size_t i = 0; i < TxIns.size(); i++)
+    {
+        if (*TxIns[i] != *obj.TxIns[i])
+        {
+            return false;
+        }
+    }
+
+    if (TxOuts.size() != obj.TxOuts.size())
+        return false;
+    for (size_t i = 0; i < TxOuts.size(); i++)
+    {
+        if (*TxOuts[i] != *obj.TxOuts[i])
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void Tx::ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UnspentTxOut>& utxo) const
 {
     auto pubKeyAsAddr = Wallet::PubKeyToAddress(txIn->UnlockPubKey);

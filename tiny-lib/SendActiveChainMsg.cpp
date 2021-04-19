@@ -1,11 +1,12 @@
 #include "pch.hpp"
 
 #include "SendActiveChainMsg.hpp"
+#include "MsgCache.hpp"
 #include "Chain.hpp"
 
 void SendActiveChainMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
 {
-	//TODO
+	MsgCache::SendActiveChainMsg = std::make_shared<SendActiveChainMsg>(*this);
 }
 
 BinaryBuffer SendActiveChainMsg::Serialize() const
@@ -46,7 +47,7 @@ bool SendActiveChainMsg::Deserialize(BinaryBuffer& buffer)
 		auto vec_it = std::find_if(ActiveChain.begin(), ActiveChain.end(),
 			[&block](const std::shared_ptr<Block>& o)
 			{
-				return block->Id() == o->Id();
+				return *block == *o;
 			});
 		if (vec_it == ActiveChain.end())
 		{

@@ -2,7 +2,7 @@
 
 #include "TxIn.hpp"
 
-TxIn::TxIn(std::shared_ptr<TxOutPoint> toSpend, const std::vector<uint8_t>& unlockSig, const std::vector<uint8_t>& unlockPk, int32_t sequence)
+TxIn::TxIn(const std::shared_ptr<TxOutPoint>& toSpend, const std::vector<uint8_t>& unlockSig, const std::vector<uint8_t>& unlockPk, int32_t sequence)
 	: ToSpend(toSpend), UnlockSig(unlockSig), UnlockPubKey(unlockPk), Sequence(sequence)
 {
 
@@ -12,7 +12,10 @@ BinaryBuffer TxIn::Serialize() const
 {
 	BinaryBuffer buffer;
 
-	buffer.WriteRaw(ToSpend->Serialize().GetBuffer());
+	bool has_toSpend = ToSpend != nullptr;
+	buffer.Write(has_toSpend);
+	if (has_toSpend)
+		buffer.WriteRaw(ToSpend->Serialize().GetBuffer());
 	buffer.Write(UnlockSig);
 	buffer.Write(UnlockPubKey);
 	buffer.Write(Sequence);
@@ -24,12 +27,22 @@ bool TxIn::Deserialize(BinaryBuffer& buffer)
 {
 	auto copy = *this;
 
-	ToSpend = std::make_shared<TxOutPoint>();
-	if (!ToSpend->Deserialize(buffer))
+	bool has_toSpend = false;
+	if (!buffer.Read(has_toSpend))
 	{
 		*this = std::move(copy);
 
 		return false;
+	}
+	if (has_toSpend)
+	{
+		ToSpend = std::make_shared<TxOutPoint>();
+		if (!ToSpend->Deserialize(buffer))
+		{
+			*this = std::move(copy);
+
+			return false;
+		}
 	}
 
 	if (!buffer.Read(UnlockSig))
@@ -54,4 +67,14 @@ bool TxIn::Deserialize(BinaryBuffer& buffer)
 	}
 
 	return true;
+}
+
+bool TxIn::operator==(const TxIn& obj) const
+{
+	if (this == &obj)
+	{
+		return true;
+	}
+
+	return tied() == obj.tied() && *ToSpend == *obj.ToSpend;
 }

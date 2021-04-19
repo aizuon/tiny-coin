@@ -3,12 +3,13 @@
 #include <algorithm>
 
 #include "SendUTXOsMsg.hpp"
+#include "MsgCache.hpp"
 #include "UnspentTxOut.hpp"
 #include "NetClient.hpp"
 
 void SendUTXOsMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
 {
-	//TODO
+	MsgCache::SendUTXOsMsg = std::make_shared<SendUTXOsMsg>(*this);
 }
 
 BinaryBuffer SendUTXOsMsg::Serialize() const
@@ -58,7 +59,7 @@ bool SendUTXOsMsg::Deserialize(BinaryBuffer& buffer)
 			[&txOutPoint](const std::pair<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
 			{
 				auto& [txOutPoint2, utxo2] = p;
-				return txOutPoint->TxId == txOutPoint2->TxId && txOutPoint->TxOutIdx == txOutPoint2->TxOutIdx;
+				return *txOutPoint == *txOutPoint2;
 			});
 		if (map_it == UTXO_Map.end())
 		{

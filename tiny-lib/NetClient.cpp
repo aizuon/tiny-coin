@@ -12,6 +12,9 @@ using namespace boost::placeholders;
 #include "GetMempoolMsg.hpp"
 #include "GetUTXOsMsg.hpp"
 #include "InvMsg.hpp"
+#include "SendActiveChainMsg.hpp"
+#include "SendMempoolMsg.hpp"
+#include "SendUTXOsMsg.hpp"
 #include "TxInfoMsg.hpp"
 #include "Log.hpp"
 #include "Random.hpp"
@@ -211,6 +214,24 @@ void NetClient::HandleMsg(const std::shared_ptr<Connection>& con, BinaryBuffer& 
 	case Opcode::InvMsg:
 	{
 		msg = std::make_unique<InvMsg>();
+
+		break;
+	}
+	case Opcode::SendActiveChainMsg:
+	{
+		msg = std::make_unique<SendActiveChainMsg>();
+
+		break;
+	}
+	case Opcode::SendMempoolMsg:
+	{
+		msg = std::make_unique<SendMempoolMsg>();
+
+		break;
+	}
+	case Opcode::SendUTXOsMsg:
+	{
+		msg = std::make_unique<SendUTXOsMsg>();
 
 		break;
 	}

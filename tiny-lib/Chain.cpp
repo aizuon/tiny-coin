@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <fstream>
 #include <fmt/format.h>
+#include <openssl/bn.h>
 
 #include "Chain.hpp"
 #include "TxOutPoint.hpp"
@@ -16,6 +17,8 @@
 #include "Exceptions.hpp"
 #include "MerkleTree.hpp"
 #include "PoW.hpp"
+#include "HashChecker.hpp"
+#include "SHA256.hpp"
 #include "NetClient.hpp"
 #include "BlockInfoMsg.hpp"
 
@@ -59,22 +62,31 @@ std::pair<std::shared_ptr<Block>, int64_t> Chain::LocateBlockInChain(const std::
 	return { nullptr, -1 };
 }
 
-std::tuple<std::shared_ptr<Block>, int64_t, int64_t> Chain::LocateBlockInActiveChain(const std::string& blockHash)
+std::tuple<std::shared_ptr<Block>, int64_t> Chain::LocateBlockInActiveChain(const std::string& blockHash)
+{
+	auto [located_block, located_block_height] = LocateBlockInChain(blockHash, ActiveChain);
+	if (located_block != nullptr)
+		return { located_block, located_block_height };
+
+	return { located_block, located_block_height };
+}
+
+std::tuple<std::shared_ptr<Block>, int64_t, int64_t> Chain::LocateBlockInAllChains(const std::string& blockHash)
 {
 	std::lock_guard lock(Lock);
 
 	int64_t chain_idx = 0;
-	auto [located_block, located_block_height] = LocateBlockInChain(blockHash, ActiveChain);
+	auto [located_block, located_block_height] = LocateBlockInActiveChain(blockHash);
 	if (located_block != nullptr)
 		return { located_block, located_block_height, chain_idx };
+	chain_idx++;
 
 	for (const auto& side_chain : SideBranches)
 	{
-		chain_idx++;
-
 		auto [located_block, located_block_height] = LocateBlockInChain(blockHash, side_chain);
 		if (located_block != nullptr)
 			return { located_block, located_block_height, chain_idx };
+		chain_idx++;
 	}
 
 	return { nullptr, -1, -1 };
@@ -86,9 +98,19 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 
 	const auto blockId = block->Id();
 
-	if (doingReorg)
+	if (!doingReorg)
 	{
-		auto [located_block, located_block_height, located_block_chain_idx] = LocateBlockInActiveChain(block->Id());
+		auto [located_block, located_block_height, located_block_chain_idx] = LocateBlockInAllChains(block->Id());
+		if (located_block != nullptr)
+		{
+			LOG_TRACE("Ignore block already seen: {}", blockId);
+
+			return -1;
+		}
+	}
+	else
+	{
+		auto [located_block, located_block_height] = LocateBlockInActiveChain(block->Id());
 		if (located_block != nullptr)
 		{
 			LOG_TRACE("Ignore block already seen: {}", blockId);
@@ -115,7 +137,7 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 		return -1;
 	}
 
-	if (chainIdx == ActiveChainIdx && SideBranches.size() < chainIdx)
+	if (chainIdx != ActiveChainIdx && SideBranches.size() < chainIdx)
 	{
 		LOG_INFO("Creating a new side branch {} for block {}", chainIdx, blockId);
 
@@ -124,7 +146,7 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 
 	LOG_INFO("Connecting block {} to chain {}", blockId, chainIdx);
 
-	auto chain = chainIdx == ActiveChainIdx ? ActiveChain : SideBranches[chainIdx - 1];
+	auto& chain = chainIdx == ActiveChainIdx ? ActiveChain : SideBranches[chainIdx - 1];
 	chain.push_back(block);
 
 	if (chainIdx == ActiveChainIdx)
@@ -133,7 +155,8 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 		{
 			const auto txId = tx->Id();
 
-			Mempool::Map.erase(txId);
+			if (Mempool::Map.contains(txId))
+				Mempool::Map.erase(txId);
 
 			if (!tx->IsCoinbase())
 			{
@@ -213,11 +236,17 @@ int64_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 		throw BlockValidationException("Transactions are empty");
 
 	auto now = Utils::GetUnixTimestamp();
-	if (block->Timestamp - now > NetParams::MAX_FUTURE_BLOCK_TIME_IN_SECS)
+	if (block->Timestamp - now > static_cast<int64_t>(NetParams::MAX_FUTURE_BLOCK_TIME_IN_SECS))
 		throw BlockValidationException("Block timestamp is too far in future");
 
-	if (std::stoul(block->Id(), nullptr, 16) > (1 << (256 - block->Bits)))
+	BIGNUM* target_bn = HashChecker::TargetBitsToBN(block->Bits);
+	if (!HashChecker::IsValid(block->Id(), target_bn))
+	{
+		BN_free(target_bn);
+
 		throw BlockValidationException("Block header does not satisfy bits");
+	}
+	BN_free(target_bn);
 
 	auto coinbase_pred = [](const std::shared_ptr<Tx>& tx)
 	{
@@ -248,21 +277,23 @@ int64_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 	if (block->Timestamp <= GetMedianTimePast(11))
 		throw BlockValidationException("Timestamp is too old");
 
-	int64_t prev_block_chain_idx = 0;
+	int64_t prev_block_chain_idx = -1;
 	if (block->PrevBlockHash.empty())
 	{
 		prev_block_chain_idx = ActiveChainIdx;
 	}
 	else
 	{
-		auto [prev_block, prev_block_height, prev_block_chain_idx] = LocateBlockInActiveChain(block->PrevBlockHash);
+		auto [prev_block, prev_block_height, prev_block_chain_idx2] = LocateBlockInAllChains(block->PrevBlockHash);
 		if (prev_block == nullptr)
 			throw BlockValidationException(fmt::format("Previous block {} is not found in any chain", block->PrevBlockHash).c_str(), block);
 
-		if (prev_block_chain_idx != ActiveChainIdx)
-			return prev_block_chain_idx;
+		if (prev_block_chain_idx2 != ActiveChainIdx)
+			return prev_block_chain_idx2;
 		else if (prev_block->Id() != ActiveChain.back()->Id())
-			return prev_block_chain_idx + 1;
+			return prev_block_chain_idx2 + 1;
+
+		prev_block_chain_idx = prev_block_chain_idx2;
 	}
 
 	if (PoW::GetNextWorkRequired(block->PrevBlockHash) != block->Bits)
@@ -368,19 +399,19 @@ bool Chain::ReorgIfNecessary()
 	bool reorged = false;
 
 	auto frozenSideBranches = SideBranches;
-	for (int64_t i = 1; i < frozenSideBranches.size(); i++)
+	int64_t branch_idx = 1;
+	for (const auto& chain : frozenSideBranches)
 	{
-		const auto& chain = frozenSideBranches[i];
+		auto [fork_block, fork_heigh] = LocateBlockInActiveChain(chain[0]->PrevBlockHash);
 
-		auto [fork_block, fork_height, fork_idx] = LocateBlockInActiveChain(chain[0]->PrevBlockHash);
-
-		size_t branchHeight = chain.size() + fork_idx;
+		size_t branchHeight = chain.size() + fork_heigh;
 		if (branchHeight > GetCurrentHeight())
 		{
-			LOG_INFO("Attempting reorg of idx {} to active chain, new height of {} vs. {}", i, branchHeight, fork_idx);
+			LOG_INFO("Attempting reorg of idx {} to active chain, new height of {} vs. {}", branch_idx, branchHeight, fork_heigh);
 
-			reorged |= TryReorg(chain, i, fork_idx);
+			reorged |= TryReorg(chain, branch_idx, fork_heigh);
 		}
+		branch_idx++;
 	}
 
 	return reorged;
@@ -442,6 +473,8 @@ std::vector<std::shared_ptr<Block>> Chain::DisconnectToFork(const std::shared_pt
 	{
 		disconnected_chain.push_back(DisconnectBlock(ActiveChain.back()));
 	}
+
+	std::reverse(disconnected_chain.begin(), disconnected_chain.end());
 
 	return disconnected_chain;
 }

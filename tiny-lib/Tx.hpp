@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <tuple>
 
 #include "ISerializable.hpp"
 #include "IDeserializable.hpp"
@@ -42,6 +43,13 @@ public:
 
 	void Validate(const ValidateRequest& req) const;
 
+	bool operator==(const Tx& obj) const;
+
 private:
 	void ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UnspentTxOut>& utxo) const;
+
+	auto tied() const
+	{
+		return std::tie(LockTime);
+	}
 };

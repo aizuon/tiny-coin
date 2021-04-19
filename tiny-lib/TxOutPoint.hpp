@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <tuple>
 
 #include "ISerializable.hpp"
 #include "IDeserializable.hpp"
@@ -17,4 +18,12 @@ public:
 
 	BinaryBuffer Serialize() const override;
 	bool Deserialize(BinaryBuffer& buffer) override;
+
+	bool operator==(const TxOutPoint& obj) const;
+
+private:
+	auto tied() const
+	{
+		return std::tie(TxId, TxOutIdx);
+	}
 };

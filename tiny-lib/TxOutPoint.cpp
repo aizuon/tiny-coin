@@ -37,3 +37,13 @@ bool TxOutPoint::Deserialize(BinaryBuffer& buffer)
 
 	return true;
 }
+
+bool TxOutPoint::operator==(const TxOutPoint& obj) const
+{
+	if (this == &obj)
+	{
+		return true;
+	}
+
+	return tied() == obj.tied();
+}

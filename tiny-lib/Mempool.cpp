@@ -110,7 +110,7 @@ std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, con
 			[&toSpend](const std::pair<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
 			{
 				auto& [txOutPoint, utxo] = p;
-				return txOutPoint->TxId == toSpend->TxId && txOutPoint->TxOutIdx == toSpend->TxOutIdx;
+				return *txOutPoint == *toSpend;
 			});
 		if (map_it != UnspentTxOut::Map.end())
 			continue;
