@@ -10,7 +10,7 @@ TxInfoMsg::TxInfoMsg(const std::shared_ptr<::Tx>& tx)
 
 }
 
-void TxInfoMsg::Handle(std::shared_ptr<NetClient::Connection>& con)
+void TxInfoMsg::Handle(std::shared_ptr<Connection>& con)
 {
 	LOG_INFO("Recieved transaction {} from peer {}:{}", Tx->Id(), con->Socket.remote_endpoint().address().to_string(), con->Socket.remote_endpoint().port());
 

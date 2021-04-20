@@ -12,7 +12,7 @@ InvMsg::InvMsg(const std::vector<std::shared_ptr<Block>>& blocks)
 
 }
 
-void InvMsg::Handle(std::shared_ptr<NetClient::Connection>& con)
+void InvMsg::Handle(std::shared_ptr<Connection>& con)
 {
 	LOG_INFO("Recieved initial sync from {}:{}", con->Socket.remote_endpoint().address().to_string(), con->Socket.remote_endpoint().port());
 
@@ -41,7 +41,7 @@ void InvMsg::Handle(std::shared_ptr<NetClient::Connection>& con)
 	auto new_tip_id = Chain::ActiveChain.back()->Id();
 	LOG_INFO("Continuing initial sync from {}", new_tip_id);
 
-	NetClient::SendMsgAsync(con, GetBlockMsg(new_tip_id));
+	NetClient::SendMsg(con, GetBlockMsg(new_tip_id));
 }
 
 BinaryBuffer InvMsg::Serialize() const

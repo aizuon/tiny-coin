@@ -8,7 +8,6 @@
 
 #include "Block.hpp"
 #include "Tx.hpp"
-#include "UnspentTxOut.hpp"
 
 class PoW
 {

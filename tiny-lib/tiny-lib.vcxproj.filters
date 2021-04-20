@@ -109,6 +109,9 @@
     <ClInclude Include="MsgSerializer.hpp">
       <Filter>P2P</Filter>
     </ClInclude>
+    <ClInclude Include="Connection.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -205,6 +208,9 @@
       <Filter>P2P</Filter>
     </ClCompile>
     <ClCompile Include="MsgSerializer.cpp">
+      <Filter>P2P</Filter>
+    </ClCompile>
+    <ClCompile Include="Connection.cpp">
       <Filter>P2P</Filter>
     </ClCompile>
   </ItemGroup>

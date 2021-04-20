@@ -25,6 +25,7 @@
     <ClInclude Include="Block.hpp" />
     <ClInclude Include="BlockInfoMsg.hpp" />
     <ClInclude Include="Chain.hpp" />
+    <ClInclude Include="Connection.hpp" />
     <ClInclude Include="ECDSA.hpp" />
     <ClInclude Include="Exceptions.hpp" />
     <ClInclude Include="GetActiveChainMsg.hpp" />
@@ -69,6 +70,7 @@
     <ClCompile Include="Block.cpp" />
     <ClCompile Include="BlockInfoMsg.cpp" />
     <ClCompile Include="Chain.cpp" />
+    <ClCompile Include="Connection.cpp" />
     <ClCompile Include="ECDSA.cpp" />
     <ClCompile Include="Exceptions.cpp" />
     <ClCompile Include="GetActiveChainMsg.cpp" />

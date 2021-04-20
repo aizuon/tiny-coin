@@ -7,7 +7,6 @@
 
 #include "Block.hpp"
 #include "Tx.hpp"
-#include "TxIn.hpp"
 #include "TxOutPoint.hpp"
 #include "UnspentTxOut.hpp"
 

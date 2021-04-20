@@ -4,7 +4,7 @@
 #include "Mempool.hpp"
 #include "MsgCache.hpp"
 
-void SendMempoolMsg::Handle(std::shared_ptr<NetClient::Connection>& con)
+void SendMempoolMsg::Handle(std::shared_ptr<Connection>& con)
 {
 	MsgCache::SendMempoolMsg = std::make_shared<SendMempoolMsg>(*this);
 }

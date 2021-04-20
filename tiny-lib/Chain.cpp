@@ -238,7 +238,7 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 		LOG_INFO("Block accepted with height {} and txs {}", ActiveChain.size() - 1, block->Txs.size());
 	}
 
-	NetClient::BroadcastMsgAsync(BlockInfoMsg(block));
+	NetClient::BroadcastMsg(BlockInfoMsg(block));
 
 	return chainIdx;
 }
@@ -485,7 +485,7 @@ void Chain::LoadFromDisk()
 				}
 				loadedChain.push_back(block);
 			}
-			ActiveChain = loadedChain;
+			ActiveChain = std::move(loadedChain);
 			chain_in.close();
 			LOG_INFO("Loaded chain with {} blocks", ActiveChain.size());
 		}

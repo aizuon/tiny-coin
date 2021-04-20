@@ -26,6 +26,7 @@
 #include "SendUTXOsMsg.hpp"
 #include "TxInfoMsg.hpp"
 #include "Tx.hpp"
+#include "UnspentTxOut.hpp"
 
 std::string Wallet::WalletPath = DefaultWalletPath;
 
@@ -148,7 +149,7 @@ void Wallet::SendValue(uint64_t value, const std::string& address, const std::ve
     }
     auto tx = std::make_shared<Tx>(txIns, std::vector<std::shared_ptr<TxOut>>{ txOut }, -1);
     LOG_INFO("Built transaction {}, broadcasting", tx->Id());
-    if (!NetClient::SendMsgRandomAsync(TxInfoMsg(tx)))
+    if (!NetClient::SendMsgRandom(TxInfoMsg(tx)))
     {
         LOG_ERROR("No connection to send transaction");
     }
@@ -159,7 +160,7 @@ void Wallet::PrintTxStatus(const std::string& txId)
     if (MsgCache::SendMempoolMsg != nullptr)
         MsgCache::SendMempoolMsg = nullptr;
 
-    if (!NetClient::SendMsgRandomAsync(GetMempoolMsg()))
+    if (!NetClient::SendMsgRandom(GetMempoolMsg()))
     {
         LOG_ERROR("No connection to ask mempool");
 
@@ -191,7 +192,7 @@ void Wallet::PrintTxStatus(const std::string& txId)
     if (MsgCache::SendActiveChainMsg != nullptr)
         MsgCache::SendActiveChainMsg = nullptr;
 
-    if (!NetClient::SendMsgRandomAsync(GetActiveChainMsg()))
+    if (!NetClient::SendMsgRandom(GetActiveChainMsg()))
     {
         LOG_ERROR("No connection to ask active chain");
 
@@ -244,7 +245,7 @@ std::vector<std::shared_ptr<UnspentTxOut>> Wallet::FindUTXOsForAddress(const std
     if (MsgCache::SendUTXOsMsg != nullptr)
         MsgCache::SendUTXOsMsg = nullptr;
 
-    if (!NetClient::SendMsgRandomAsync(GetUTXOsMsg()))
+    if (!NetClient::SendMsgRandom(GetUTXOsMsg()))
     {
         LOG_ERROR("No connection to ask UTXO set");
 

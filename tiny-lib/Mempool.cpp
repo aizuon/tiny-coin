@@ -79,7 +79,7 @@ void Mempool::AddTxToMempool(const std::shared_ptr<Tx>& tx)
 
 	LOG_INFO("Transaction {} added to mempool", txId);
 
-	NetClient::BroadcastMsgAsync(TxInfoMsg(tx));
+	NetClient::BroadcastMsg(TxInfoMsg(tx));
 }
 
 bool Mempool::CheckBlockSize(const std::shared_ptr<Block>& block)

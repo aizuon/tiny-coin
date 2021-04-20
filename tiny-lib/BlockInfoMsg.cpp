@@ -10,7 +10,7 @@ BlockInfoMsg::BlockInfoMsg(const std::shared_ptr<::Block>& block)
 
 }
 
-void BlockInfoMsg::Handle(std::shared_ptr<NetClient::Connection>& con)
+void BlockInfoMsg::Handle(std::shared_ptr<Connection>& con)
 {
 	LOG_INFO("Recieved block {} from peer {}:{}", Block->Id(), con->Socket.remote_endpoint().address().to_string(), con->Socket.remote_endpoint().port());
 

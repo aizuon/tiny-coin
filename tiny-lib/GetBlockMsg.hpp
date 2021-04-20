@@ -12,7 +12,7 @@ public:
 
 	std::string FromBlockId;
 
-	void Handle(std::shared_ptr<NetClient::Connection>& con) override;
+	void Handle(std::shared_ptr<Connection>& con) override;
 	BinaryBuffer Serialize() const override;
 	bool Deserialize(BinaryBuffer& buffer) override;
 

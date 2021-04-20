@@ -7,7 +7,8 @@
 #include "TxIn.hpp"
 #include "TxOut.hpp"
 #include "TxOutPoint.hpp"
-#include "UnspentTxOut.hpp"
+
+class UnspentTxOut;
 
 class Wallet
 {

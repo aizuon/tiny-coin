@@ -1,9 +1,11 @@
 #include "pch.hpp"
 
+#include <mutex>
 #include <boost/bind/bind.hpp>
 using namespace boost::placeholders;
 
 #include "NetClient.hpp"
+#include "BinaryBuffer.hpp"
 #include "Log.hpp"
 #include "Random.hpp"
 #include "Utils.hpp"
@@ -20,17 +22,11 @@ using namespace boost::placeholders;
 #include "SendUTXOsMsg.hpp"
 #include "TxInfoMsg.hpp"
 
-NetClient::Connection::Connection(boost::asio::io_service& io_service)
-	: Socket(io_service)
-{
-
-}
-
 const std::vector<std::pair<std::string, uint16_t>> NetClient::InitialPeers = std::vector<std::pair<std::string, uint16_t>>{ {"127.0.0.1", 9900}, {"127.0.0.1", 9901}, {"127.0.0.1", 9902}, {"127.0.0.1", 9903}, {"127.0.0.1", 9904} };
 
 std::string NetClient::Magic = "\r\n\r\n";
 
-std::vector<std::shared_ptr<NetClient::Connection>> NetClient::Connections;
+std::vector<std::shared_ptr<Connection>> NetClient::Connections;
 
 boost::asio::io_service NetClient::IO_Service;
 boost::thread NetClient::IO_Thread;
@@ -84,26 +80,19 @@ void NetClient::ListenAsync(uint16_t port)
 	StartAccept();
 }
 
-void NetClient::SendMsgAsync(std::shared_ptr<Connection>& con, const IMsg& msg)
+void NetClient::SendMsg(std::shared_ptr<Connection>& con, const IMsg& msg)
 {
-	auto serializedMsg = msg.Serialize().GetBuffer();
-	auto opcode = static_cast<OpcodeType>(msg.GetOpcode());
+	auto msgBuffer = PrepareSendBuffer(msg);
 
-	auto msgBuffer = std::make_shared<BinaryBuffer>();
-	msgBuffer->Reserve(sizeof(opcode) + serializedMsg.size() + Magic.size());
-	msgBuffer->Write(opcode);
-	msgBuffer->WriteRaw(serializedMsg);
-	msgBuffer->WriteRaw(Magic);
-
-	DoAsyncWrite(con, msgBuffer);
+	Write(con, msgBuffer);
 }
 
-bool NetClient::SendMsgRandomAsync(const IMsg& msg)
+bool NetClient::SendMsgRandom(const IMsg& msg)
 {
 	auto con = GetRandomConnection();
 	if (con != nullptr)
 	{
-		SendMsgAsync(con, msg);
+		SendMsg(con, msg);
 
 		return true;
 	}
@@ -113,13 +102,18 @@ bool NetClient::SendMsgRandomAsync(const IMsg& msg)
 	}
 }
 
-void NetClient::BroadcastMsgAsync(const IMsg& msg)
+void NetClient::BroadcastMsg(const IMsg& msg)
 {
+	if (Connections.empty())
+		return;
+
+	auto msgBuffer = PrepareSendBuffer(msg);
+
 	for (auto& con : Connections)
-		SendMsgAsync(con, msg);
+		Write(con, msgBuffer);
 }
 
-std::shared_ptr<NetClient::Connection> NetClient::GetRandomConnection()
+std::shared_ptr<Connection> NetClient::GetRandomConnection()
 {
 	if (Connections.empty())
 		return nullptr;
@@ -284,22 +278,27 @@ void NetClient::HandleMsg(std::shared_ptr<Connection>& con, BinaryBuffer& msg_bu
 	msg->Handle(con);
 }
 
-void NetClient::DoAsyncWrite(std::shared_ptr<Connection>& con, const std::shared_ptr<BinaryBuffer>& msg_buffer)
+BinaryBuffer NetClient::PrepareSendBuffer(const IMsg& msg)
 {
-	auto handler = boost::bind(&NetClient::HandleWrite, con, msg_buffer, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred);
-	boost::asio::async_write(con->Socket, boost::asio::buffer(msg_buffer->GetBuffer()), handler);
-	DoAsyncRead(con);
+	auto serializedMsg = msg.Serialize().GetBuffer();
+	auto opcode = static_cast<OpcodeType>(msg.GetOpcode());
+
+	BinaryBuffer msgBuffer;
+	msgBuffer.Reserve(sizeof(opcode) + serializedMsg.size() + Magic.size());
+	msgBuffer.Write(opcode);
+	msgBuffer.WriteRaw(serializedMsg);
+	msgBuffer.WriteRaw(Magic);
+
+	return msgBuffer;
 }
 
-void NetClient::HandleWrite(std::shared_ptr<Connection>& con, const std::shared_ptr<BinaryBuffer> msg_buffer, const boost::system::error_code& err, size_t bytes_transferred)
+void NetClient::Write(std::shared_ptr<Connection>& con, const BinaryBuffer& msg_buffer)
 {
-	if (!err)
-	{
-		if (con->Socket.is_open())
-		{
-		}
-	}
-	else
+	std::lock_guard lock(con->WriteLock);
+
+	boost::system::error_code err;
+	boost::asio::write(con->Socket, boost::asio::buffer(msg_buffer.GetBuffer()), err);
+	if (err)
 	{
 		if (err != boost::asio::error::shut_down && err != boost::asio::error::connection_reset && err != boost::asio::error::operation_aborted)
 			LOG_ERROR(err.message());

@@ -4,25 +4,18 @@
 #include <string>
 #include <memory>
 #include <utility>
+
 #include <boost/asio.hpp>
 #include <boost/thread/thread.hpp>
 
-#include "BinaryBuffer.hpp"
+#include "Connection.hpp"
+#include "IMsg.hpp"
 
-class IMsg;
+class BinaryBuffer;
 
 class NetClient
 {
 public:
-	class Connection
-	{
-	public:
-		Connection(boost::asio::io_service& io_service);
-
-		boost::asio::ip::tcp::socket Socket;
-		boost::asio::streambuf ReadBuffer;
-	};
-
 	static const std::vector<std::pair<std::string, uint16_t>> InitialPeers;
 
 	static void RunAsync();
@@ -31,10 +24,10 @@ public:
 	static void Connect(const std::string& address, uint16_t port);
 	static void ListenAsync(uint16_t port);
 
-	static void SendMsgAsync(std::shared_ptr<Connection>& con, const IMsg& msg);
-	static bool SendMsgRandomAsync(const IMsg& msg);
+	static void SendMsg(std::shared_ptr<Connection>& con, const IMsg& msg);
+	static bool SendMsgRandom(const IMsg& msg);
 
-	static void BroadcastMsgAsync(const IMsg& msg);
+	static void BroadcastMsg(const IMsg& msg);
 
 private:
 	static std::string Magic;
@@ -55,8 +48,8 @@ private:
 
 	static void HandleMsg(std::shared_ptr<Connection>& con, BinaryBuffer& msg_buffer);
 
-	static void DoAsyncWrite(std::shared_ptr<Connection>& con, const std::shared_ptr<BinaryBuffer>& msg_buffer);
-	static void HandleWrite(std::shared_ptr<Connection>& con, const std::shared_ptr<BinaryBuffer> msg_buffer, const boost::system::error_code& err, size_t bytes_transferred);
+	static BinaryBuffer PrepareSendBuffer(const IMsg& msg);
+	static void Write(std::shared_ptr<Connection>& con, const BinaryBuffer& msg_buffer);
 
 	static void RemoveConnection(std::shared_ptr<Connection>& con);
 };

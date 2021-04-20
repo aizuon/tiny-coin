@@ -3,8 +3,8 @@
 #include <vector>
 #include <memory>
 
-class TxOut;
-class TxOutPoint;
+#include "TxOut.hpp"
+#include "TxOutPoint.hpp"
 
 class MsgSerializer
 {

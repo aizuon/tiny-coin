@@ -1,11 +1,12 @@
 #include "pch.hpp"
 
 #include "GetMempoolMsg.hpp"
+#include "NetClient.hpp"
 #include "SendMempoolMsg.hpp"
 
-void GetMempoolMsg::Handle(std::shared_ptr<NetClient::Connection>& con)
+void GetMempoolMsg::Handle(std::shared_ptr<Connection>& con)
 {
-	NetClient::SendMsgAsync(con, SendMempoolMsg());
+	NetClient::SendMsg(con, SendMempoolMsg());
 }
 
 BinaryBuffer GetMempoolMsg::Serialize() const

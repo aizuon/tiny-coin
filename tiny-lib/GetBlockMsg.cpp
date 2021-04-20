@@ -12,7 +12,7 @@ GetBlockMsg::GetBlockMsg(const std::string& fromBlockId)
 
 }
 
-void GetBlockMsg::Handle(std::shared_ptr<NetClient::Connection>& con)
+void GetBlockMsg::Handle(std::shared_ptr<Connection>& con)
 {
 	const auto& endpoint = con->Socket.remote_endpoint();
 	LOG_TRACE("Recieved GetBlockMsg from {}:{}", endpoint.address().to_string(), endpoint.port());
@@ -35,7 +35,7 @@ void GetBlockMsg::Handle(std::shared_ptr<NetClient::Connection>& con)
 	Chain::Lock.unlock();
 
 	LOG_TRACE("Sending {} blocks to {}:{}", blocks.size(), endpoint.address().to_string(), endpoint.port());
-	NetClient::SendMsgAsync(con, InvMsg(blocks));
+	NetClient::SendMsg(con, InvMsg(blocks));
 }
 
 BinaryBuffer GetBlockMsg::Serialize() const

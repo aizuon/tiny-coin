@@ -15,8 +15,8 @@ BinaryBuffer UnspentTxOut::Serialize() const
 {
 	BinaryBuffer buffer;
 
-	buffer.WriteRaw(this->TxOut->Serialize().GetBuffer());
-	buffer.WriteRaw(this->TxOutPoint->Serialize().GetBuffer());
+	buffer.WriteRaw(TxOut->Serialize().GetBuffer());
+	buffer.WriteRaw(TxOutPoint->Serialize().GetBuffer());
 	buffer.Write(IsCoinbase);
 	buffer.Write(Height);
 

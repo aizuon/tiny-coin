@@ -20,6 +20,7 @@
 #include <tuple>
 #include <utility>
 #include <memory>
+#include <mutex>
 #include <exception>
 #include <algorithm>
 #include <fstream>

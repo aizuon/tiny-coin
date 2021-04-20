@@ -6,9 +6,9 @@
 #include "NetClient.hpp"
 #include "SendUTXOsMsg.hpp"
 
-void GetUTXOsMsg::Handle(std::shared_ptr<NetClient::Connection>& con)
+void GetUTXOsMsg::Handle(std::shared_ptr<Connection>& con)
 {
-	NetClient::SendMsgAsync(con, SendUTXOsMsg());
+	NetClient::SendMsg(con, SendUTXOsMsg());
 }
 
 BinaryBuffer GetUTXOsMsg::Serialize() const
