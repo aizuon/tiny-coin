@@ -35,7 +35,7 @@ void Tx::ValidateBasics(bool coinbase /*= false*/) const
     if (TxOuts.empty() || (TxIns.empty() && !coinbase))
         throw TxValidationException("Missing TxOuts or TxIns");
 
-    if (Serialize().GetLength() > NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES)
+    if (Serialize().GetSize() > NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES)
         throw TxValidationException("Too large");
 
     uint64_t totalSpent = 0;

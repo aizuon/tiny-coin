@@ -12,7 +12,7 @@ InvMsg::InvMsg(const std::vector<std::shared_ptr<Block>>& blocks)
 
 }
 
-void InvMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
+void InvMsg::Handle(std::shared_ptr<NetClient::Connection>& con)
 {
 	LOG_INFO("Recieved initial sync from {}:{}", con->Socket.remote_endpoint().address().to_string(), con->Socket.remote_endpoint().port());
 

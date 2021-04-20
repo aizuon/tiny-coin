@@ -2,6 +2,8 @@
 #define PCH_H
 
 #include <cstdint>
+#include <sstream>
+#include <iomanip>
 #include <thread>
 #include <chrono>
 #include <atomic>

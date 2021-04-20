@@ -6,6 +6,7 @@ using namespace boost::placeholders;
 #include "NetClient.hpp"
 #include "Log.hpp"
 #include "Random.hpp"
+#include "Utils.hpp"
 #include "IMsg.hpp"
 #include "AddPeerMsg.hpp"
 #include "BlockInfoMsg.hpp"
@@ -20,23 +21,24 @@ using namespace boost::placeholders;
 #include "TxInfoMsg.hpp"
 
 NetClient::Connection::Connection(boost::asio::io_service& io_service)
-	: Socket(io_service), ReadBuffer()
+	: Socket(io_service)
 {
 
 }
 
-const std::vector<std::pair<std::string, uint16_t>> NetClient::InitialPeers = std::vector<std::pair<std::string, uint16_t>>{ {"127.0.0.1", 9900}, {"127.0.0.1", 9901}, {"127.0.0.1", 9902} };
+const std::vector<std::pair<std::string, uint16_t>> NetClient::InitialPeers = std::vector<std::pair<std::string, uint16_t>>{ {"127.0.0.1", 9900}, {"127.0.0.1", 9901}, {"127.0.0.1", 9902}, {"127.0.0.1", 9903}, {"127.0.0.1", 9904} };
 
 std::string NetClient::Magic = "\r\n\r\n";
 
 std::vector<std::shared_ptr<NetClient::Connection>> NetClient::Connections;
 
 boost::asio::io_service NetClient::IO_Service;
+boost::thread NetClient::IO_Thread;
 boost::asio::ip::tcp::acceptor NetClient::Acceptor = boost::asio::ip::tcp::acceptor(NetClient::IO_Service);
 
-void NetClient::Run()
+void NetClient::RunAsync()
 {
-	IO_Service.run();
+	IO_Thread = boost::thread(boost::bind(&boost::asio::io_service::run, &IO_Service));
 }
 
 void NetClient::Stop()
@@ -48,9 +50,11 @@ void NetClient::Stop()
 			con->Socket.shutdown(boost::asio::socket_base::shutdown_both);
 		}
 	}
-	Connections.clear();
 
 	IO_Service.stop();
+	IO_Thread.join();
+
+	Connections.clear();
 }
 
 void NetClient::Connect(const std::string& address, uint16_t port)
@@ -80,7 +84,7 @@ void NetClient::ListenAsync(uint16_t port)
 	StartAccept();
 }
 
-void NetClient::SendMsgAsync(const std::shared_ptr<Connection>& con, const IMsg& msg)
+void NetClient::SendMsgAsync(std::shared_ptr<Connection>& con, const IMsg& msg)
 {
 	auto serializedMsg = msg.Serialize().GetBuffer();
 	auto opcode = static_cast<OpcodeType>(msg.GetOpcode());
@@ -111,7 +115,7 @@ bool NetClient::SendMsgRandomAsync(const IMsg& msg)
 
 void NetClient::BroadcastMsgAsync(const IMsg& msg)
 {
-	for (const auto& con : Connections)
+	for (auto& con : Connections)
 		SendMsgAsync(con, msg);
 }
 
@@ -131,11 +135,12 @@ void NetClient::StartAccept()
 	Acceptor.async_accept(con->Socket, handler);
 }
 
-void NetClient::HandleAccept(const std::shared_ptr<Connection>& con, const boost::system::error_code& err)
+void NetClient::HandleAccept(std::shared_ptr<Connection>& con, const boost::system::error_code& err)
 {
 	if (!err)
 	{
 		auto& soc = con->Socket;
+
 		LOG_INFO("Incoming connection from {}:{}", soc.remote_endpoint().address().to_string(), soc.remote_endpoint().port());
 
 		soc.set_option(boost::asio::ip::tcp::no_delay(true));
@@ -149,40 +154,49 @@ void NetClient::HandleAccept(const std::shared_ptr<Connection>& con, const boost
 	StartAccept();
 }
 
-void NetClient::DoAsyncRead(const std::shared_ptr<Connection>& con)
+void NetClient::DoAsyncRead(std::shared_ptr<Connection>& con)
 {
 	auto handler = boost::bind(&NetClient::HandleRead, con, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred);
 	boost::asio::async_read_until(con->Socket, con->ReadBuffer, Magic, handler);
 }
 
-void NetClient::HandleRead(const std::shared_ptr<Connection>& con, const boost::system::error_code& err, size_t bytes_transfered)
+void NetClient::HandleRead(std::shared_ptr<Connection>& con, const boost::system::error_code& err, size_t bytes_transfered)
 {
-	auto& readBuffer = con->ReadBuffer;
-	if (bytes_transfered > 0 && readBuffer.size() > 0)
-	{
-		BinaryBuffer buffer;
-		buffer.GrowTo(bytes_transfered - Magic.size());
-		boost::asio::buffer_copy(boost::asio::buffer(buffer.GetWritableBuffer()), readBuffer.data());
-
-		HandleMsg(con, buffer);
-
-		readBuffer.consume(bytes_transfered);
-	}
-
 	if (!err)
 	{
+		auto& readBuffer = con->ReadBuffer;
+		if (bytes_transfered > Magic.size() && readBuffer.size() >= bytes_transfered)
+		{
+			BinaryBuffer buffer;
+			buffer.GrowTo(bytes_transfered - (Magic.size()));
+			boost::asio::buffer_copy(boost::asio::buffer(buffer.GetWritableBuffer()), readBuffer.data());
+
+			//DEBUG
+			BinaryBuffer buffer2;
+			buffer2.GrowTo(readBuffer.size());
+			boost::asio::buffer_copy(boost::asio::buffer(buffer2.GetWritableBuffer()), readBuffer.data());
+			LOG_TRACE("READ WHOLE {} | {}", buffer2.GetSize(), Utils::ByteArrayToHexString_DEBUG(buffer2.GetBuffer()));
+
+			LOG_TRACE("READ UNTIL {} | {}", buffer.GetSize(), Utils::ByteArrayToHexString_DEBUG(buffer.GetBuffer()));
+			//
+
+			HandleMsg(con, buffer);
+
+			readBuffer.consume(bytes_transfered);
+		}
+
 		DoAsyncRead(con);
 	}
 	else
 	{
-		if (err != boost::asio::error::eof && err != boost::asio::error::shut_down)
+		if (err != boost::asio::error::eof && err != boost::asio::error::shut_down && err != boost::asio::error::connection_reset && err != boost::asio::error::operation_aborted)
 			LOG_ERROR(err.message());
 
 		RemoveConnection(con);
 	}
 }
 
-void NetClient::HandleMsg(const std::shared_ptr<Connection>& con, BinaryBuffer& msg_buffer)
+void NetClient::HandleMsg(std::shared_ptr<Connection>& con, BinaryBuffer& msg_buffer)
 {
 	OpcodeType opcode = 0;
 	if (!msg_buffer.Read(opcode))
@@ -279,32 +293,34 @@ void NetClient::HandleMsg(const std::shared_ptr<Connection>& con, BinaryBuffer& 
 	msg->Handle(con);
 }
 
-void NetClient::DoAsyncWrite(const std::shared_ptr<Connection>& con, const std::shared_ptr<BinaryBuffer>& msg_buffer)
+void NetClient::DoAsyncWrite(std::shared_ptr<Connection>& con, const std::shared_ptr<BinaryBuffer>& msg_buffer)
 {
 	auto handler = boost::bind(&NetClient::HandleWrite, con, msg_buffer, boost::asio::placeholders::error);
 	boost::asio::async_write(con->Socket, boost::asio::buffer(msg_buffer->GetBuffer()), handler);
 	DoAsyncRead(con);
 }
 
-void NetClient::HandleWrite(const std::shared_ptr<Connection>& con, const std::shared_ptr<BinaryBuffer> msg_buffer, const boost::system::error_code& err)
+void NetClient::HandleWrite(std::shared_ptr<Connection>& con, const std::shared_ptr<BinaryBuffer> msg_buffer, const boost::system::error_code& err)
 {
 	if (!err)
 	{
 		if (con->Socket.is_open())
 		{
-
+			//DEBUG
+			LOG_TRACE("WRITE {} | {}", msg_buffer->GetSize(), Utils::ByteArrayToHexString_DEBUG(msg_buffer->GetBuffer()));
+			//
 		}
 	}
 	else
 	{
-		if (err != boost::asio::error::shut_down)
+		if (err != boost::asio::error::shut_down && err != boost::asio::error::connection_reset && err != boost::asio::error::operation_aborted)
 			LOG_ERROR(err.message());
 
 		RemoveConnection(con);
 	}
 }
 
-void NetClient::RemoveConnection(const std::shared_ptr<Connection>& con)
+void NetClient::RemoveConnection(std::shared_ptr<Connection>& con)
 {
 	auto vec_it = std::find_if(Connections.begin(), Connections.end(),
 		[&con](const std::shared_ptr<Connection>& o)

@@ -26,7 +26,7 @@ public:
 		return Buffer;
 	}
 
-	inline size_t GetLength() const
+	inline size_t GetSize() const
 	{
 		return Buffer.size();
 	}

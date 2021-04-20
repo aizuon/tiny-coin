@@ -9,7 +9,7 @@ AddPeerMsg::AddPeerMsg(const std::string& hostname, uint16_t port)
 
 }
 
-void AddPeerMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
+void AddPeerMsg::Handle(std::shared_ptr<NetClient::Connection>& con)
 {
 	NetClient::Connect(Hostname, Port);
 }

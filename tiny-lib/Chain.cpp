@@ -160,25 +160,22 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 
 	const auto blockId = block->Id();
 
+	std::shared_ptr<Block> located_block = nullptr; //HACK: this could be a ref
 	if (!doingReorg)
 	{
-		auto [located_block, located_block_height, located_block_chain_idx] = LocateBlockInAllChains(block->Id());
-		if (located_block != nullptr)
-		{
-			LOG_TRACE("Ignore already seen block {}", blockId);
-
-			return -1;
-		}
+		auto [located_block2, located_block_height, located_block_chain_idx] = LocateBlockInAllChains(block->Id());
+		located_block = located_block2;
 	}
 	else
 	{
-		auto [located_block, located_block_height] = LocateBlockInActiveChain(block->Id());
-		if (located_block != nullptr)
-		{
-			LOG_TRACE("Ignore already seen block {}", blockId);
+		auto [located_block2, located_block_height] = LocateBlockInActiveChain(block->Id());
+		located_block = located_block2;
+	}
+	if (located_block != nullptr)
+	{
+		LOG_TRACE("Ignore already seen block {}", blockId);
 
-			return -1;
-		}
+		return -1;
 	}
 
 	int64_t chainIdx = -1;
@@ -456,7 +453,7 @@ void Chain::SaveToDisk()
 	chainData.Write(ActiveChain.size());
 	for (const auto& block : ActiveChain)
 	{
-		chainData.WriteRaw(block->Serialize().GetWritableBuffer());
+		chainData.WriteRaw(block->Serialize().GetBuffer());
 	}
 	auto& chainDataBuffer = chainData.GetBuffer();
 	chain_out.write((const char*)chainDataBuffer.data(), chainDataBuffer.size());
@@ -473,27 +470,29 @@ void Chain::LoadFromDisk()
 	{
 		BinaryBuffer chainData(std::vector<uint8_t>(std::istreambuf_iterator<char>(chain_in), {}));
 		size_t blockSize = 0;
-		if (!chainData.Read(blockSize))
+		if (chainData.Read(blockSize))
+		{
+			std::vector<std::shared_ptr<Block>> loadedChain;
+			loadedChain.reserve(blockSize);
+			for (size_t i = 0; i < blockSize; i++)
+			{
+				auto block = std::make_shared<Block>();
+				if (!block->Deserialize(chainData))
+				{
+					LOG_ERROR("Load chain failed, starting from genesis");
+
+					return;
+				}
+				loadedChain.push_back(block);
+			}
+			ActiveChain = loadedChain;
+			chain_in.close();
+			LOG_INFO("Loaded chain with {} blocks", ActiveChain.size());
+		}
+		else
 		{
 			LOG_ERROR("Load chain failed, starting from genesis");
-
-			return;
 		}
-		std::vector<std::shared_ptr<Block>> loadedChain;
-		loadedChain.reserve(blockSize);
-		for (size_t i = 0; i < blockSize; i++)
-		{
-			auto block = std::make_shared<Block>();
-			if (!block->Deserialize(chainData))
-			{
-				LOG_ERROR("Load chain failed, starting from genesis");
-
-				return;
-			}
-			loadedChain.push_back(block);
-		}
-		ActiveChain = loadedChain;
-		chain_in.close();
 	}
 	else
 	{

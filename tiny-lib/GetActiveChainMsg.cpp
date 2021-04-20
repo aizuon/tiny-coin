@@ -4,7 +4,7 @@
 #include "NetClient.hpp"
 #include "SendActiveChainMsg.hpp"
 
-void GetActiveChainMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
+void GetActiveChainMsg::Handle(std::shared_ptr<NetClient::Connection>& con)
 {
 	NetClient::SendMsgAsync(con, SendActiveChainMsg());
 }

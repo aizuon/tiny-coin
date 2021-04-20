@@ -4,7 +4,7 @@
 #include "Chain.hpp"
 #include "MsgCache.hpp"
 
-void SendActiveChainMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
+void SendActiveChainMsg::Handle(std::shared_ptr<NetClient::Connection>& con)
 {
 	MsgCache::SendActiveChainMsg = std::make_shared<SendActiveChainMsg>(*this);
 }
@@ -44,15 +44,7 @@ bool SendActiveChainMsg::Deserialize(BinaryBuffer& buffer)
 
 			return false;
 		}
-		auto vec_it = std::find_if(ActiveChain.begin(), ActiveChain.end(),
-			[&block](const std::shared_ptr<Block>& o)
-			{
-				return *block == *o;
-			});
-		if (vec_it == ActiveChain.end())
-		{
-			ActiveChain.push_back(block);
-		}
+		ActiveChain.push_back(block);
 	}
 
 	return true;

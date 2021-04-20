@@ -148,7 +148,10 @@ void Wallet::SendValue(uint64_t value, const std::string& address, const std::ve
     }
     auto tx = std::make_shared<Tx>(txIns, std::vector<std::shared_ptr<TxOut>>{ txOut }, -1);
     LOG_INFO("Built transaction {}, broadcasting", tx->Id());
-    NetClient::SendMsgRandomAsync(TxInfoMsg(tx));
+    if (!NetClient::SendMsgRandomAsync(TxInfoMsg(tx)))
+    {
+        LOG_ERROR("No connection to send transaction");
+    }
 }
 
 void Wallet::PrintTxStatus(const std::string& txId)
@@ -243,7 +246,7 @@ std::vector<std::shared_ptr<UnspentTxOut>> Wallet::FindUTXOsForAddress(const std
 
     if (!NetClient::SendMsgRandomAsync(GetUTXOsMsg()))
     {
-        LOG_ERROR("No connection to ask utxo set");
+        LOG_ERROR("No connection to ask UTXO set");
 
         return std::vector<std::shared_ptr<UnspentTxOut>>();
     }

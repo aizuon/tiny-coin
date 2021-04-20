@@ -1,11 +1,11 @@
 #include "pch.hpp"
 
-#include <thread>
-#include <atomic>
 #include <type_traits>
 #include <exception>
 #include <algorithm>
-#include <openssl/bn.h>
+#include <boost/thread/thread.hpp>
+#include <boost/bind/bind.hpp>
+using namespace boost::placeholders;
 
 #include "PoW.hpp"
 #include "Log.hpp"
@@ -29,12 +29,9 @@ uint8_t PoW::GetNextWorkRequired(const std::string& prevBlockHash)
     if ((prev_block_height + 1) % NetParams::DIFFICULTY_PERIOD_IN_BLOCKS != 0)
         return prev_block->Bits;
 
-    std::shared_ptr<Block> period_start_block = nullptr; //HACK: this could be a ref
-    {
-        std::lock_guard lock(Chain::Lock);
-
-        period_start_block = Chain::ActiveChain[std::max(prev_block_height - (NetParams::DIFFICULTY_PERIOD_IN_BLOCKS - 1), 0ULL)];
-    }
+    Chain::Lock.lock();
+    auto& period_start_block = Chain::ActiveChain[std::max(prev_block_height - (NetParams::DIFFICULTY_PERIOD_IN_BLOCKS - 1), 0ULL)];
+    Chain::Lock.unlock();
     int64_t actual_time_taken = prev_block->Timestamp - period_start_block->Timestamp;
     if (actual_time_taken < NetParams::DIFFICULTY_PERIOD_IN_SECS_TARGET)
         return prev_block->Bits + 1;
@@ -50,45 +47,32 @@ std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
         MineInterrupt = false;
 
     auto newBlock = std::make_shared<Block>(*block);
-
-    std::atomic_bool found = false;
-    std::atomic<uint64_t> found_nonce = 0;
-    std::atomic<uint64_t> hash_count = 0;
     BIGNUM* target_bn = HashChecker::TargetBitsToBN(newBlock->Bits);
-    auto hash_chunk = [&newBlock, &found, &found_nonce, target_bn, &hash_count](uint64_t start, uint64_t chunk_size)
-    {
-        uint64_t i = 0;
-        while (!HashChecker::IsValid(Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(newBlock->Header(start + i)))), target_bn))
-        {
-            if (found || i == chunk_size || MineInterrupt)
-            {
-                return;
-            }
-            i++;
-            hash_count++;
-        }
-        found = true;
-        found_nonce = start + i;
-    };
-
     uint8_t num_threads = std::thread::hardware_concurrency() / 2;
     if (num_threads == 0)
         num_threads = 1;
     uint64_t chunk_size = std::numeric_limits<uint64_t>::max() / num_threads;
-    std::vector<std::thread> threads;
+    std::atomic_bool found = false;
+    std::atomic<uint64_t> found_nonce = 0;
+    std::atomic<uint64_t> hash_count = 0;
+    
     auto start = Utils::GetUnixTimestamp();
+    boost::thread_group threadpool;
     for (uint8_t i = 0; i < num_threads; i++)
     {
-        threads.emplace_back(std::thread(hash_chunk, std::numeric_limits<uint64_t>::min() + chunk_size * i, chunk_size));
+        threadpool.create_thread(boost::bind(&PoW::MineChunk, newBlock, target_bn, std::numeric_limits<uint64_t>::min() + chunk_size * i, chunk_size, boost::ref(found), boost::ref(found_nonce), boost::ref(hash_count)));
     }
-    for (auto& thread : threads)
-    {
-        thread.join();
-    }
+    threadpool.join_all();
     BN_free(target_bn);
 
     if (MineInterrupt)
+    {
         MineInterrupt = false;
+
+        LOG_INFO("Mining interrupted");
+
+        return nullptr;
+    }
 
     newBlock->Nonce = found_nonce;
     auto duration = Utils::GetUnixTimestamp() - start;
@@ -116,6 +100,22 @@ void PoW::MineForever()
     }
 }
 
+void PoW::MineChunk(const std::shared_ptr<Block>& block, BIGNUM* target_bn, uint64_t start, uint64_t chunk_size, std::atomic_bool& found, std::atomic<uint64_t>& found_nonce, std::atomic<uint64_t>& hash_count)
+{
+    uint64_t i = 0;
+    while (!HashChecker::IsValid(Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(block->Header(start + i)))), target_bn))
+    {
+        if (found || i == chunk_size || MineInterrupt)
+        {
+            return;
+        }
+        i++;
+        hash_count++;
+    }
+    found = true;
+    found_nonce = start + i;
+}
+
 std::shared_ptr<Block> PoW::AssembleAndSolveBlock()
 {
     return AssembleAndSolveBlock(std::vector<std::shared_ptr<Tx>>());
@@ -138,7 +138,7 @@ std::shared_ptr<Block> PoW::AssembleAndSolveBlock(const std::vector<std::shared_
     block->Txs.insert(block->Txs.begin(), coinbaseTx);
     block->MerkleHash = MerkleTree::GetRootOfTxs(block->Txs)->Value;
 
-    if (block->Serialize().GetLength() > NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES)
+    if (block->Serialize().GetSize() > NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES)
         throw std::exception("Transactions specified create a block too large");
 
     return Mine(block);

@@ -12,7 +12,7 @@ GetBlockMsg::GetBlockMsg(const std::string& fromBlockId)
 
 }
 
-void GetBlockMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
+void GetBlockMsg::Handle(std::shared_ptr<NetClient::Connection>& con)
 {
 	const auto& endpoint = con->Socket.remote_endpoint();
 	LOG_TRACE("Recieved GetBlockMsg from {}:{}", endpoint.address().to_string(), endpoint.port());

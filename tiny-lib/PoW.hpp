@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <openssl/bn.h>
 
 #include "Block.hpp"
 #include "Tx.hpp"
@@ -20,6 +21,8 @@ public:
 	static void MineForever();
 
 private:
+	static void MineChunk(const std::shared_ptr<Block>& block, BIGNUM* target_bn, uint64_t start, uint64_t chunk_size, std::atomic_bool& found, std::atomic<uint64_t>& found_nonce, std::atomic<uint64_t>& hash_count);
+
 	static std::shared_ptr<Block> AssembleAndSolveBlock();
 	static std::shared_ptr<Block> AssembleAndSolveBlock(const std::vector<std::shared_ptr<Tx>>& txs);
 

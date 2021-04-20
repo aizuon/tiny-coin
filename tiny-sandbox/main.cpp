@@ -40,14 +40,11 @@ int main(int ac, char** av)
 
 		return 0;
 	}
+
 	auto [privKey, pubKey, address] = vm.contains("wallet") ? Wallet::InitWallet(vm["wallet"].as<std::string>()) : Wallet::InitWallet();
 	auto port = vm["port"].as<uint16_t>();
 	NetClient::ListenAsync(port);
-	std::thread io_thread(
-		[]()
-		{
-			NetClient::Run();
-		});
+	NetClient::RunAsync();
 
 	for (const auto& [k, v] : NetClient::InitialPeers)
 	{
@@ -77,7 +74,6 @@ int main(int ac, char** av)
 	}
 
 	NetClient::Stop();
-	io_thread.join();
 
 	Log::StopLog();
 

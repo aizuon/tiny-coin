@@ -55,8 +55,7 @@ void Mempool::AddTxToMempool(const std::shared_ptr<Tx>& tx)
 
 	try
 	{
-		Tx::ValidateRequest req;
-		tx->Validate(req);
+		tx->Validate(Tx::ValidateRequest());
 	}
 	catch (const TxValidationException& ex)
 	{
@@ -85,7 +84,7 @@ void Mempool::AddTxToMempool(const std::shared_ptr<Tx>& tx)
 
 bool Mempool::CheckBlockSize(const std::shared_ptr<Block>& block)
 {
-	return block->Serialize().GetLength() < NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES;
+	return block->Serialize().GetSize() < NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES;
 }
 
 std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, const std::string& txId, std::set<std::string>& addedToBlock)

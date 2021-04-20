@@ -1,5 +1,7 @@
 #include "pch.hpp"
 
+#include <sstream>
+#include <iomanip>
 #include <chrono>
 #include <algorithm>
 #include <boost/algorithm/hex.hpp>
@@ -31,6 +33,20 @@ std::vector<uint8_t> Utils::StringToByteArray(const std::string& str)
     std::vector<uint8_t> vec(str.begin(), str.end());
 
     return vec;
+}
+
+std::string Utils::ByteArrayToHexString_DEBUG(const std::vector<uint8_t>& vec)
+{
+    std::stringstream ss;
+    ss << std::hex;
+
+    for (auto b : vec)
+        ss << std::setw(2) << std::setfill('0') << (int)b << " ";
+
+    std::string output = ss.str();
+    std::transform(output.begin(), output.end(), output.begin(), std::toupper);
+
+    return output;
 }
 
 int64_t Utils::GetUnixTimestamp()

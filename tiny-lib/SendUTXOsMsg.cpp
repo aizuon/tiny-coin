@@ -7,7 +7,7 @@
 #include "NetClient.hpp"
 #include "UnspentTxOut.hpp"
 
-void SendUTXOsMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
+void SendUTXOsMsg::Handle(std::shared_ptr<NetClient::Connection>& con)
 {
 	MsgCache::SendUTXOsMsg = std::make_shared<SendUTXOsMsg>(*this);
 }
@@ -55,16 +55,7 @@ bool SendUTXOsMsg::Deserialize(BinaryBuffer& buffer)
 
 			return false;
 		}
-		auto map_it = std::find_if(UTXO_Map.begin(), UTXO_Map.end(),
-			[&txOutPoint](const std::pair<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
-			{
-				auto& [txOutPoint2, utxo2] = p;
-				return *txOutPoint == *txOutPoint2;
-			});
-		if (map_it == UTXO_Map.end())
-		{
-			UTXO_Map[txOutPoint] = utxo;
-		}
+		UTXO_Map[txOutPoint] = utxo;
 	}
 
 	return true;
