@@ -479,19 +479,20 @@ void Chain::LoadFromDisk()
 
 			return;
 		}
+		std::vector<std::shared_ptr<Block>> loadedChain;
+		loadedChain.reserve(blockSize);
 		for (size_t i = 0; i < blockSize; i++)
 		{
 			auto block = std::make_shared<Block>();
 			if (!block->Deserialize(chainData))
 			{
 				LOG_ERROR("Load chain failed, starting from genesis");
-				ActiveChain.clear();
 
 				return;
 			}
-			ActiveChain.push_back(block);
+			loadedChain.push_back(block);
 		}
-		ActiveChain.clear();
+		ActiveChain = loadedChain;
 		chain_in.close();
 	}
 	else
