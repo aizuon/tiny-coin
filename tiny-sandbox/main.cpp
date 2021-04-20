@@ -1,8 +1,5 @@
 #include <cstdint>
-#include <atomic>
 #include <string>
-#include <tuple>
-#include <thread>
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 

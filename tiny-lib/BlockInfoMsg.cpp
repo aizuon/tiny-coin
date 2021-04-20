@@ -30,8 +30,8 @@ bool BlockInfoMsg::Deserialize(BinaryBuffer& buffer)
 {
 	auto copy = *this;
 
-	auto block = std::make_shared<::Block>();
-	if (!block->Deserialize(buffer))
+	Block = std::make_shared<::Block>();
+	if (!Block->Deserialize(buffer))
 	{
 		*this = std::move(copy);
 

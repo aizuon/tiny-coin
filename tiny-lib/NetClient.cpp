@@ -160,29 +160,20 @@ void NetClient::DoAsyncRead(std::shared_ptr<Connection>& con)
 	boost::asio::async_read_until(con->Socket, con->ReadBuffer, Magic, handler);
 }
 
-void NetClient::HandleRead(std::shared_ptr<Connection>& con, const boost::system::error_code& err, size_t bytes_transfered)
+void NetClient::HandleRead(std::shared_ptr<Connection>& con, const boost::system::error_code& err, size_t bytes_transferred)
 {
 	if (!err)
 	{
 		auto& readBuffer = con->ReadBuffer;
-		if (bytes_transfered > Magic.size() && readBuffer.size() >= bytes_transfered)
+		if (bytes_transferred > Magic.size() && readBuffer.size() >= bytes_transferred)
 		{
 			BinaryBuffer buffer;
-			buffer.GrowTo(bytes_transfered - (Magic.size()));
+			buffer.GrowTo(bytes_transferred - (Magic.size()));
 			boost::asio::buffer_copy(boost::asio::buffer(buffer.GetWritableBuffer()), readBuffer.data());
-
-			//DEBUG
-			BinaryBuffer buffer2;
-			buffer2.GrowTo(readBuffer.size());
-			boost::asio::buffer_copy(boost::asio::buffer(buffer2.GetWritableBuffer()), readBuffer.data());
-			LOG_TRACE("READ WHOLE {} | {}", buffer2.GetSize(), Utils::ByteArrayToHexString_DEBUG(buffer2.GetBuffer()));
-
-			LOG_TRACE("READ UNTIL {} | {}", buffer.GetSize(), Utils::ByteArrayToHexString_DEBUG(buffer.GetBuffer()));
-			//
 
 			HandleMsg(con, buffer);
 
-			readBuffer.consume(bytes_transfered);
+			readBuffer.consume(bytes_transferred);
 		}
 
 		DoAsyncRead(con);
@@ -295,20 +286,17 @@ void NetClient::HandleMsg(std::shared_ptr<Connection>& con, BinaryBuffer& msg_bu
 
 void NetClient::DoAsyncWrite(std::shared_ptr<Connection>& con, const std::shared_ptr<BinaryBuffer>& msg_buffer)
 {
-	auto handler = boost::bind(&NetClient::HandleWrite, con, msg_buffer, boost::asio::placeholders::error);
+	auto handler = boost::bind(&NetClient::HandleWrite, con, msg_buffer, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred);
 	boost::asio::async_write(con->Socket, boost::asio::buffer(msg_buffer->GetBuffer()), handler);
 	DoAsyncRead(con);
 }
 
-void NetClient::HandleWrite(std::shared_ptr<Connection>& con, const std::shared_ptr<BinaryBuffer> msg_buffer, const boost::system::error_code& err)
+void NetClient::HandleWrite(std::shared_ptr<Connection>& con, const std::shared_ptr<BinaryBuffer> msg_buffer, const boost::system::error_code& err, size_t bytes_transferred)
 {
 	if (!err)
 	{
 		if (con->Socket.is_open())
 		{
-			//DEBUG
-			LOG_TRACE("WRITE {} | {}", msg_buffer->GetSize(), Utils::ByteArrayToHexString_DEBUG(msg_buffer->GetBuffer()));
-			//
 		}
 	}
 	else

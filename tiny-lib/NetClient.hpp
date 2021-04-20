@@ -51,12 +51,12 @@ private:
 	static void HandleAccept(std::shared_ptr<Connection>& con, const boost::system::error_code& err);
 
 	static void DoAsyncRead(std::shared_ptr<Connection>& con);
-	static void HandleRead(std::shared_ptr<Connection>& con, const boost::system::error_code& err, size_t bytes_transfered);
+	static void HandleRead(std::shared_ptr<Connection>& con, const boost::system::error_code& err, size_t bytes_transferred);
 
 	static void HandleMsg(std::shared_ptr<Connection>& con, BinaryBuffer& msg_buffer);
 
 	static void DoAsyncWrite(std::shared_ptr<Connection>& con, const std::shared_ptr<BinaryBuffer>& msg_buffer);
-	static void HandleWrite(std::shared_ptr<Connection>& con, const std::shared_ptr<BinaryBuffer> msg_buffer, const boost::system::error_code& err);
+	static void HandleWrite(std::shared_ptr<Connection>& con, const std::shared_ptr<BinaryBuffer> msg_buffer, const boost::system::error_code& err, size_t bytes_transferred);
 
 	static void RemoveConnection(std::shared_ptr<Connection>& con);
 };
