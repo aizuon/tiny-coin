@@ -48,7 +48,6 @@
     <ClInclude Include="ECDSA.hpp">
       <Filter>Crypto</Filter>
     </ClInclude>
-    <ClInclude Include="MsgSerializer.hpp" />
     <ClInclude Include="Exceptions.hpp" />
     <ClInclude Include="IDeserializable.hpp" />
     <ClInclude Include="GetBlockMsg.hpp">
@@ -107,6 +106,9 @@
     <ClInclude Include="MsgCache.hpp">
       <Filter>P2P</Filter>
     </ClInclude>
+    <ClInclude Include="MsgSerializer.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -154,7 +156,6 @@
     <ClCompile Include="ECDSA.cpp">
       <Filter>Crypto</Filter>
     </ClCompile>
-    <ClCompile Include="MsgSerializer.cpp" />
     <ClCompile Include="Exceptions.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="NetClient.cpp">
@@ -201,6 +202,9 @@
       <Filter>P2P</Filter>
     </ClCompile>
     <ClCompile Include="MsgCache.cpp">
+      <Filter>P2P</Filter>
+    </ClCompile>
+    <ClCompile Include="MsgSerializer.cpp">
       <Filter>P2P</Filter>
     </ClCompile>
   </ItemGroup>

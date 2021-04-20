@@ -1,10 +1,10 @@
 #include "pch.hpp"
 
 #include "MsgSerializer.hpp"
-#include "TxOut.hpp"
-#include "TxOutPoint.hpp"
 #include "BinaryBuffer.hpp"
 #include "SHA256.hpp"
+#include "TxOut.hpp"
+#include "TxOutPoint.hpp"
 
 std::vector<uint8_t> MsgSerializer::BuildSpendMsg(const std::shared_ptr<TxOutPoint>& toSpend, const std::vector<uint8_t>& pubKey, int32_t sequence, const std::vector<std::shared_ptr<TxOut>>& txOuts)
 {

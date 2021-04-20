@@ -3,8 +3,8 @@
 #include <algorithm>
 
 #include "GetUTXOsMsg.hpp"
-#include "SendUTXOsMsg.hpp"
 #include "NetClient.hpp"
+#include "SendUTXOsMsg.hpp"
 
 void GetUTXOsMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
 {

@@ -5,9 +5,9 @@
 #include <string>
 #include <memory>
 
+#include "Block.hpp"
 #include "Tx.hpp"
 #include "UnspentTxOut.hpp"
-#include "Block.hpp"
 
 class PoW
 {

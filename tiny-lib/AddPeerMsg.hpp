@@ -11,7 +11,7 @@ public:
 	AddPeerMsg(const std::string& gostname, uint16_t port);
 
 	std::string Hostname;
-	uint16_t Port;
+	uint16_t Port = 0;
 
 	void Handle(const std::shared_ptr<NetClient::Connection>& con) override;
 	BinaryBuffer Serialize() const override;

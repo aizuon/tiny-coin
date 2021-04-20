@@ -1,19 +1,22 @@
 #include "pch.hpp"
 
+#include <thread>
+#include <atomic>
+#include <type_traits>
 #include <exception>
 #include <algorithm>
 #include <openssl/bn.h>
 
 #include "PoW.hpp"
+#include "Log.hpp"
+#include "NetParams.hpp"
+#include "Utils.hpp"
 #include "Chain.hpp"
 #include "Mempool.hpp"
 #include "MerkleTree.hpp"
-#include "Wallet.hpp"
 #include "HashChecker.hpp"
 #include "SHA256.hpp"
-#include "NetParams.hpp"
-#include "Utils.hpp"
-#include "Log.hpp"
+#include "Wallet.hpp"
 
 std::atomic_bool PoW::MineInterrupt = false;
 
@@ -41,42 +44,66 @@ uint8_t PoW::GetNextWorkRequired(const std::string& prevBlockHash)
         return prev_block->Bits;
 }
 
-//TODO: multithreading
 std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
 {
+    if (MineInterrupt)
+        MineInterrupt = false;
+
     auto newBlock = std::make_shared<Block>(*block);
 
-    auto start = Utils::GetUnixTimestamp();
-    uint64_t nonce = 0;
+    std::atomic_bool found = false;
+    std::atomic<uint64_t> found_nonce = 0;
+    std::atomic<uint64_t> hash_count = 0;
     BIGNUM* target_bn = HashChecker::TargetBitsToBN(newBlock->Bits);
-    while (!HashChecker::IsValid(Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(newBlock->Header(nonce)))), target_bn))
+    auto hash_chunk = [&newBlock, &found, &found_nonce, target_bn, &hash_count](uint64_t start, uint64_t chunk_size)
     {
-        if (nonce % 10000 == 0 && MineInterrupt)
+        uint64_t i = 0;
+        while (!HashChecker::IsValid(Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(newBlock->Header(start + i)))), target_bn))
         {
-            LOG_INFO("Mining interrupted");
-
-            MineInterrupt = false;
-
-            BN_free(target_bn);
-
-            return nullptr;
+            if (found || i == chunk_size || MineInterrupt)
+            {
+                return;
+            }
+            i++;
+            hash_count++;
         }
-        nonce++;
+        found = true;
+        found_nonce = start + i;
+    };
+
+    uint8_t num_threads = std::thread::hardware_concurrency() / 2;
+    if (num_threads == 0)
+        num_threads = 1;
+    uint64_t chunk_size = std::numeric_limits<uint64_t>::max() / num_threads;
+    std::vector<std::thread> threads;
+    auto start = Utils::GetUnixTimestamp();
+    for (uint8_t i = 0; i < num_threads; i++)
+    {
+        threads.emplace_back(std::thread(hash_chunk, std::numeric_limits<uint64_t>::min() + chunk_size * i, chunk_size));
+    }
+    for (auto& thread : threads)
+    {
+        thread.join();
     }
     BN_free(target_bn);
 
-    newBlock->Nonce = nonce;
+    if (MineInterrupt)
+        MineInterrupt = false;
+
+    newBlock->Nonce = found_nonce;
     auto duration = Utils::GetUnixTimestamp() - start;
     if (duration == 0)
         duration = 1;
-    auto khs = (newBlock->Nonce / duration) / 1000;
-    LOG_INFO("Block found => {} s, {} KH/s, {}", duration, khs, newBlock->Id());
+    auto khs = (hash_count / duration) / 1000;
+    LOG_INFO("Block found => {} s, {} KH/s, {}, {}", duration, khs, newBlock->Id(), newBlock->Nonce);
 
     return newBlock;
 }
 
 void PoW::MineForever()
 {
+    Chain::LoadFromDisk();
+
     while (true)
     {
         auto block = AssembleAndSolveBlock();

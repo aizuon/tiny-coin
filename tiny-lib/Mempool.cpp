@@ -3,12 +3,12 @@
 #include <ranges>
 
 #include "Mempool.hpp"
-#include "NetParams.hpp"
-#include "Log.hpp"
 #include "BinaryBuffer.hpp"
 #include "Exceptions.hpp"
-#include "NetClient.hpp"
+#include "Log.hpp"
+#include "NetParams.hpp"
 #include "TxInfoMsg.hpp"
+#include "NetClient.hpp"
 
 std::unordered_map<std::string, std::shared_ptr<Tx>> Mempool::Map;
 
@@ -80,11 +80,7 @@ void Mempool::AddTxToMempool(const std::shared_ptr<Tx>& tx)
 
 	LOG_INFO("Transaction {} added to mempool", txId);
 
-	TxInfoMsg txInfoMsg(tx);
-	for (const auto& peer : NetClient::Connections)
-	{
-		NetClient::SendMsgAsync(peer, txInfoMsg);
-	}
+	NetClient::BroadcastMsgAsync(TxInfoMsg(tx));
 }
 
 bool Mempool::CheckBlockSize(const std::shared_ptr<Block>& block)
@@ -141,7 +137,7 @@ std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, con
 
 	if (CheckBlockSize(newBlock))
 	{
-		LOG_TRACE("Added tx {} to block {}", txId, block->Id());
+		LOG_TRACE("Added transaction {} to block {}", txId, block->Id());
 
 		addedToBlock.insert(txId);
 

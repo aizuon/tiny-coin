@@ -4,15 +4,15 @@
 #include <memory>
 #include <tuple>
 
-#include "ISerializable.hpp"
 #include "IDeserializable.hpp"
+#include "ISerializable.hpp"
 #include "TxOutPoint.hpp"
 
 class TxIn : public ISerializable, public IDeserializable
 {
 public:
 	TxIn() = default;
-	TxIn(const std::shared_ptr<TxOutPoint>& toSpend, const std::vector<uint8_t>& unlockSig, const std::vector<uint8_t>& unlockPk, int32_t sequence);
+	TxIn(const std::shared_ptr<TxOutPoint>& toSpend, const std::vector<uint8_t>& unlockSig, const std::vector<uint8_t>& unlockPubKey, int32_t sequence);
 
 	std::shared_ptr<TxOutPoint> ToSpend;
 

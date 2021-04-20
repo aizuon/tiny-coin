@@ -1,10 +1,10 @@
 #include "pch.hpp"
 
 #include "InvMsg.hpp"
+#include "Log.hpp"
+#include "Chain.hpp"
 #include "GetBlockMsg.hpp"
 #include "NetClient.hpp"
-#include "Chain.hpp"
-#include "Log.hpp"
 
 InvMsg::InvMsg(const std::vector<std::shared_ptr<Block>>& blocks)
 	: Blocks(blocks)
@@ -14,7 +14,7 @@ InvMsg::InvMsg(const std::vector<std::shared_ptr<Block>>& blocks)
 
 void InvMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
 {
-	LOG_INFO("Recieved initial sync from {}", con->Socket.remote_endpoint().address().to_string());
+	LOG_INFO("Recieved initial sync from {}:{}", con->Socket.remote_endpoint().address().to_string(), con->Socket.remote_endpoint().port());
 
 	std::vector<std::shared_ptr<Block>> newBlocks;
 	for (const auto& block : Blocks)

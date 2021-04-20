@@ -12,7 +12,9 @@ public:
 	BinaryBuffer(std::vector<uint8_t>&& obj);
 
 	BinaryBuffer(const BinaryBuffer& obj);
+	BinaryBuffer(BinaryBuffer&& obj) noexcept;
 	BinaryBuffer& operator=(const BinaryBuffer& obj);
+	BinaryBuffer& operator=(BinaryBuffer&& obj) noexcept;
 
     inline const std::vector<uint8_t>& GetBuffer() const
     {
@@ -105,6 +107,8 @@ public:
 
 	void Write(const std::string& obj);
 
+	void WriteRaw(const std::string& obj);
+
 	template<typename T>
 	bool Read(T& obj)
 	{
@@ -152,6 +156,8 @@ public:
 	}
 
 	bool Read(std::string& obj);
+
+	bool operator==(const BinaryBuffer& obj) const;
 
 private:
 	std::vector<uint8_t> Buffer;

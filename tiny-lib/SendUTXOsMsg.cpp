@@ -4,8 +4,8 @@
 
 #include "SendUTXOsMsg.hpp"
 #include "MsgCache.hpp"
-#include "UnspentTxOut.hpp"
 #include "NetClient.hpp"
+#include "UnspentTxOut.hpp"
 
 void SendUTXOsMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
 {

@@ -1,8 +1,8 @@
 #include "pch.hpp"
 
 #include "SendActiveChainMsg.hpp"
-#include "MsgCache.hpp"
 #include "Chain.hpp"
+#include "MsgCache.hpp"
 
 void SendActiveChainMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
 {

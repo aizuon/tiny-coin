@@ -9,15 +9,19 @@ BinaryBuffer::BinaryBuffer(const std::vector<uint8_t>& obj)
 }
 
 BinaryBuffer::BinaryBuffer(std::vector<uint8_t>&& obj)
-	: Buffer(obj), WriteOffset(obj.size())
+	: Buffer(std::move(obj)), WriteOffset(obj.size())
 {
+
 }
 
 BinaryBuffer::BinaryBuffer(const BinaryBuffer& obj)
+	: Buffer(obj.Buffer), WriteOffset(obj.WriteOffset), ReadOffset(obj.ReadOffset)
 {
-	Buffer = obj.Buffer;
-	WriteOffset = obj.WriteOffset;
-	ReadOffset = obj.ReadOffset;
+}
+
+BinaryBuffer::BinaryBuffer(BinaryBuffer&& obj) noexcept
+	: Buffer(std::move(obj.Buffer)), WriteOffset(obj.WriteOffset), ReadOffset(obj.ReadOffset)
+{
 }
 
 BinaryBuffer& BinaryBuffer::operator=(const BinaryBuffer& obj)
@@ -25,6 +29,15 @@ BinaryBuffer& BinaryBuffer::operator=(const BinaryBuffer& obj)
 	Buffer = obj.Buffer;
 	WriteOffset = obj.WriteOffset;
 	ReadOffset = obj.ReadOffset;
+
+	return *this;
+}
+
+BinaryBuffer& BinaryBuffer::operator=(BinaryBuffer&& obj) noexcept
+{
+	std::swap(Buffer, obj.Buffer);
+	std::swap(WriteOffset, obj.WriteOffset);
+	std::swap(ReadOffset, obj.ReadOffset);
 
 	return *this;
 }
@@ -42,6 +55,19 @@ void BinaryBuffer::Write(const std::string& obj)
 
 	memcpy(Buffer.data() + WriteOffset, &size, length1);
 	memcpy(Buffer.data() + WriteOffset + length1, obj.data(), length2);
+	WriteOffset = finalLength;
+}
+
+void BinaryBuffer::WriteRaw(const std::string& obj)
+{
+	std::lock_guard<std::mutex> lock(Mutex);
+
+	size_t length = obj.size();
+
+	size_t finalLength = WriteOffset + length;
+	GrowIfNeeded(finalLength);
+
+	memcpy(Buffer.data() + WriteOffset, obj.data(), length);
 	WriteOffset = finalLength;
 }
 
@@ -67,6 +93,17 @@ bool BinaryBuffer::Read(std::string& obj)
 	ReadOffset = finalOffset;
 
 	return true;
+}
+
+bool BinaryBuffer::operator==(const BinaryBuffer& obj) const
+{
+	if (WriteOffset != obj.WriteOffset)
+		return false;
+
+	if (ReadOffset != obj.ReadOffset)
+		return false;
+
+	return Buffer == obj.Buffer;
 }
 
 void BinaryBuffer::GrowIfNeeded(size_t finalLength)

@@ -1,6 +1,9 @@
 #pragma once
 #include <cstdint>
+#include <vector>
+#include <string>
 #include <memory>
+#include <utility>
 #include <boost/asio.hpp>
 
 #include "BinaryBuffer.hpp"
@@ -19,24 +22,29 @@ public:
 		boost::asio::streambuf ReadBuffer;
 	};
 
-	static std::vector<std::shared_ptr<Connection>> Connections;
+	static const std::vector<std::pair<std::string, uint16_t>> InitialPeers;
 
 	static void Run();
+	static void Stop();
 
 	static void Connect(const std::string& address, uint16_t port);
 
-	static void Listen(uint16_t port);
-
-	static std::shared_ptr<Connection> GetRandomConnection();
+	static void ListenAsync(uint16_t port);
 
 	static void SendMsgAsync(const std::shared_ptr<Connection>& con, const IMsg& msg);
-	static void SendMsgRandomAsync(const IMsg& msg);
+	static bool SendMsgRandomAsync(const IMsg& msg);
+
+	static void BroadcastMsgAsync(const IMsg& msg);
 
 private:
+	static std::string Magic;
+
 	static boost::asio::io_service IO_Service;
 	static boost::asio::ip::tcp::acceptor Acceptor;
 
-	static void HandleConnect(const std::shared_ptr<Connection>& con, const boost::system::error_code& err);
+	static std::vector<std::shared_ptr<Connection>> Connections;
+
+	static std::shared_ptr<Connection> GetRandomConnection();
 
 	static void StartAccept();
 	static void HandleAccept(const std::shared_ptr<Connection>& con, const boost::system::error_code& err);

@@ -1,8 +1,8 @@
 #include "pch.hpp"
 
 #include "TxInfoMsg.hpp"
-#include "Mempool.hpp"
 #include "Log.hpp"
+#include "Mempool.hpp"
 
 TxInfoMsg::TxInfoMsg(const std::shared_ptr<::Tx>& tx)
 	: Tx(tx)
@@ -12,7 +12,7 @@ TxInfoMsg::TxInfoMsg(const std::shared_ptr<::Tx>& tx)
 
 void TxInfoMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
 {
-	LOG_INFO("Recieved transaction {} from peer {}", Tx->Id(), con->Socket.remote_endpoint().address().to_string());
+	LOG_INFO("Recieved transaction {} from peer {}:{}", Tx->Id(), con->Socket.remote_endpoint().address().to_string(), con->Socket.remote_endpoint().port());
 
 	Mempool::AddTxToMempool(Tx);
 }
@@ -30,8 +30,8 @@ bool TxInfoMsg::Deserialize(BinaryBuffer& buffer)
 {
 	auto copy = *this;
 
-	auto tx = std::make_shared<::Tx>();
-	if (!tx->Deserialize(buffer))
+	Tx = std::make_shared<::Tx>();
+	if (!Tx->Deserialize(buffer))
 	{
 		*this = std::move(copy);
 

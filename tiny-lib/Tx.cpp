@@ -3,17 +3,17 @@
 #include <fmt/format.h>
 
 #include "Tx.hpp"
-#include "UnspentTxOut.hpp"
-#include "NetParams.hpp"
-#include "Log.hpp"
-#include "Utils.hpp"
 #include "Exceptions.hpp"
-#include "ECDSA.hpp"
-#include "SHA256.hpp"
-#include "MsgSerializer.hpp"
+#include "Log.hpp"
+#include "NetParams.hpp"
+#include "Utils.hpp"
 #include "Chain.hpp"
 #include "Mempool.hpp"
+#include "ECDSA.hpp"
+#include "SHA256.hpp"
 #include "Wallet.hpp"
+#include "MsgSerializer.hpp"
+#include "UnspentTxOut.hpp"
 
 Tx::Tx(const std::vector<std::shared_ptr<TxIn>>& txIns, const std::vector<std::shared_ptr<TxOut>>& txOuts, int64_t lockTime)
     : TxIns(txIns), TxOuts(txOuts), LockTime(lockTime)

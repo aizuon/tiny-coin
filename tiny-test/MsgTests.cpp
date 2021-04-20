@@ -6,12 +6,12 @@
 #include <memory>
 #include "gtest/gtest.h"
 
+#include "../tiny-lib/Utils.hpp"
 #include "../tiny-lib/MsgSerializer.hpp"
 #include "../tiny-lib/Tx.hpp"
 #include "../tiny-lib/TxIn.hpp"
 #include "../tiny-lib/TxOut.hpp"
 #include "../tiny-lib/TxOutPoint.hpp"
-#include "../tiny-lib/Utils.hpp"
 
 TEST(MsgTest, SpendMsg)
 {
@@ -24,7 +24,7 @@ TEST(MsgTest, SpendMsg)
 	auto txOut = std::make_shared<TxOut>(0, "foo");
 	txOuts.push_back(txOut);
 
-	auto tx = std::make_shared<Tx>(txIns, txOuts, 0);
+	auto tx = std::make_shared<Tx>(txIns, txOuts, -1);
 
 	auto spendMsg = MsgSerializer::BuildSpendMsg(txIn->ToSpend, txIn->UnlockPubKey, txIn->Sequence, tx->TxOuts);
 	auto spendMsg_str = Utils::ByteArrayToHexString(spendMsg);

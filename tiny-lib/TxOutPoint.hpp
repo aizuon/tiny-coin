@@ -4,8 +4,8 @@
 #include <string>
 #include <tuple>
 
-#include "ISerializable.hpp"
 #include "IDeserializable.hpp"
+#include "ISerializable.hpp"
 
 class TxOutPoint : public ISerializable, public IDeserializable
 {

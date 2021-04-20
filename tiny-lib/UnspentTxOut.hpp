@@ -6,9 +6,8 @@
 #include <memory>
 #include <tuple>
 
-#include "ISerializable.hpp"
 #include "IDeserializable.hpp"
-
+#include "ISerializable.hpp"
 #include "Tx.hpp"
 #include "TxIn.hpp"
 #include "TxOut.hpp"

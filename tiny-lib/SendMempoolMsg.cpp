@@ -1,8 +1,8 @@
 #include "pch.hpp"
 
 #include "SendMempoolMsg.hpp"
-#include "MsgCache.hpp"
 #include "Mempool.hpp"
+#include "MsgCache.hpp"
 
 void SendMempoolMsg::Handle(const std::shared_ptr<NetClient::Connection>& con)
 {

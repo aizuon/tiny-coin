@@ -1,8 +1,8 @@
 #include "pch.hpp"
 
 #include "Exceptions.hpp"
-#include "Tx.hpp"
 #include "Block.hpp"
+#include "Tx.hpp"
 
 TxUnlockException::TxUnlockException(const char* msg)
 	: std::exception(msg)

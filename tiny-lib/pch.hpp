@@ -2,7 +2,10 @@
 #define PCH_H
 
 #include <cstdint>
+#include <thread>
+#include <chrono>
 #include <atomic>
+#include <type_traits>
 #include <cassert>
 #include <array>
 #include <vector>

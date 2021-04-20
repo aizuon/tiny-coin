@@ -1,6 +1,8 @@
 #include "pch.hpp"
 
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/async.h>
 
 #include "Log.hpp"
 
@@ -21,7 +23,12 @@ void Log::StartLog()
 	logSinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_st>(path));
 	logSinks[0]->set_pattern("[ %T ] [ %l ] [ %n ] %v");
 
-	s_Logger = std::make_shared<spdlog::logger>("tc", logSinks.begin(), logSinks.end());
+	logSinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+	logSinks[1]->set_pattern("%^[ %T ] [ %n ] %v%$");
+
+	spdlog::init_thread_pool(128, 1);
+
+	s_Logger = std::make_shared<spdlog::async_logger>("tc", logSinks.begin(), logSinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
 	s_Logger->set_level(spdlog::level::trace);
 	s_Logger->flush_on(spdlog::level::trace);
 	spdlog::register_logger(s_Logger);

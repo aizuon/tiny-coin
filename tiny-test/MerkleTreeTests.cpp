@@ -4,8 +4,8 @@
 #include <string>
 #include "gtest/gtest.h"
 
-#include "../tiny-lib/MerkleTree.hpp"
 #include "../tiny-lib/Utils.hpp"
+#include "../tiny-lib/MerkleTree.hpp"
 #include "../tiny-lib/SHA256.hpp"
 
 TEST(MerkleTreeTest, OneChain)

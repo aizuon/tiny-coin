@@ -2,8 +2,8 @@
 #include <cstdint>
 #include <memory>
 
-#include "IMsg.hpp"
 #include "Block.hpp"
+#include "IMsg.hpp"
 
 class BlockInfoMsg : public IMsg
 {

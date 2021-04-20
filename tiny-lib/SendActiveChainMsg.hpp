@@ -3,8 +3,8 @@
 #include <vector>
 #include <string>
 
-#include "IMsg.hpp"
 #include "Block.hpp"
+#include "IMsg.hpp"
 
 class SendActiveChainMsg : public IMsg
 {
