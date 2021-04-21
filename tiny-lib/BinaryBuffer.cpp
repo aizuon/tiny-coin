@@ -44,7 +44,7 @@ BinaryBuffer& BinaryBuffer::operator=(BinaryBuffer&& obj) noexcept
 
 void BinaryBuffer::Write(const std::string& obj)
 {
-	std::lock_guard<std::mutex> lock(Mutex);
+	std::lock_guard lock(Mutex);
 
 	size_t size = obj.size();
 	size_t length1 = sizeof(size);
@@ -60,7 +60,7 @@ void BinaryBuffer::Write(const std::string& obj)
 
 void BinaryBuffer::WriteRaw(const std::string& obj)
 {
-	std::lock_guard<std::mutex> lock(Mutex);
+	std::lock_guard lock(Mutex);
 
 	size_t length = obj.size();
 
@@ -73,7 +73,7 @@ void BinaryBuffer::WriteRaw(const std::string& obj)
 
 bool BinaryBuffer::Read(std::string& obj)
 {
-	std::lock_guard<std::mutex> lock(Mutex);
+	std::lock_guard lock(Mutex);
 
 	size_t size = 0;
 	size_t length1 = sizeof(size);

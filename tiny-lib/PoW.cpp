@@ -41,6 +41,46 @@ uint8_t PoW::GetNextWorkRequired(const std::string& prevBlockHash)
         return prev_block->Bits;
 }
 
+std::shared_ptr<Block> PoW::AssembleAndSolveBlock(const std::string& payCoinbaseToAddress)
+{
+    return AssembleAndSolveBlock(payCoinbaseToAddress, std::vector<std::shared_ptr<Tx>>());
+}
+
+std::shared_ptr<Block> PoW::AssembleAndSolveBlock(const std::string& payCoinbaseToAddress, const std::vector<std::shared_ptr<Tx>>& txs)
+{
+    Chain::Lock.lock();
+    auto prevBlockHash = !Chain::ActiveChain.empty() ? Chain::ActiveChain.back()->Id() : "";
+    Chain::Lock.unlock();
+
+    auto block = std::make_shared<Block>(0, prevBlockHash, "", Utils::GetUnixTimestamp(), GetNextWorkRequired(prevBlockHash), 0, txs);
+
+    if (block->Txs.empty())
+        block = Mempool::SelectFromMempool(block);
+
+    auto fees = CalculateFees(block);
+    auto coinbaseTx = Tx::CreateCoinbase(payCoinbaseToAddress, GetBlockSubsidy() + fees, Chain::ActiveChain.size());
+    block->Txs.insert(block->Txs.begin(), coinbaseTx);
+    block->MerkleHash = MerkleTree::GetRootOfTxs(block->Txs)->Value;
+
+    if (block->Serialize().GetSize() > NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES)
+        throw std::exception("Transactions specified create a block too large");
+
+    return Mine(block);
+}
+
+std::shared_ptr<TxOut> PoW::UTXO_FromBlock(const std::shared_ptr<Block>& block, const std::shared_ptr<TxIn>& txIn)
+{
+    for (const auto& tx : block->Txs)
+    {
+        if (tx->Id() == txIn->ToSpend->TxId)
+        {
+            return tx->TxOuts[txIn->ToSpend->TxOutIdx];
+        }
+    }
+
+    return nullptr;
+}
+
 std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
 {
     if (MineInterrupt)
@@ -86,11 +126,12 @@ std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
 
 void PoW::MineForever()
 {
+    auto [privKey, pubKey, myAddress] = Wallet::InitWallet();
     Chain::LoadFromDisk();
 
     while (true)
     {
-        auto block = AssembleAndSolveBlock();
+        auto block = AssembleAndSolveBlock(myAddress);
 
         if (block != nullptr)
         {
@@ -114,47 +155,6 @@ void PoW::MineChunk(const std::shared_ptr<Block>& block, BIGNUM* target_bn, uint
     }
     found = true;
     found_nonce = start + i;
-}
-
-std::shared_ptr<Block> PoW::AssembleAndSolveBlock()
-{
-    return AssembleAndSolveBlock(std::vector<std::shared_ptr<Tx>>());
-}
-
-std::shared_ptr<Block> PoW::AssembleAndSolveBlock(const std::vector<std::shared_ptr<Tx>>& txs)
-{
-    Chain::Lock.lock();
-    auto prevBlockHash = !Chain::ActiveChain.empty() ? Chain::ActiveChain.back()->Id() : "";
-    Chain::Lock.unlock();
-
-    auto block = std::make_shared<Block>(0, prevBlockHash, "", Utils::GetUnixTimestamp(), GetNextWorkRequired(prevBlockHash), 0, txs);
-
-    if (block->Txs.empty())
-        block = Mempool::SelectFromMempool(block);
-
-    auto fees = CalculateFees(block);
-    auto [privKey, pubKey, myAddress] = Wallet::InitWallet();
-    auto coinbaseTx = Tx::CreateCoinbase(myAddress, GetBlockSubsidy() + fees, Chain::ActiveChain.size());
-    block->Txs.insert(block->Txs.begin(), coinbaseTx);
-    block->MerkleHash = MerkleTree::GetRootOfTxs(block->Txs)->Value;
-
-    if (block->Serialize().GetSize() > NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES)
-        throw std::exception("Transactions specified create a block too large");
-
-    return Mine(block);
-}
-
-std::shared_ptr<TxOut> PoW::UTXO_FromBlock(const std::shared_ptr<Block>& block, const std::shared_ptr<TxIn>& txIn)
-{
-    for (const auto& tx : block->Txs)
-    {
-        if (tx->Id() == txIn->ToSpend->TxId)
-        {
-            return tx->TxOuts[txIn->ToSpend->TxOutIdx];
-        }
-    }
-
-    return nullptr;
 }
 
 std::shared_ptr<TxOut> PoW::Find_UTXO(const std::shared_ptr<Block>& block, const std::shared_ptr<TxIn>& txIn)

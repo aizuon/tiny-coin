@@ -4,12 +4,18 @@
 #include <array>
 #include <vector>
 #include <memory>
+#include <algorithm>
 
 #include "gtest/gtest.h"
 
+#include "../tiny-lib/Exceptions.hpp"
+#include "../tiny-lib/Utils.hpp"
 #include "../tiny-lib/Block.hpp"
 #include "../tiny-lib/Chain.hpp"
 #include "../tiny-lib/Mempool.hpp"
+#include "../tiny-lib/PoW.hpp"
+#include "../tiny-lib/ECDSA.hpp"
+#include "../tiny-lib/Wallet.hpp"
 #include "../tiny-lib/Tx.hpp"
 #include "../tiny-lib/TxOut.hpp"
 #include "../tiny-lib/UnspentTxOut.hpp"
@@ -67,8 +73,85 @@ TEST(BlockChainTest, DependentTxsInSingleBlock)
 	ASSERT_TRUE(UTXO::Map.size() == 2);
 
 	const auto& utxo1 = UTXO::Map.begin()->second;
-	auto txout1 = std::make_shared<TxOut>(901, utxo1->TxOut->ToAddress);
-	//TODO: make txin
+	auto txOut1 = std::make_shared<TxOut>(901, utxo1->TxOut->ToAddress);
+	auto priv_key = Utils::HexStringToByteArray("f1ad3279bfa278ab6efb4f98f7a7b4c0f4664f7a58bff65cd2cb2d1d3a3020a7");
+	auto pub_key = ECDSA::GetPubKeyFromPrivKey(priv_key);
+	auto address = Wallet::PubKeyToAddress(pub_key);
+	auto txIn1 = Wallet::MakeTxIn(priv_key, utxo1->TxOutPoint, txOut1);
+	auto tx1 = std::make_shared<Tx>(std::vector<std::shared_ptr<TxIn>>{ txIn1 }, std::vector <std::shared_ptr<TxOut>>{ txOut1 }, 0);
+
+	auto txOut2 = std::make_shared<TxOut>(9001, txOut1->ToAddress);
+	auto txOutPoint2 = std::make_shared<TxOutPoint>(tx1->Id(), 0);
+	auto txIn2 = Wallet::MakeTxIn(priv_key, txOutPoint2, txOut2);
+	auto tx2 = std::make_shared<Tx>(std::vector<std::shared_ptr<TxIn>>{ txIn2 }, std::vector <std::shared_ptr<TxOut>>{ txOut2 }, 0);
+
+	ASSERT_THROW({
+		try
+		{
+			tx2->Validate(Tx::ValidateRequest());
+		}
+		catch (const TxValidationException& ex)
+		{
+			ASSERT_STREQ("Coinbase UTXO is not ready for spending", ex.what());
+			throw;
+		}
+		}, TxValidationException);
+
+	Chain::ConnectBlock(chain1[2]);
+
+	Mempool::AddTxToMempool(tx1);
+	ASSERT_TRUE(Mempool::Map.contains(tx1->Id()));
+
+	Mempool::AddTxToMempool(tx2);
+	ASSERT_FALSE(Mempool::Map.contains(tx2->Id()));
+
+	ASSERT_THROW({
+		try
+		{
+			tx2->Validate(Tx::ValidateRequest());
+		}
+		catch (const TxValidationException& ex)
+		{
+			ASSERT_STREQ("Spend value is more than available", ex.what());
+			throw;
+		}
+		}, TxValidationException);
+
+	txOut2 = std::make_shared<TxOut>(901, txOut1->ToAddress);
+	txOutPoint2 = std::make_shared<TxOutPoint>(tx1->Id(), 0);
+	txIn2 = Wallet::MakeTxIn(priv_key, txOutPoint2, txOut2);
+	tx2 = std::make_shared<Tx>(std::vector<std::shared_ptr<TxIn>>{ txIn2 }, std::vector <std::shared_ptr<TxOut>>{ txOut2 }, 0);
+
+	Mempool::AddTxToMempool(tx2);
+	ASSERT_TRUE(Mempool::Map.contains(tx2->Id()));
+
+	auto block = PoW::AssembleAndSolveBlock(address);
+
+	ASSERT_EQ(Chain::ConnectBlock(block), Chain::ActiveChainIdx);
+
+	ASSERT_EQ(*Chain::ActiveChain.back(), *block);
+	ASSERT_EQ(block->Txs.size() - 1, 2);
+	std::array<std::shared_ptr<Tx>, 2> txs{ tx1, tx2 };
+	for (size_t i = 0; i < txs.size(); i++)
+	{
+		ASSERT_EQ(*block->Txs[i + 1], *txs[i]);
+	}
+	ASSERT_FALSE(Mempool::Map.contains(tx1->Id()));
+	ASSERT_FALSE(Mempool::Map.contains(tx2->Id()));
+	auto map_it1 = std::find_if(UTXO::Map.begin(), UTXO::Map.end(),
+		[&tx1](const std::pair<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
+		{
+			const auto& [txOutPoint, utxo] = p;
+			return txOutPoint->TxId == tx1->Id() && txOutPoint->TxOutIdx == 0;
+		});
+	ASSERT_EQ(map_it1, UTXO::Map.end());
+	auto map_it2 = std::find_if(UTXO::Map.begin(), UTXO::Map.end(),
+		[&tx2](const std::pair<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
+		{
+			const auto& [txOutPoint, utxo] = p;
+			return txOutPoint->TxId == tx2->Id() && txOutPoint->TxOutIdx == 0;
+		});
+	ASSERT_NE(map_it2, UTXO::Map.end());
 }
 
 TEST(BlockChainTest, Reorg)

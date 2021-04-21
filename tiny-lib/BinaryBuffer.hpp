@@ -57,7 +57,7 @@ public:
     template<typename T>
     void Write(T obj)
     {
-		std::lock_guard<std::mutex> lock(Mutex);
+		std::lock_guard lock(Mutex);
 
 		static_assert(std::is_trivial_v<T>);
 
@@ -73,7 +73,7 @@ public:
 	template<typename T>
 	void Write(const std::vector<T>& obj)
 	{
-		std::lock_guard<std::mutex> lock(Mutex);
+		std::lock_guard lock(Mutex);
 
 		static_assert(std::is_trivial_v<T>);
 
@@ -92,7 +92,7 @@ public:
 	template<typename T>
 	void WriteRaw(const std::vector<T>& obj)
 	{
-		std::lock_guard<std::mutex> lock(Mutex);
+		std::lock_guard lock(Mutex);
 
 		static_assert(std::is_trivial_v<T>);
 
@@ -112,7 +112,7 @@ public:
 	template<typename T>
 	bool Read(T& obj)
 	{
-		std::lock_guard<std::mutex> lock(Mutex);
+		std::lock_guard lock(Mutex);
 
 		static_assert(std::is_trivial_v<T>);
 
@@ -131,7 +131,7 @@ public:
 	template<typename T>
 	bool Read(std::vector<T>& obj)
 	{
-		std::lock_guard<std::mutex> lock(Mutex);
+		std::lock_guard lock(Mutex);
 
 		static_assert(std::is_trivial_v<T>);
 

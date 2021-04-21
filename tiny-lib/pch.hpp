@@ -27,6 +27,9 @@
 #include <iterator>
 #include <random>
 
+#include <tbb/concurrent_vector.h>
+#include <tbb/concurrent_unordered_set.h>
+#include <tbb/concurrent_unordered_map.h>
 #include <fmt/format.h>
 
 #include "Log.hpp"

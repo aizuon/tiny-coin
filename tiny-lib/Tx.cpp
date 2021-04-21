@@ -43,7 +43,7 @@ void Tx::ValidateBasics(bool coinbase /*= false*/) const
         totalSpent += tx_out->Value;
 
     if (totalSpent > NetParams::MAX_MONEY)
-        throw TxValidationException("Spent value is too high");
+        throw TxValidationException("Spend value is too high");
 }
 
 BinaryBuffer Tx::Serialize() const
@@ -145,7 +145,7 @@ void Tx::Validate(const ValidateRequest& req) const
         const auto& txIn = TxIns[i];
 
         std::shared_ptr<UnspentTxOut> utxo = nullptr; //HACK: this could be a ref
-        if (!UTXO::Map.contains(txIn->ToSpend))
+        if (UTXO::Map.contains(txIn->ToSpend))
         {
             utxo = UTXO::Map[txIn->ToSpend];
         }

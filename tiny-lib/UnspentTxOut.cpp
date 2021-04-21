@@ -78,7 +78,7 @@ void UnspentTxOut::RemoveFromMap(const std::string& txId, int64_t idx)
 	auto map_it = std::find_if(Map.begin(), Map.end(),
 		[&txId, idx](const std::pair<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
 		{
-			auto& [txOutPoint, utxo] = p;
+			const auto& [txOutPoint, utxo] = p;
 			return txOutPoint->TxId == txId && txOutPoint->TxOutIdx == idx;
 		});
 	if (map_it != Map.end())
