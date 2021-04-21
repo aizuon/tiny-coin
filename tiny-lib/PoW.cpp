@@ -29,9 +29,9 @@ uint8_t PoW::GetNextWorkRequired(const std::string& prevBlockHash)
     if ((prev_block_height + 1) % NetParams::DIFFICULTY_PERIOD_IN_BLOCKS != 0)
         return prev_block->Bits;
 
-    Chain::Lock.lock();
-    auto& period_start_block = Chain::ActiveChain[std::max(prev_block_height - (NetParams::DIFFICULTY_PERIOD_IN_BLOCKS - 1), 0ULL)];
-    Chain::Lock.unlock();
+    Chain::Mutex.lock();
+    auto& period_start_block = Chain::ActiveChain[std::max(prev_block_height - (NetParams::DIFFICULTY_PERIOD_IN_BLOCKS - 1), 0LL)];
+    Chain::Mutex.unlock();
     int64_t actual_time_taken = prev_block->Timestamp - period_start_block->Timestamp;
     if (actual_time_taken < NetParams::DIFFICULTY_PERIOD_IN_SECS_TARGET)
         return prev_block->Bits + 1;
@@ -48,9 +48,9 @@ std::shared_ptr<Block> PoW::AssembleAndSolveBlock(const std::string& payCoinbase
 
 std::shared_ptr<Block> PoW::AssembleAndSolveBlock(const std::string& payCoinbaseToAddress, const std::vector<std::shared_ptr<Tx>>& txs)
 {
-    Chain::Lock.lock();
+    Chain::Mutex.lock();
     auto prevBlockHash = !Chain::ActiveChain.empty() ? Chain::ActiveChain.back()->Id() : "";
-    Chain::Lock.unlock();
+    Chain::Mutex.unlock();
 
     auto block = std::make_shared<Block>(0, prevBlockHash, "", Utils::GetUnixTimestamp(), GetNextWorkRequired(prevBlockHash), 0, txs);
 
@@ -87,8 +87,9 @@ std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
         MineInterrupt = false;
 
     auto newBlock = std::make_shared<Block>(*block);
+    newBlock->Nonce = 0;
     BIGNUM* target_bn = HashChecker::TargetBitsToBN(newBlock->Bits);
-    uint8_t num_threads = std::thread::hardware_concurrency() / 2;
+    uint8_t num_threads = 1; //std::thread::hardware_concurrency() / 2;
     if (num_threads == 0)
         num_threads = 1;
     uint64_t chunk_size = std::numeric_limits<uint64_t>::max() / num_threads;

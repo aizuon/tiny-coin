@@ -16,7 +16,7 @@ BinaryBuffer SendUTXOsMsg::Serialize() const
 {
 	BinaryBuffer buffer;
 
-	buffer.Write(UTXO::Map.size());
+	buffer.WriteSize(UTXO::Map.size());
 	for (const auto& [key, value] : UTXO::Map)
 	{
 		buffer.WriteRaw(key->Serialize().GetBuffer());
@@ -30,8 +30,8 @@ bool SendUTXOsMsg::Deserialize(BinaryBuffer& buffer)
 {
 	auto copy = *this;
 
-	size_t utxoMapSize = 0;
-	if (!buffer.Read(utxoMapSize))
+	uint32_t utxoMapSize = 0;
+	if (!buffer.ReadSize(utxoMapSize))
 	{
 		*this = std::move(copy);
 
@@ -39,7 +39,7 @@ bool SendUTXOsMsg::Deserialize(BinaryBuffer& buffer)
 	}
 	UTXO_Map = std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>>();
 	UTXO_Map.reserve(utxoMapSize);
-	for (size_t i = 0; i < utxoMapSize; i++)
+	for (uint32_t i = 0; i < utxoMapSize; i++)
 	{
 		auto txOutPoint = std::make_shared<TxOutPoint>();
 		if (!txOutPoint->Deserialize(buffer))

@@ -8,6 +8,8 @@
 
 #include "Utils.hpp"
 
+const bool Utils::IsBigEndian = Utils::IsBigEndianCast();
+
 std::string Utils::ByteArrayToHexString(const std::vector<uint8_t>& vec)
 {
     std::string hash;
@@ -52,4 +54,11 @@ std::string Utils::ByteArrayToHexString_DEBUG(const std::vector<uint8_t>& vec)
 int64_t Utils::GetUnixTimestamp()
 {
     return static_cast<int64_t>(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+}
+
+bool Utils::IsBigEndianCast()
+{
+    const uint32_t i = 1;
+
+    return (reinterpret_cast<const uint8_t*>(&i)[sizeof(i) - 1] == i);
 }

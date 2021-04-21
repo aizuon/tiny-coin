@@ -42,23 +42,23 @@ TEST(BlockChainTest, MedianTimePast)
 }
 
 auto chain1_block1_txs = std::vector<std::shared_ptr<Tx>>{ std::make_shared<Tx>(std::vector<std::shared_ptr<TxIn>>{ std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{ 0x00 }, std::vector<uint8_t>(), 0) }, std::vector<std::shared_ptr<TxOut>>{ std::make_shared<TxOut>(5000000000, "143UVyz7ooiAv1pMqbwPPpnH4BV9ifJGFF") }, -1) };
-auto chain1_block1 = std::make_shared<Block>(0, "", "d445c16c304784f3d89c2f65a53bb9f9d0b5e27a87dc1a33770664b62b424a3c", 1501821412, 24, 49160650, chain1_block1_txs);
+auto chain1_block1 = std::make_shared<Block>(0, "", "8fdcb01b725d0dba8437ab9fd20714acc5b6ff0ea7a3a052d72318ab234b5d0d", 1501821412, 24, 60590211, chain1_block1_txs);
 auto chain1_block2_txs = std::vector<std::shared_ptr<Tx>>{ std::make_shared<Tx>(std::vector<std::shared_ptr<TxIn>>{ std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{ 0x01 }, std::vector<uint8_t>(), 0) }, std::vector<std::shared_ptr<TxOut>>{ std::make_shared<TxOut>(5000000000, "1Piq91dFUqSb7tdddCWvuGX5UgdzXeoAwA") }, -1) };
-auto chain1_block2 = std::make_shared<Block>(0, "000000f3160fe69119aa6d1387964d0136bb8e7f52e5cf0ab8e2e769969ea541", "63818f170eb126c9c827c9183e9f611c6cb39cd18bab82f8421fe87c13b44304", 1501826444, 24, 40740373, chain1_block2_txs);
+auto chain1_block2 = std::make_shared<Block>(0, "0000009aefdd6ab38b5549dec09039ab64f5055892cb49f309568ffd9fedb629", "4eced71470b00a09aa7d61e6acb12a0aad2864593504072c8acf39f87da48cec", 1501826444, 24, 12171145, chain1_block2_txs);
 auto chain1_block3_txs = std::vector<std::shared_ptr<Tx>>{ std::make_shared<Tx>(std::vector<std::shared_ptr<TxIn>>{ std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{ 0x02 }, std::vector<uint8_t>(), 0) }, std::vector<std::shared_ptr<TxOut>>{ std::make_shared<TxOut>(5000000000, "1Piq91dFUqSb7tdddCWvuGX5UgdzXeoAwA") }, -1) };
-auto chain1_block3 = std::make_shared<Block>(0, "000000a3c54df8964dfe3713a64e2b570b75bb8c9f3c1c39abb056b837c805df", "fa349cc448c31ed701f18eeb9bb788fd646efab168f4caa9952e75840559b4eb", 1501826556, 24, 3101452, chain1_block3_txs);
+auto chain1_block3 = std::make_shared<Block>(0, "0000005d284aa9f5448f1f74f18d36204cdb9c5f673a5f1b35340a0f83fdb23c", "e8c33875847f0eb422e3de129e258a7f0c90b65fa28e5d0dbf6b13b41f4e5415", 1501826556, 24, 53695323, chain1_block3_txs);
 auto chain1 = std::vector<std::shared_ptr<Block>>{ chain1_block1, chain1_block2, chain1_block3 };
 
 auto chain2_block1_txs = std::vector<std::shared_ptr<Tx>>{ std::make_shared<Tx>(std::vector<std::shared_ptr<TxIn>>{ std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{ 0x00 }, std::vector<uint8_t>(), 0) }, std::vector<std::shared_ptr<TxOut>>{ std::make_shared<TxOut>(5000000000, "143UVyz7ooiAv1pMqbwPPpnH4BV9ifJGFF") }, -1) };
-auto chain2_block1 = std::make_shared<Block>(0, "", "d445c16c304784f3d89c2f65a53bb9f9d0b5e27a87dc1a33770664b62b424a3c", 1501821412, 24, 49160650, chain2_block1_txs);
+auto chain2_block1 = std::make_shared<Block>(0, "", "8fdcb01b725d0dba8437ab9fd20714acc5b6ff0ea7a3a052d72318ab234b5d0d", 1501821412, 24, 60590211, chain2_block1_txs);
 auto chain2_block2_txs = std::vector<std::shared_ptr<Tx>>{ std::make_shared<Tx>(std::vector<std::shared_ptr<TxIn>>{ std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{ 0x01 }, std::vector<uint8_t>(), 0) }, std::vector<std::shared_ptr<TxOut>>{ std::make_shared<TxOut>(5000000000, "1Piq91dFUqSb7tdddCWvuGX5UgdzXeoAwA") }, -1) };
-auto chain2_block2 = std::make_shared<Block>(0, "000000f3160fe69119aa6d1387964d0136bb8e7f52e5cf0ab8e2e769969ea541", "63818f170eb126c9c827c9183e9f611c6cb39cd18bab82f8421fe87c13b44304", 1501826757, 24, 20137768, chain2_block2_txs);
+auto chain2_block2 = std::make_shared<Block>(0, "0000009aefdd6ab38b5549dec09039ab64f5055892cb49f309568ffd9fedb629", "4eced71470b00a09aa7d61e6acb12a0aad2864593504072c8acf39f87da48cec", 1501826757, 24, 18122613, chain2_block2_txs);
 auto chain2_block3_txs = std::vector<std::shared_ptr<Tx>>{ std::make_shared<Tx>(std::vector<std::shared_ptr<TxIn>>{ std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{ 0x02 }, std::vector<uint8_t>(), 0) }, std::vector<std::shared_ptr<TxOut>>{ std::make_shared<TxOut>(5000000000, "1Piq91dFUqSb7tdddCWvuGX5UgdzXeoAwA") }, -1) };
-auto chain2_block3 = std::make_shared<Block>(0, "000000a786e4e510e222496c1f642d615198f41ba659736a7fa8f45a78d017bb", "fa349cc448c31ed701f18eeb9bb788fd646efab168f4caa9952e75840559b4eb", 1501826872, 24, 37034282, chain2_block3_txs);
+auto chain2_block3 = std::make_shared<Block>(0, "000000eb4d21e850a00cb509394d944e402ff723accfc8c0b81e6fbe88f0d53a", "e8c33875847f0eb422e3de129e258a7f0c90b65fa28e5d0dbf6b13b41f4e5415", 1501826872, 24, 3758387, chain2_block3_txs);
 auto chain2_block4_txs = std::vector<std::shared_ptr<Tx>>{ std::make_shared<Tx>(std::vector<std::shared_ptr<TxIn>>{ std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{ 0x03 }, std::vector<uint8_t>(), 0) }, std::vector<std::shared_ptr<TxOut>>{ std::make_shared<TxOut>(5000000000, "1Piq91dFUqSb7tdddCWvuGX5UgdzXeoAwA") }, -1) };
-auto chain2_block4 = std::make_shared<Block>(0, "000000d183865ef97c86d103daf63c0c50668bd2667618721e3392a090a32163", "34bba28730fcb681faa810c66a959aee010e1b837a2b4dea84477c983585219b", 1501826949, 24, 40171301, chain2_block4_txs);
+auto chain2_block4 = std::make_shared<Block>(0, "000000c611569bda6c484145f297c89c4774dfce133a26b5345c8098685dce1b", "e4ddedd960dcd9611f312a9aad74c3364ed02f2244cfb2e90ffc1effab47fc0b", 1501826949, 24, 31463847, chain2_block4_txs);
 auto chain2_block5_txs = std::vector<std::shared_ptr<Tx>>{ std::make_shared<Tx>(std::vector<std::shared_ptr<TxIn>>{ std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{ 0x04 }, std::vector<uint8_t>(), 0) }, std::vector<std::shared_ptr<TxOut>>{ std::make_shared<TxOut>(5000000000, "1Piq91dFUqSb7tdddCWvuGX5UgdzXeoAwA") }, -1) };
-auto chain2_block5 = std::make_shared<Block>(0, "000000da45d61cab6e2ec33c36452418a2f188de9c3f37b4e04ba448cf6843e3", "8ac9e36a39dfc0b5242977470955e53545eee42f60bcf06e2e2891376516083a", 1501827000, 24, 19653316, chain2_block5_txs);
+auto chain2_block5 = std::make_shared<Block>(0, "000000a3139dfb06800b631d2fdb2b0b445ed5d8538b85a1ef453482fbd9ffed", "89e6f44107581323b918c25dc9917c1baf87e8a2de884d7de093b1b083514583", 1501827000, 24, 25006008, chain2_block5_txs);
 auto chain2 = std::vector<std::shared_ptr<Block>>{ chain2_block1, chain2_block2, chain2_block3, chain2_block4, chain2_block5 };
 
 TEST(BlockChainTest, DependentTxsInSingleBlock)
@@ -190,7 +190,7 @@ TEST(BlockChainTest, Reorg)
 		ASSERT_EQ(*Chain::ActiveChain[i], *chain1[i]);
 	}
 	ASSERT_TRUE(Mempool::Map.empty());
-	const std::array<std::string, 3> txIds{ "9b42f6", "e58973", "0e738d" };
+	const std::array<std::string, 3> txIds{ "eab1ea", "7bbb46", "c3c8ab" };
 	ASSERT_EQ(UTXO::Map.size(), txIds.size());
 	for (const auto& [k, v] : UTXO::Map)
 	{
@@ -198,6 +198,10 @@ TEST(BlockChainTest, Reorg)
 		for (const auto& txId : txIds)
 		{
 			found |= k->TxId.ends_with(txId);
+			if (found)
+			{
+				break;
+			}
 		}
 		ASSERT_TRUE(found);
 	}
@@ -224,6 +228,10 @@ TEST(BlockChainTest, Reorg)
 		for (const auto& txId : txIds)
 		{
 			found |= k->TxId.ends_with(txId);
+			if (found)
+			{
+				break;
+			}
 		}
 		ASSERT_TRUE(found);
 	}
@@ -254,6 +262,10 @@ TEST(BlockChainTest, Reorg)
 		for (const auto& txId : txIds)
 		{
 			found |= k->TxId.ends_with(txId);
+			if (found)
+			{
+				break;
+			}
 		}
 		ASSERT_TRUE(found);
 	}
@@ -282,7 +294,7 @@ TEST(BlockChainTest, Reorg)
 		ASSERT_EQ(*Chain::SideBranches[0][i], *sideBranchTest2[i]);
 	}
 	ASSERT_TRUE(Mempool::Map.empty());
-	const std::array<std::string, 5> txIds2{ "9b42f6", "0e738d", "e58973", "2bdc57", "7047d8" };
+	const std::array<std::string, 5> txIds2{ "eab1ea", "7bbb46", "c3c8ab", "f52068", "b3df02" };
 	ASSERT_EQ(UTXO::Map.size(), txIds2.size());
 	for (const auto& [k, v] : UTXO::Map)
 	{
@@ -290,6 +302,10 @@ TEST(BlockChainTest, Reorg)
 		for (const auto& txId : txIds2)
 		{
 			found |= k->TxId.ends_with(txId);
+			if (found)
+			{
+				break;
+			}
 		}
 		ASSERT_TRUE(found);
 	}

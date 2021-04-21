@@ -13,7 +13,7 @@ BinaryBuffer SendMempoolMsg::Serialize() const
 {
 	BinaryBuffer buffer;
 
-	buffer.Write(Mempool::Map.size());
+	buffer.WriteSize(Mempool::Map.size());
 	for (const auto& [key, value] : Mempool::Map)
 	{
 		buffer.Write(key);
@@ -26,8 +26,8 @@ bool SendMempoolMsg::Deserialize(BinaryBuffer& buffer)
 {
 	auto copy = *this;
 
-	size_t mempoolSize = 0;
-	if (!buffer.Read(mempoolSize))
+	uint32_t mempoolSize = 0;
+	if (!buffer.ReadSize(mempoolSize))
 	{
 		*this = std::move(copy);
 
@@ -35,7 +35,7 @@ bool SendMempoolMsg::Deserialize(BinaryBuffer& buffer)
 	}
 	Mempool = std::vector<std::string>();
 	Mempool.reserve(mempoolSize);
-	for (size_t i = 0; i < mempoolSize; i++)
+	for (uint32_t i = 0; i < mempoolSize; i++)
 	{
 		std::string tx;
 		if (!buffer.Read(tx))

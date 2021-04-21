@@ -48,7 +48,7 @@ BinaryBuffer InvMsg::Serialize() const
 {
 	BinaryBuffer buffer;
 
-	buffer.Write(Blocks.size());
+	buffer.WriteSize(Blocks.size());
 	for (const auto& block : Blocks)
 	{
 		buffer.WriteRaw(block->Serialize().GetBuffer());
@@ -61,8 +61,8 @@ bool InvMsg::Deserialize(BinaryBuffer& buffer)
 {
 	auto copy = *this;
 
-	size_t blocksSize = 0;
-	if (!buffer.Read(blocksSize))
+	uint32_t blocksSize = 0;
+	if (!buffer.ReadSize(blocksSize))
 	{
 		*this = std::move(copy);
 
@@ -70,7 +70,7 @@ bool InvMsg::Deserialize(BinaryBuffer& buffer)
 	}
 	Blocks = std::vector<std::shared_ptr<Block>>();
 	Blocks.reserve(blocksSize);
-	for (size_t i = 0; i < blocksSize; i++)
+	for (uint32_t i = 0; i < blocksSize; i++)
 	{
 		auto block = std::make_shared<Block>();
 		if (!block->Deserialize(buffer))

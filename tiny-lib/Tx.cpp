@@ -50,11 +50,11 @@ BinaryBuffer Tx::Serialize() const
 {
     BinaryBuffer buffer;
 
-    buffer.Write(TxIns.size());
+    buffer.WriteSize(TxIns.size());
     for (const auto& tx_in : TxIns)
         buffer.WriteRaw(tx_in->Serialize().GetBuffer());
 
-    buffer.Write(TxOuts.size());
+    buffer.WriteSize(TxOuts.size());
     for (const auto& tx_out : TxOuts)
         buffer.WriteRaw(tx_out->Serialize().GetBuffer());
 
@@ -67,8 +67,8 @@ bool Tx::Deserialize(BinaryBuffer& buffer)
 {
     auto copy = *this;
 
-    size_t txInsSize = 0;
-    if (!buffer.Read(txInsSize))
+    uint32_t txInsSize = 0;
+    if (!buffer.ReadSize(txInsSize))
     {
         *this = std::move(copy);
 
@@ -76,7 +76,7 @@ bool Tx::Deserialize(BinaryBuffer& buffer)
     }
     TxIns = std::vector<std::shared_ptr<TxIn>>();
     TxIns.reserve(txInsSize);
-    for (size_t i = 0; i < txInsSize; i++)
+    for (uint32_t i = 0; i < txInsSize; i++)
     {
         auto txIn = std::make_shared<TxIn>();
         if (!txIn->Deserialize(buffer))
@@ -88,8 +88,8 @@ bool Tx::Deserialize(BinaryBuffer& buffer)
         TxIns.push_back(txIn);
     }
 
-    size_t txOutsSize = 0;
-    if (!buffer.Read(txOutsSize))
+    uint32_t txOutsSize = 0;
+    if (!buffer.ReadSize(txOutsSize))
     {
         *this = std::move(copy);
 
@@ -97,7 +97,7 @@ bool Tx::Deserialize(BinaryBuffer& buffer)
     }
     TxOuts = std::vector<std::shared_ptr<TxOut>>();
     TxOuts.reserve(txOutsSize);
-    for (size_t i = 0; i < txOutsSize; i++)
+    for (uint32_t i = 0; i < txOutsSize; i++)
     {
         auto txOut = std::make_shared<TxOut>();
         if (!txOut->Deserialize(buffer))

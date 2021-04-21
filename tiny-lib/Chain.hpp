@@ -26,7 +26,7 @@ public:
 
 	static std::vector<std::shared_ptr<Block>> OrphanBlocks;
 
-	static std::recursive_mutex Lock;
+	static std::recursive_mutex Mutex;
 
 	static constexpr int64_t ActiveChainIdx = 0;
 

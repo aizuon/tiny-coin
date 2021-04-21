@@ -3,6 +3,9 @@
 #include <vector>
 #include <string>
 #include <mutex>
+#include <boost/endian/conversion.hpp>
+
+#include "Utils.hpp"
 
 class BinaryBuffer
 {
@@ -26,22 +29,22 @@ public:
 		return Buffer;
 	}
 
-	inline size_t GetSize() const
+	inline uint32_t GetSize() const
 	{
 		return Buffer.size();
 	}
 
-	inline size_t GetWriteOffset() const
+	inline uint32_t GetWriteOffset() const
 	{
 		return WriteOffset;
 	}
 
-	inline size_t GetReadOffset() const
+	inline uint32_t GetReadOffset() const
 	{
 		return ReadOffset;
 	}
 
-	inline void GrowTo(size_t size)
+	inline void GrowTo(uint32_t size)
 	{
 		if (size < Buffer.size())
 			return;
@@ -49,25 +52,29 @@ public:
 		Buffer.resize(size);
 	}
 
-	inline void Reserve(size_t size)
+	inline void Reserve(uint32_t size)
 	{
 		Buffer.reserve(size);
 	}
 
+	void WriteSize(uint32_t obj);
+
     template<typename T>
     void Write(T obj)
     {
+		static_assert(std::is_arithmetic_v<T>);
+
 		std::lock_guard lock(Mutex);
 
-		static_assert(std::is_trivial_v<T>);
+		if (Utils::IsBigEndian)
+		{
+			boost::endian::endian_reverse_inplace(obj);
+		}
 
-		size_t length = sizeof(T);
-
-		size_t finalLength = WriteOffset + length;
-		GrowIfNeeded(finalLength);
-
+		uint32_t length = sizeof(T);
+		GrowIfNeeded(length);
 		memcpy(Buffer.data() + WriteOffset, &obj, length);
-		WriteOffset = finalLength;
+		WriteOffset += length;
     }
 
 	template<typename T>
@@ -75,18 +82,15 @@ public:
 	{
 		std::lock_guard lock(Mutex);
 
-		static_assert(std::is_trivial_v<T>);
+		uint32_t size = obj.size();
+		WriteSize(size);
 
-		size_t size = obj.size();
-		size_t length1 = sizeof(size);
-		size_t length2 = size * sizeof(T);
-
-		size_t finalLength = WriteOffset + length1 + length2;
-		GrowIfNeeded(finalLength);
-
-		memcpy(Buffer.data() + WriteOffset, &size, length1);
-		memcpy(Buffer.data() + WriteOffset + length1, obj.data(), length2);
-		WriteOffset = finalLength;
+		uint32_t length = size * sizeof(T);
+		GrowIfNeeded(length);
+		for (auto o : obj)
+		{
+			Write(o);
+		}
 	}
 
 	template<typename T>
@@ -94,35 +98,38 @@ public:
 	{
 		std::lock_guard lock(Mutex);
 
-		static_assert(std::is_trivial_v<T>);
-
-		size_t length = obj.size() * sizeof(T);
-
-		size_t finalLength = WriteOffset + length;
-		GrowIfNeeded(finalLength);
-
-		memcpy(Buffer.data() + WriteOffset, obj.data(), length);
-		WriteOffset = finalLength;
+		uint32_t length = obj.size() * sizeof(T);
+		GrowIfNeeded(length);
+		for (auto o : obj)
+		{
+			Write(o);
+		}
 	}
 
 	void Write(const std::string& obj);
 
 	void WriteRaw(const std::string& obj);
 
+	bool ReadSize(uint32_t& obj);
+
 	template<typename T>
 	bool Read(T& obj)
 	{
+		static_assert(std::is_arithmetic_v<T>);
+
 		std::lock_guard lock(Mutex);
 
-		static_assert(std::is_trivial_v<T>);
+		uint32_t length = sizeof(T);
 
-		size_t length = sizeof(T);
-
-		size_t finalOffset = ReadOffset + length;
+		uint32_t finalOffset = ReadOffset + length;
 		if (Buffer.size() < finalOffset)
 			return false;
 
 		memcpy(&obj, Buffer.data() + ReadOffset, length);
+		if (Utils::IsBigEndian)
+		{
+			boost::endian::endian_reverse_inplace(obj);
+		}
 		ReadOffset = finalOffset;
 
 		return true;
@@ -133,24 +140,22 @@ public:
 	{
 		std::lock_guard lock(Mutex);
 
-		static_assert(std::is_trivial_v<T>);
-
-		size_t size = 0;
-		size_t length1 = sizeof(size);
-		if (Buffer.size() < ReadOffset + length1)
+		uint32_t size = 0;
+		if (!ReadSize(size))
 			return false;
 
-		memcpy(&size, Buffer.data() + ReadOffset, length1);
+		uint32_t length = size * sizeof(T);
 
-		size_t length2 = size * sizeof(T);
-
-		size_t finalOffset = ReadOffset + length1 + length2;
+		uint32_t finalOffset = ReadOffset + length;
 		if (Buffer.size() < finalOffset)
 			return false;
 
 		obj.resize(size);
-		memcpy(obj.data(), Buffer.data() + ReadOffset + length1, length2);
-		ReadOffset = finalOffset;
+		for (uint32_t i = 0; i < size; i++)
+		{
+			if (!Read(obj[i]))
+				return false;
+		}
 
 		return true;
 	}
@@ -161,12 +166,12 @@ public:
 
 private:
 	std::vector<uint8_t> Buffer;
-	size_t WriteOffset = 0;
-	size_t ReadOffset = 0;
+	uint32_t WriteOffset = 0;
+	uint32_t ReadOffset = 0;
 
-	std::mutex Mutex;
+	std::recursive_mutex Mutex;
 
 	static constexpr float BUFFER_GROW_FACTOR = 1.5f;
 
-	void GrowIfNeeded(size_t finalLength);
+	void GrowIfNeeded(uint32_t finalLength);
 };

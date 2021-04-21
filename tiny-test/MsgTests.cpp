@@ -29,7 +29,7 @@ TEST(MsgTest, SpendMsg)
 	auto spendMsg = MsgSerializer::BuildSpendMsg(txIn->ToSpend, txIn->UnlockPubKey, txIn->Sequence, tx->TxOuts);
 	auto spendMsg_str = Utils::ByteArrayToHexString(spendMsg);
 
-	EXPECT_EQ(spendMsg_str, "b67cdaca8720b583489bde0a8ea45ae83cd5f6b2623fbf182ddbce88429b744b");
+	EXPECT_EQ(spendMsg_str, "e27095c3fbcceb55b0da735f9c897e9ea58a123c3508e55d60c346457e513ba6");
 
 	auto txOut2 = std::make_shared<TxOut>(0, "foo");
 	tx->TxOuts.push_back(txOut2);

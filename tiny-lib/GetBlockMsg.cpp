@@ -21,7 +21,7 @@ void GetBlockMsg::Handle(std::shared_ptr<Connection>& con)
 	if (height == -1)
 		height = 1;
 
-	Chain::Lock.lock();
+	Chain::Mutex.lock();
 
 	std::vector<std::shared_ptr<Block>> blocks;
 	blocks.reserve(ChunkSize);
@@ -32,7 +32,7 @@ void GetBlockMsg::Handle(std::shared_ptr<Connection>& con)
 	for (int64_t i = height; i < max_height - 1; i++)
 		blocks.push_back(Chain::ActiveChain[i]);
 
-	Chain::Lock.unlock();
+	Chain::Mutex.unlock();
 
 	LOG_TRACE("Sending {} blocks to {}:{}", blocks.size(), endpoint.address().to_string(), endpoint.port());
 	NetClient::SendMsg(con, InvMsg(blocks));

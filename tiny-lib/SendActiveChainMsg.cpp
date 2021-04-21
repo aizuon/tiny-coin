@@ -13,7 +13,7 @@ BinaryBuffer SendActiveChainMsg::Serialize() const
 {
 	BinaryBuffer buffer;
 
-	buffer.Write(Chain::ActiveChain.size());
+	buffer.WriteSize(Chain::ActiveChain.size());
 	for (const auto& block : Chain::ActiveChain)
 	{
 		buffer.WriteRaw(block->Serialize().GetBuffer());
@@ -26,8 +26,8 @@ bool SendActiveChainMsg::Deserialize(BinaryBuffer& buffer)
 {
 	auto copy = *this;
 
-	size_t activeChainSize = 0;
-	if (!buffer.Read(activeChainSize))
+	uint32_t activeChainSize = 0;
+	if (!buffer.ReadSize(activeChainSize))
 	{
 		*this = std::move(copy);
 
@@ -35,7 +35,7 @@ bool SendActiveChainMsg::Deserialize(BinaryBuffer& buffer)
 	}
 	ActiveChain = std::vector<std::shared_ptr<Block>>();
 	ActiveChain.reserve(activeChainSize);
-	for (size_t i = 0; i < activeChainSize; i++)
+	for (uint32_t i = 0; i < activeChainSize; i++)
 	{
 		auto block = std::make_shared<Block>();
 		if (!block->Deserialize(buffer))

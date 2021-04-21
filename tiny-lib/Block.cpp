@@ -40,7 +40,7 @@ BinaryBuffer Block::Serialize() const
 
 	buffer.Write(Nonce);
 
-	buffer.Write(Txs.size());
+	buffer.WriteSize(Txs.size());
 	for (const auto& tx : Txs)
 		buffer.WriteRaw(tx->Serialize().GetBuffer());
 
@@ -92,8 +92,8 @@ bool Block::Deserialize(BinaryBuffer& buffer)
 		return false;
 	}
 
-	size_t txsSize = 0;
-	if (!buffer.Read(txsSize))
+	uint32_t txsSize = 0;
+	if (!buffer.ReadSize(txsSize))
 	{
 		*this = std::move(copy);
 
@@ -101,7 +101,7 @@ bool Block::Deserialize(BinaryBuffer& buffer)
 	}
 	Txs = std::vector<std::shared_ptr<Tx>>();
 	Txs.reserve(txsSize);
-	for (size_t i = 0; i < txsSize; i++)
+	for (uint32_t i = 0; i < txsSize; i++)
 	{
 		auto tx = std::make_shared<Tx>();
 		if (!tx->Deserialize(buffer))
