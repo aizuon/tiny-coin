@@ -28,8 +28,8 @@ const std::shared_ptr<TxOut> Chain::GenesisTxOut = std::make_shared<TxOut>(
 const std::shared_ptr<Tx> Chain::GenesisTx = std::make_shared<Tx>(std::vector{GenesisTxIn},
                                                                   std::vector{GenesisTxOut}, 0);
 const std::shared_ptr<Block> Chain::GenesisBlock = std::make_shared<Block>(
-	0, "", "7118894203235a955a908c0abfc6d8fe6edec47b0a04ce1bf7263da3b4366d22",
-	1501821412, 24, 10126761, std::vector{GenesisTx});
+	0, "", "b77028f1eb999d4000899d2eed84f2fc619eda96faad1543cf9628df339a25c5",
+	1501821412, 24, 9223372036858194029, std::vector{GenesisTx});
 
 std::vector<std::shared_ptr<Block>> Chain::ActiveChain{GenesisBlock};
 std::vector<std::vector<std::shared_ptr<Block>>> Chain::SideBranches{};

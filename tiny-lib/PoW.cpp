@@ -119,6 +119,13 @@ std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
 		return nullptr;
 	}
 
+	if (!found)
+	{
+		LOG_ERROR("No nonce satisfies required bits");
+
+		return nullptr;
+	}
+
 	newBlock->Nonce = found_nonce;
 	auto duration = Utils::GetUnixTimestamp() - start;
 	if (duration == 0)
@@ -154,12 +161,13 @@ void PoW::MineChunk(const std::shared_ptr<Block>& block, BIGNUM* target_bn, uint
 		Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(block->Header(start + i)))),
 		target_bn))
 	{
+		++hash_count;
+		
+		i++;
 		if (found || i == chunk_size || MineInterrupt)
 		{
 			return;
 		}
-		i++;
-		++hash_count;
 	}
 	found = true;
 	found_nonce = start + i;
