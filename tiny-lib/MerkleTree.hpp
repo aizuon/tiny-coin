@@ -5,6 +5,9 @@
 
 #include "Tx.hpp"
 
+#pragma comment(lib, "crypt32")
+#pragma comment(lib, "ws2_32.lib")
+
 class MerkleNode
 {
 public:

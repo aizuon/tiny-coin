@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "UnspentTxOut.hpp"
 
-#include <algorithm>
+#include <ranges>
 
 #include "Log.hpp"
 
@@ -78,7 +78,8 @@ void UnspentTxOut::RemoveFromMap(const std::string& txId, int64_t idx)
 {
 	const auto map_it = std::ranges::find_if(Map,
 	                                         [&txId, idx](
-	                                         const std::pair<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
+	                                         const std::pair<
+		                                         std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
 	                                         {
 		                                         const auto& [txOutPoint, utxo] = p;
 		                                         return txOutPoint->TxId == txId && txOutPoint->TxOutIdx == idx;

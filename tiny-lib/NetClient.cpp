@@ -95,7 +95,7 @@ bool NetClient::SendMsgRandom(const IMsg& msg)
 	auto con = GetRandomConnection();
 	if (con == nullptr)
 		return false;
-	
+
 
 	SendMsg(con, msg);
 

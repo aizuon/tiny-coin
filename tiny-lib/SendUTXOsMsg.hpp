@@ -10,7 +10,7 @@
 class SendUTXOsMsg : public IMsg
 {
 public:
-	std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>> UTXO_Map;
+	std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UTXO>> UTXO_Map;
 
 	void Handle(std::shared_ptr<Connection>& con) override;
 	BinaryBuffer Serialize() const override;

@@ -1,10 +1,10 @@
 #include "pch.hpp"
 #include "Chain.hpp"
 
-#include <algorithm>
 #include <cassert>
 #include <exception>
 #include <fstream>
+#include <ranges>
 #include <fmt/format.h>
 #include <openssl/bn.h>
 
@@ -26,7 +26,7 @@ const std::shared_ptr<TxIn> Chain::GenesisTxIn = std::make_shared<TxIn>(nullptr,
 const std::shared_ptr<TxOut> Chain::GenesisTxOut = std::make_shared<TxOut>(
 	5000000000, "143UVyz7ooiAv1pMqbwPPpnH4BV9ifJGFF");
 const std::shared_ptr<Tx> Chain::GenesisTx = std::make_shared<Tx>(std::vector{GenesisTxIn},
-                                                                  std::vector{GenesisTxOut}, 0);
+                                                                  std::vector{GenesisTxOut}, 0); //TODO: locktime = -1
 const std::shared_ptr<Block> Chain::GenesisBlock = std::make_shared<Block>(
 	0, "", "b77028f1eb999d4000899d2eed84f2fc619eda96faad1543cf9628df339a25c5",
 	1501821412, 24, 9223372036858194029, std::vector{GenesisTx});
@@ -233,7 +233,7 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 		}
 	}
 
-	if (!doingReorg && ReorgIfNecessary() or chainIdx == ActiveChainIdx)
+	if ((!doingReorg && ReorgIfNecessary()) || chainIdx == ActiveChainIdx)
 	{
 		PoW::MineInterrupt = true;
 

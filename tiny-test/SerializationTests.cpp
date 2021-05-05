@@ -100,11 +100,11 @@ TEST(SerializationTest, UnspentTxOutSerialization)
 
 	auto txOutPoint = std::make_shared<TxOutPoint>("foo", 0);
 
-	auto utxo = std::make_shared<UnspentTxOut>(txOut, txOutPoint, false, 0);
+	auto utxo = std::make_shared<UTXO>(txOut, txOutPoint, false, 0);
 
 	auto serializedBuffer = utxo->Serialize();
 
-	auto utxo2 = std::make_shared<UnspentTxOut>();
+	auto utxo2 = std::make_shared<UTXO>();
 	ASSERT_TRUE(utxo2->Deserialize(serializedBuffer));
 
 	auto& txOut2 = utxo->TxOut;

@@ -7,9 +7,6 @@
 #include "../tiny-lib/PoW.hpp"
 #include "../tiny-lib/Wallet.hpp"
 
-#pragma comment(lib, "crypt32")
-#pragma comment(lib, "ws2_32.lib")
-
 namespace po = boost::program_options;
 
 int main(int ac, char** av)

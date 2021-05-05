@@ -17,7 +17,7 @@ public:
 
 	static std::vector<std::shared_ptr<Tx>> OrphanedTxs;
 
-	static std::shared_ptr<UnspentTxOut> Find_UTXO_InMempool(const std::shared_ptr<TxOutPoint>& txOutPoint);
+	static std::shared_ptr<UTXO> Find_UTXO_InMempool(const std::shared_ptr<TxOutPoint>& txOutPoint);
 
 	static std::shared_ptr<Block> SelectFromMempool(const std::shared_ptr<Block>& block);
 

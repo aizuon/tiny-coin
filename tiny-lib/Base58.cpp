@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "Base58.hpp"
 
-#include <algorithm>
+#include <ranges>
 #include <openssl/bn.h>
 
 #include "Utils.hpp"
@@ -31,7 +31,7 @@ std::string Base58::Encode(const std::vector<uint8_t>& buffer)
 	std::string result;
 	while (BN_cmp(bn, bn00) > 0)
 	{
-		if (!BN_div(dv, rem, bn, bn58, bnctx) || BN_copy(bn, dv) == NULL)
+		if (!BN_div(dv, rem, bn, bn58, bnctx) || BN_copy(bn, dv) == nullptr)
 		{
 			BN_free(rem);
 			BN_free(dv);

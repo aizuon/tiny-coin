@@ -3,6 +3,9 @@
 #include <string>
 #include <vector>
 
+#pragma comment(lib, "crypt32")
+#pragma comment(lib, "ws2_32.lib")
+
 class Base58
 {
 public:

@@ -11,6 +11,9 @@
 #include "Connection.hpp"
 #include "IMsg.hpp"
 
+#pragma comment(lib, "crypt32")
+#pragma comment(lib, "ws2_32.lib")
+
 class BinaryBuffer;
 
 class NetClient

@@ -14,7 +14,7 @@ std::unordered_map<std::string, std::shared_ptr<Tx>> Mempool::Map;
 
 std::vector<std::shared_ptr<Tx>> Mempool::OrphanedTxs;
 
-std::shared_ptr<UnspentTxOut> Mempool::Find_UTXO_InMempool(const std::shared_ptr<TxOutPoint>& txOutPoint)
+std::shared_ptr<UTXO> Mempool::Find_UTXO_InMempool(const std::shared_ptr<TxOutPoint>& txOutPoint)
 {
 	if (!Map.contains(txOutPoint->TxId))
 		return nullptr;
@@ -29,7 +29,7 @@ std::shared_ptr<UnspentTxOut> Mempool::Find_UTXO_InMempool(const std::shared_ptr
 
 	const auto& txOut = tx->TxOuts[txOutPoint->TxOutIdx];
 
-	return std::make_shared<UnspentTxOut>(txOut, txOutPoint, false, -1);
+	return std::make_shared<UTXO>(txOut, txOutPoint, false, -1);
 }
 
 std::shared_ptr<Block> Mempool::SelectFromMempool(const std::shared_ptr<Block>& block)
@@ -99,14 +99,15 @@ std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, con
 	{
 		const auto& toSpend = txIn->ToSpend;
 
-		auto map_it = std::ranges::find_if(UnspentTxOut::Map,
+		auto map_it = std::ranges::find_if(UTXO::Map,
 		                                   [&toSpend](
-		                                   const std::pair<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
+		                                   const std::pair<std::shared_ptr<TxOutPoint>, std::shared_ptr<UTXO>>&
+		                                   p)
 		                                   {
 			                                   const auto& [txOutPoint, utxo] = p;
 			                                   return *txOutPoint == *toSpend;
 		                                   });
-		if (map_it != UnspentTxOut::Map.end())
+		if (map_it != UTXO::Map.end())
 			continue;
 
 		const auto& inMempool = Find_UTXO_InMempool(toSpend);

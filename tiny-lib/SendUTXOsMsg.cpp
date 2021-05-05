@@ -1,8 +1,6 @@
 #include "pch.hpp"
 #include "SendUTXOsMsg.hpp"
 
-#include <algorithm>
-
 #include "MsgCache.hpp"
 #include "NetClient.hpp"
 #include "UnspentTxOut.hpp"
@@ -37,7 +35,7 @@ bool SendUTXOsMsg::Deserialize(BinaryBuffer& buffer)
 
 		return false;
 	}
-	UTXO_Map = std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>>();
+	UTXO_Map = std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UTXO>>();
 	UTXO_Map.reserve(utxoMapSize);
 	for (uint32_t i = 0; i < utxoMapSize; i++)
 	{
@@ -48,7 +46,7 @@ bool SendUTXOsMsg::Deserialize(BinaryBuffer& buffer)
 
 			return false;
 		}
-		auto utxo = std::make_shared<UnspentTxOut>();
+		auto utxo = std::make_shared<UTXO>();
 		if (!utxo->Deserialize(buffer))
 		{
 			*this = std::move(copy);

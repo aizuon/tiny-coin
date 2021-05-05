@@ -1,7 +1,6 @@
 #include "pch.hpp"
 #include "Wallet.hpp"
 
-#include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <iterator>
@@ -119,15 +118,16 @@ void Wallet::SendValue(uint64_t value, const std::string& address, const std::ve
 		return;
 	}
 	std::ranges::sort(my_coins,
-	                  [](const std::shared_ptr<UnspentTxOut>& a, const std::shared_ptr<UnspentTxOut>& b) -> bool
+	                  [](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
 	                  {
-		                  if (a->TxOut->Value > b->TxOut->Value)
-			                  return true;
-		                  if (a->TxOut->Value == b->TxOut->Value)
-			                  return a->Height > b->Height;
-		                  return false;
+		                  return a->TxOut->Value < b->TxOut->Value;
 	                  });
-	std::unordered_set<std::shared_ptr<UnspentTxOut>> selected_coins;
+	std::ranges::sort(my_coins,
+	                  [](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
+	                  {
+		                  return a->Height < b->Height;
+	                  });
+	std::unordered_set<std::shared_ptr<UTXO>> selected_coins;
 	for (const auto& coin : my_coins)
 	{
 		if (!selected_coins.contains(coin))
@@ -243,7 +243,7 @@ uint64_t Wallet::GetBalance(const std::string& address)
 	return value;
 }
 
-std::vector<std::shared_ptr<UnspentTxOut>> Wallet::FindUTXOsForAddress(const std::string& address)
+std::vector<std::shared_ptr<UTXO>> Wallet::FindUTXOsForAddress(const std::string& address)
 {
 	if (MsgCache::SendUTXOsMsg != nullptr)
 		MsgCache::SendUTXOsMsg = nullptr;
@@ -252,7 +252,7 @@ std::vector<std::shared_ptr<UnspentTxOut>> Wallet::FindUTXOsForAddress(const std
 	{
 		LOG_ERROR("No connection to ask UTXO set");
 
-		return std::vector<std::shared_ptr<UnspentTxOut>>();
+		return std::vector<std::shared_ptr<UTXO>>();
 	}
 
 	const auto start = Utils::GetUnixTimestamp();
@@ -262,12 +262,12 @@ std::vector<std::shared_ptr<UnspentTxOut>> Wallet::FindUTXOsForAddress(const std
 		{
 			LOG_ERROR("Timeout on GetUTXOsMsg");
 
-			return std::vector<std::shared_ptr<UnspentTxOut>>();
+			return std::vector<std::shared_ptr<UTXO>>();
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
-	std::vector<std::shared_ptr<UnspentTxOut>> utxos;
+	std::vector<std::shared_ptr<UTXO>> utxos;
 	for (const auto& v : MsgCache::SendUTXOsMsg->UTXO_Map | std::views::values)
 	{
 		if (v->TxOut->ToAddress == address)

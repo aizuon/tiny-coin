@@ -1,6 +1,7 @@
 #include "pch.hpp"
 #include "Tx.hpp"
 
+#include <ranges>
 #include <fmt/format.h>
 
 #include "Chain.hpp"
@@ -145,10 +146,20 @@ void Tx::Validate(const ValidateRequest& req) const
 	{
 		const auto& txIn = TxIns[i];
 
-		std::shared_ptr<UnspentTxOut> utxo = nullptr; //HACK: this could be a ref
-		if (UTXO::Map.contains(txIn->ToSpend))
+		std::shared_ptr<UTXO> utxo = nullptr; //HACK: this could be a ref
+		
+		const auto& toSpend = txIn->ToSpend;
+		auto map_it = std::ranges::find_if(UTXO::Map,
+			[&toSpend](
+				const std::pair<std::shared_ptr<TxOutPoint>, std::shared_ptr<UTXO>>&
+				p)
+			{
+				const auto& [txOutPoint, utxo] = p;
+				return *txOutPoint == *toSpend;
+			});
+		if (map_it != UTXO::Map.end())
 		{
-			utxo = UTXO::Map[txIn->ToSpend];
+			utxo = map_it->second;
 		}
 		else
 		{
@@ -224,7 +235,7 @@ bool Tx::operator==(const Tx& obj) const
 	return true;
 }
 
-void Tx::ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UnspentTxOut>& utxo) const
+void Tx::ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UTXO>& utxo) const
 {
 	const auto pubKeyAsAddr = Wallet::PubKeyToAddress(txIn->UnlockPubKey);
 	if (pubKeyAsAddr != utxo->TxOut->ToAddress)

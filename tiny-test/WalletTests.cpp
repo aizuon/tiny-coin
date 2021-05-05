@@ -7,9 +7,6 @@
 #include "../tiny-lib/Wallet.hpp"
 #include "gtest/gtest.h"
 
-#pragma comment(lib, "crypt32")
-#pragma comment(lib, "ws2_32.lib")
-
 TEST(WalletTest, PubKeyToAddress)
 {
 	const std::vector<uint8_t> pubKey = Utils::HexStringToByteArray(

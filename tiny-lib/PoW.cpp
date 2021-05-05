@@ -1,7 +1,6 @@
 #include "pch.hpp"
 #include "PoW.hpp"
 
-#include <algorithm>
 #include <exception>
 #include <boost/bind/bind.hpp>
 #include <boost/thread/thread.hpp>
@@ -60,7 +59,8 @@ std::shared_ptr<Block> PoW::AssembleAndSolveBlock(const std::string& payCoinbase
 		block = Mempool::SelectFromMempool(block);
 
 	const auto fees = CalculateFees(block);
-	const auto coinbaseTx = Tx::CreateCoinbase(payCoinbaseToAddress, GetBlockSubsidy() + fees, Chain::ActiveChain.size());
+	const auto coinbaseTx = Tx::CreateCoinbase(payCoinbaseToAddress, GetBlockSubsidy() + fees,
+	                                           Chain::ActiveChain.size());
 	block->Txs.insert(block->Txs.begin(), coinbaseTx);
 	block->MerkleHash = MerkleTree::GetRootOfTxs(block->Txs)->Value;
 
@@ -162,7 +162,7 @@ void PoW::MineChunk(const std::shared_ptr<Block>& block, BIGNUM* target_bn, uint
 		target_bn))
 	{
 		++hash_count;
-		
+
 		i++;
 		if (found || i == chunk_size || MineInterrupt)
 		{

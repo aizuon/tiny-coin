@@ -14,7 +14,7 @@ void Log::StartLog()
 	char logFile[MAX_PATH];
 	const std::string logFolder = "log\\";
 	if (GetFileAttributes(logFolder.c_str()) == INVALID_FILE_ATTRIBUTES)
-		CreateDirectory(logFolder.c_str(), NULL);
+		CreateDirectory(logFolder.c_str(), nullptr);
 	SYSTEMTIME t;
 	GetSystemTime(&t);
 	sprintf_s(logFile, MAX_PATH, "TinyCoin_%4d%02d%02d_%02d%02d%02d.log", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute,
@@ -29,7 +29,7 @@ void Log::StartLog()
 	spdlog::init_thread_pool(128, 1);
 
 	Logger = std::make_shared<spdlog::async_logger>("tc", logSinks.begin(), logSinks.end(), spdlog::thread_pool(),
-	                                                  spdlog::async_overflow_policy::block);
+	                                                spdlog::async_overflow_policy::block);
 	Logger->set_level(spdlog::level::trace);
 	Logger->flush_on(spdlog::level::trace);
 	spdlog::register_logger(Logger);

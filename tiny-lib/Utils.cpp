@@ -1,9 +1,9 @@
 #include "pch.hpp"
 #include "Utils.hpp"
 
-#include <algorithm>
 #include <chrono>
 #include <iomanip>
+#include <ranges>
 #include <sstream>
 #include <boost/algorithm/hex.hpp>
 

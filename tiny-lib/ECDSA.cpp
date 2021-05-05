@@ -95,7 +95,7 @@ bool ECDSA::VerifySig(const std::vector<uint8_t>& sig, const std::vector<uint8_t
 	EC_KEY* ec_key = EC_KEY_new_by_curve_name(NID_secp256k1);
 
 	BIGNUM* pub_key_bn = BN_new();
-	if (BN_bin2bn(pubKey.data(), pubKey.size(), pub_key_bn) == NULL)
+	if (BN_bin2bn(pubKey.data(), pubKey.size(), pub_key_bn) == nullptr)
 	{
 		BN_free(pub_key_bn);
 
@@ -107,7 +107,7 @@ bool ECDSA::VerifySig(const std::vector<uint8_t>& sig, const std::vector<uint8_t
 	const EC_GROUP* ec_group = EC_KEY_get0_group(ec_key);
 	EC_POINT* pub_key_point = EC_POINT_new(ec_group);
 	BN_CTX* bn_ctx = BN_CTX_new();
-	if (EC_POINT_bn2point(ec_group, pub_key_bn, pub_key_point, bn_ctx) == NULL)
+	if (EC_POINT_bn2point(ec_group, pub_key_bn, pub_key_point, bn_ctx) == nullptr)
 	{
 		BN_CTX_free(bn_ctx);
 
@@ -150,7 +150,7 @@ bool ECDSA::VerifySig(const std::vector<uint8_t>& sig, const std::vector<uint8_t
 bool ECDSA::ImportPrivKey(EC_KEY* ec_key, const std::vector<uint8_t>& privKey)
 {
 	BIGNUM* priv_key_bn = BN_new();
-	if (BN_bin2bn(privKey.data(), privKey.size(), priv_key_bn) == NULL)
+	if (BN_bin2bn(privKey.data(), privKey.size(), priv_key_bn) == nullptr)
 	{
 		BN_free(priv_key_bn);
 
@@ -171,11 +171,11 @@ std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(EC_KEY* ec_key, const EC_GROUP*
 	BN_CTX* bn_ctx = BN_CTX_new();
 
 	const EC_POINT* pub_key = EC_KEY_get0_public_key(ec_key);
-	if (pub_key == NULL)
+	if (pub_key == nullptr)
 	{
 		EC_POINT* pub_key2 = EC_POINT_new(ec_group);
 		const BIGNUM* priv_key = EC_KEY_get0_private_key(ec_key);
-		if (!EC_POINT_mul(ec_group, pub_key2, priv_key, NULL, NULL, bn_ctx))
+		if (!EC_POINT_mul(ec_group, pub_key2, priv_key, nullptr, nullptr, bn_ctx))
 		{
 			BN_CTX_free(bn_ctx);
 
@@ -201,7 +201,7 @@ std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(EC_KEY* ec_key, const EC_GROUP*
 	}
 
 	BIGNUM* pub_key_bn = BN_new();
-	if (EC_POINT_point2bn(ec_group, pub_key, POINT_CONVERSION_COMPRESSED, pub_key_bn, bn_ctx) == NULL)
+	if (EC_POINT_point2bn(ec_group, pub_key, POINT_CONVERSION_COMPRESSED, pub_key_bn, bn_ctx) == nullptr)
 	{
 		BN_free(pub_key_bn);
 		BN_CTX_free(bn_ctx);
