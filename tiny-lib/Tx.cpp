@@ -147,16 +147,16 @@ void Tx::Validate(const ValidateRequest& req) const
 		const auto& txIn = TxIns[i];
 
 		std::shared_ptr<UTXO> utxo = nullptr; //HACK: this could be a ref
-		
+
 		const auto& toSpend = txIn->ToSpend;
 		auto map_it = std::ranges::find_if(UTXO::Map,
-			[&toSpend](
-				const std::pair<std::shared_ptr<TxOutPoint>, std::shared_ptr<UTXO>>&
-				p)
-			{
-				const auto& [txOutPoint, utxo] = p;
-				return *txOutPoint == *toSpend;
-			});
+		                                   [&toSpend](
+		                                   const std::pair<std::shared_ptr<TxOutPoint>, std::shared_ptr<UTXO>>&
+		                                   p)
+		                                   {
+			                                   const auto& [txOutPoint, utxo] = p;
+			                                   return *txOutPoint == *toSpend;
+		                                   });
 		if (map_it != UTXO::Map.end())
 		{
 			utxo = map_it->second;
