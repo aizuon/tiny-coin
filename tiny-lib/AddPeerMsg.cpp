@@ -1,6 +1,6 @@
 #include "pch.hpp"
-
 #include "AddPeerMsg.hpp"
+
 #include "NetClient.hpp"
 
 AddPeerMsg::AddPeerMsg(const std::string& hostname, uint16_t port)

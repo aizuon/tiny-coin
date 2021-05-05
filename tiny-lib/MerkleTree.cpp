@@ -1,8 +1,8 @@
 #include "pch.hpp"
-
 #include "MerkleTree.hpp"
-#include "Utils.hpp"
+
 #include "SHA256.hpp"
+#include "Utils.hpp"
 
 MerkleNode::MerkleNode(const std::string& value, const std::vector<std::shared_ptr<MerkleNode>>& children)
 	: Value(value), Children(children)

@@ -1,14 +1,14 @@
 #include "pch.hpp"
+#include "Mempool.hpp"
 
 #include <ranges>
 
-#include "Mempool.hpp"
 #include "BinaryBuffer.hpp"
 #include "Exceptions.hpp"
 #include "Log.hpp"
+#include "NetClient.hpp"
 #include "NetParams.hpp"
 #include "TxInfoMsg.hpp"
-#include "NetClient.hpp"
 
 std::unordered_map<std::string, std::shared_ptr<Tx>> Mempool::Map;
 

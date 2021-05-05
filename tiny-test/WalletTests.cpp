@@ -2,10 +2,10 @@
 
 #include <cstdint>
 #include <vector>
-#include "gtest/gtest.h"
 
 #include "../tiny-lib/Utils.hpp"
 #include "../tiny-lib/Wallet.hpp"
+#include "gtest/gtest.h"
 
 #pragma comment(lib, "crypt32")
 #pragma comment(lib, "ws2_32.lib")

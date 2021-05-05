@@ -1,25 +1,26 @@
 #include "pch.hpp"
+#include "NetClient.hpp"
 
 #include <mutex>
 #include <boost/bind/bind.hpp>
-using namespace boost::placeholders;
 
-#include "NetClient.hpp"
-#include "BinaryBuffer.hpp"
-#include "Log.hpp"
-#include "Random.hpp"
-#include "IMsg.hpp"
 #include "AddPeerMsg.hpp"
+#include "BinaryBuffer.hpp"
 #include "BlockInfoMsg.hpp"
 #include "GetActiveChainMsg.hpp"
 #include "GetBlockMsg.hpp"
 #include "GetMempoolMsg.hpp"
 #include "GetUTXOsMsg.hpp"
+#include "IMsg.hpp"
 #include "InvMsg.hpp"
+#include "Log.hpp"
+#include "Random.hpp"
 #include "SendActiveChainMsg.hpp"
 #include "SendMempoolMsg.hpp"
 #include "SendUTXOsMsg.hpp"
 #include "TxInfoMsg.hpp"
+
+using namespace boost::placeholders;
 
 const std::vector<std::pair<std::string, uint16_t>> NetClient::InitialPeers = std::vector<std::pair<
 	std::string, uint16_t>>{

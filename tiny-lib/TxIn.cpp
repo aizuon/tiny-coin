@@ -1,5 +1,4 @@
 #include "pch.hpp"
-
 #include "TxIn.hpp"
 
 TxIn::TxIn(const std::shared_ptr<TxOutPoint>& toSpend, const std::vector<uint8_t>& unlockSig,

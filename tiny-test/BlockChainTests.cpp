@@ -1,25 +1,24 @@
 #include "pch.hpp"
 
-#include <cstdint>
-#include <array>
-#include <vector>
-#include <memory>
 #include <algorithm>
+#include <array>
+#include <cstdint>
+#include <memory>
 #include <ranges>
+#include <vector>
 
-#include "gtest/gtest.h"
-
-#include "../tiny-lib/Exceptions.hpp"
-#include "../tiny-lib/Utils.hpp"
 #include "../tiny-lib/Block.hpp"
 #include "../tiny-lib/Chain.hpp"
+#include "../tiny-lib/ECDSA.hpp"
+#include "../tiny-lib/Exceptions.hpp"
 #include "../tiny-lib/Mempool.hpp"
 #include "../tiny-lib/PoW.hpp"
-#include "../tiny-lib/ECDSA.hpp"
-#include "../tiny-lib/Wallet.hpp"
 #include "../tiny-lib/Tx.hpp"
 #include "../tiny-lib/TxOut.hpp"
 #include "../tiny-lib/UnspentTxOut.hpp"
+#include "../tiny-lib/Utils.hpp"
+#include "../tiny-lib/Wallet.hpp"
+#include "gtest/gtest.h"
 
 TEST(BlockChainTest, MedianTimePast)
 {

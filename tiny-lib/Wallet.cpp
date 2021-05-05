@@ -1,34 +1,33 @@
 #include "pch.hpp"
+#include "Wallet.hpp"
 
-#include <thread>
-#include <chrono>
-#include <unordered_set>
 #include <algorithm>
+#include <chrono>
 #include <fstream>
 #include <iterator>
 #include <ranges>
+#include <thread>
+#include <unordered_set>
 
-#include "Wallet.hpp"
-
-#include "Log.hpp"
-#include "NetParams.hpp"
-#include "Utils.hpp"
 #include "Base58.hpp"
 #include "ECDSA.hpp"
-#include "RIPEMD160.hpp"
-#include "SHA256.hpp"
 #include "GetActiveChainMsg.hpp"
 #include "GetMempoolMsg.hpp"
 #include "GetUTXOsMsg.hpp"
+#include "Log.hpp"
 #include "MsgCache.hpp"
 #include "MsgSerializer.hpp"
 #include "NetClient.hpp"
+#include "NetParams.hpp"
+#include "RIPEMD160.hpp"
 #include "SendActiveChainMsg.hpp"
 #include "SendMempoolMsg.hpp"
 #include "SendUTXOsMsg.hpp"
-#include "TxInfoMsg.hpp"
+#include "SHA256.hpp"
 #include "Tx.hpp"
+#include "TxInfoMsg.hpp"
 #include "UnspentTxOut.hpp"
+#include "Utils.hpp"
 
 std::string Wallet::WalletPath = DefaultWalletPath;
 

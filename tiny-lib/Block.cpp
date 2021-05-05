@@ -1,10 +1,10 @@
 #include "pch.hpp"
+#include "Block.hpp"
 
 #include <fmt/format.h>
 
-#include "Block.hpp"
-#include "Utils.hpp"
 #include "SHA256.hpp"
+#include "Utils.hpp"
 
 Block::Block(uint64_t version, const std::string& prevBlockHash, const std::string& markleHash, int64_t timestamp,
              uint8_t bits, uint64_t nonce,

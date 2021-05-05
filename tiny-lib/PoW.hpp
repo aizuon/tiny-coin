@@ -1,9 +1,9 @@
 #pragma once
-#include <cstdint>
 #include <atomic>
-#include <vector>
-#include <string>
+#include <cstdint>
 #include <memory>
+#include <string>
+#include <vector>
 #include <openssl/bn.h>
 
 #include "Block.hpp"

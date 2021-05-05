@@ -1,25 +1,25 @@
 #include "pch.hpp"
+#include "Chain.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <exception>
-#include <algorithm>
 #include <fstream>
 #include <fmt/format.h>
 #include <openssl/bn.h>
 
-#include "Chain.hpp"
+#include "BlockInfoMsg.hpp"
 #include "Exceptions.hpp"
+#include "HashChecker.hpp"
 #include "Log.hpp"
-#include "NetParams.hpp"
-#include "Utils.hpp"
 #include "Mempool.hpp"
 #include "MerkleTree.hpp"
-#include "PoW.hpp"
-#include "HashChecker.hpp"
-#include "BlockInfoMsg.hpp"
 #include "NetClient.hpp"
+#include "NetParams.hpp"
+#include "PoW.hpp"
 #include "TxOutPoint.hpp"
 #include "UnspentTxOut.hpp"
+#include "Utils.hpp"
 
 const std::shared_ptr<TxIn> Chain::GenesisTxIn = std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{0x00},
                                                                         std::vector<uint8_t>(), 0);

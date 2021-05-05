@@ -1,10 +1,9 @@
 #include "pch.hpp"
+#include "ECDSA.hpp"
 
+#include <openssl/bn.h>
 #include <openssl/ecdsa.h>
 #include <openssl/obj_mac.h>
-#include <openssl/bn.h>
-
-#include "ECDSA.hpp"
 
 std::pair<std::vector<uint8_t>, std::vector<uint8_t>> ECDSA::Generate()
 {

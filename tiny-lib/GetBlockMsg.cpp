@@ -1,9 +1,9 @@
 #include "pch.hpp"
-
 #include "GetBlockMsg.hpp"
-#include "Log.hpp"
+
 #include "Chain.hpp"
 #include "InvMsg.hpp"
+#include "Log.hpp"
 #include "NetClient.hpp"
 
 GetBlockMsg::GetBlockMsg(const std::string& fromBlockId)

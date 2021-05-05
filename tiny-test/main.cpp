@@ -1,8 +1,7 @@
 #include "pch.hpp"
 
-#include "gtest/gtest.h"
-
 #include "../tiny-lib/Log.hpp"
+#include "gtest/gtest.h"
 
 int main(int argc, char** argv)
 {

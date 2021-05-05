@@ -1,12 +1,12 @@
 #include "pch.hpp"
 
-#include <vector>
 #include <string>
-#include "gtest/gtest.h"
+#include <vector>
 
-#include "../tiny-lib/Utils.hpp"
 #include "../tiny-lib/MerkleTree.hpp"
 #include "../tiny-lib/SHA256.hpp"
+#include "../tiny-lib/Utils.hpp"
+#include "gtest/gtest.h"
 
 TEST(MerkleTreeTest, OneChain)
 {

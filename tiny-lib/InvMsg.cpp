@@ -1,9 +1,9 @@
 #include "pch.hpp"
-
 #include "InvMsg.hpp"
-#include "Log.hpp"
+
 #include "Chain.hpp"
 #include "GetBlockMsg.hpp"
+#include "Log.hpp"
 #include "NetClient.hpp"
 
 InvMsg::InvMsg(const std::vector<std::shared_ptr<Block>>& blocks)

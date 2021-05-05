@@ -1,5 +1,4 @@
 #include "pch.hpp"
-
 #include "Random.hpp"
 
 std::random_device Random::rd;

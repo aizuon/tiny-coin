@@ -1,11 +1,11 @@
 #include "pch.hpp"
 
 #include <cstdint>
-#include <vector>
 #include <string>
-#include "gtest/gtest.h"
+#include <vector>
 
 #include "../tiny-lib/BinaryBuffer.hpp"
+#include "gtest/gtest.h"
 
 TEST(BinaryBufferTest, PrimitiveReadWrite)
 {

@@ -1,6 +1,6 @@
 #include "pch.hpp"
-
 #include "MsgSerializer.hpp"
+
 #include "BinaryBuffer.hpp"
 #include "SHA256.hpp"
 #include "TxOut.hpp"

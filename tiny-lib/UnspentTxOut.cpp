@@ -1,8 +1,8 @@
 #include "pch.hpp"
+#include "UnspentTxOut.hpp"
 
 #include <algorithm>
 
-#include "UnspentTxOut.hpp"
 #include "Log.hpp"
 
 UnspentTxOut::UnspentTxOut(const std::shared_ptr<::TxOut>& txOut, const std::shared_ptr<::TxOutPoint>& txOutPoint,

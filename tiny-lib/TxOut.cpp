@@ -1,5 +1,4 @@
 #include "pch.hpp"
-
 #include "TxOut.hpp"
 
 TxOut::TxOut(uint64_t value, const std::string& toAddress)

@@ -1,12 +1,12 @@
 #pragma once
 #include <cstdint>
-#include <vector>
-#include <string>
 #include <memory>
+#include <string>
 #include <tuple>
+#include <vector>
 
-#include "ISerializable.hpp"
 #include "IDeserializable.hpp"
+#include "ISerializable.hpp"
 #include "Tx.hpp"
 
 class Block : public ISerializable, public IDeserializable

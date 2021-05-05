@@ -1,5 +1,4 @@
 #include "pch.hpp"
-
 #include "BinaryBuffer.hpp"
 
 BinaryBuffer::BinaryBuffer(const std::vector<uint8_t>& obj)

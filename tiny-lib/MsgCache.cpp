@@ -1,5 +1,4 @@
 #include "pch.hpp"
-
 #include "MsgCache.hpp"
 
 std::shared_ptr<SendActiveChainMsg> MsgCache::SendActiveChainMsg;

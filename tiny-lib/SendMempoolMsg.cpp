@@ -1,8 +1,8 @@
 #include "pch.hpp"
+#include "SendMempoolMsg.hpp"
 
 #include <ranges>
 
-#include "SendMempoolMsg.hpp"
 #include "Mempool.hpp"
 #include "MsgCache.hpp"
 

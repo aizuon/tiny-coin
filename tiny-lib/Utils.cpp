@@ -1,12 +1,11 @@
 #include "pch.hpp"
-
-#include <sstream>
-#include <iomanip>
-#include <chrono>
-#include <algorithm>
-#include <boost/algorithm/hex.hpp>
-
 #include "Utils.hpp"
+
+#include <algorithm>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
+#include <boost/algorithm/hex.hpp>
 
 const bool Utils::IsBigEndian = IsBigEndianCast();
 

@@ -1,9 +1,9 @@
 #pragma once
-#include <cstdint>
 #include <cassert>
-#include <vector>
-#include <string>
+#include <cstdint>
 #include <mutex>
+#include <string>
+#include <vector>
 #include <boost/endian/conversion.hpp>
 
 #include "Utils.hpp"

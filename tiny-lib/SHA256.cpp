@@ -1,8 +1,7 @@
 #include "pch.hpp"
+#include "SHA256.hpp"
 
 #include <openssl/sha.h>
-
-#include "SHA256.hpp"
 
 std::vector<uint8_t> SHA256::HashBinary(const std::vector<uint8_t>& buffer)
 {

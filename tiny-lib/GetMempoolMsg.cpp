@@ -1,6 +1,6 @@
 #include "pch.hpp"
-
 #include "GetMempoolMsg.hpp"
+
 #include "NetClient.hpp"
 #include "SendMempoolMsg.hpp"
 

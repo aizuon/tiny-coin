@@ -1,10 +1,9 @@
 #include "pch.hpp"
 
 #include <cstdint>
-#include <vector>
-#include <string>
 #include <memory>
-#include "gtest/gtest.h"
+#include <string>
+#include <vector>
 
 #include "../tiny-lib/BinaryBuffer.hpp"
 #include "../tiny-lib/Tx.hpp"
@@ -12,6 +11,7 @@
 #include "../tiny-lib/TxOut.hpp"
 #include "../tiny-lib/TxOutPoint.hpp"
 #include "../tiny-lib/UnspentTxOut.hpp"
+#include "gtest/gtest.h"
 
 TEST(SerializationTest, TxSerialization)
 {

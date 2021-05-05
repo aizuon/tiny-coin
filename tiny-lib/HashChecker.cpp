@@ -1,5 +1,4 @@
 #include "pch.hpp"
-
 #include "HashChecker.hpp"
 
 BIGNUM* HashChecker::TargetBitsToBN(uint8_t targetBits)

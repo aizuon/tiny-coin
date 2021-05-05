@@ -1,6 +1,6 @@
 #include "pch.hpp"
-
 #include "GetUTXOsMsg.hpp"
+
 #include "NetClient.hpp"
 #include "SendUTXOsMsg.hpp"
 

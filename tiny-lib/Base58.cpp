@@ -1,9 +1,9 @@
 #include "pch.hpp"
+#include "Base58.hpp"
 
 #include <algorithm>
 #include <openssl/bn.h>
 
-#include "Base58.hpp"
 #include "Utils.hpp"
 
 std::string Base58::Encode(const std::vector<uint8_t>& buffer)

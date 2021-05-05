@@ -1,8 +1,8 @@
 #pragma once
 #include <cstdint>
-#include <vector>
 #include <memory>
 #include <tuple>
+#include <vector>
 
 #include "IDeserializable.hpp"
 #include "ISerializable.hpp"

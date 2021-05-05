@@ -1,9 +1,9 @@
 #pragma once
 #include <cstdint>
-#include <vector>
-#include <string>
 #include <memory>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include <boost/asio.hpp>
 #include <boost/thread/thread.hpp>

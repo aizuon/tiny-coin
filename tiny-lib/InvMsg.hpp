@@ -1,8 +1,8 @@
 #pragma once
 #include <vector>
 
-#include "IMsg.hpp"
 #include "Block.hpp"
+#include "IMsg.hpp"
 
 class InvMsg : public IMsg
 {

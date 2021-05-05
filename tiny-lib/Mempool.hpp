@@ -1,9 +1,9 @@
 #pragma once
-#include <vector>
-#include <string>
-#include <set>
-#include <unordered_map>
 #include <memory>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "Block.hpp"
 #include "Tx.hpp"

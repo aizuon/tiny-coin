@@ -1,6 +1,6 @@
 #pragma once
-#include <memory>
 #include <exception>
+#include <memory>
 
 class Tx;
 class Block;

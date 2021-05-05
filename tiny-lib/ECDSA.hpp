@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include <openssl/ec.h>
 

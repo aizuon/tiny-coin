@@ -1,12 +1,12 @@
 #pragma once
-#include <cstdint>
 #include <atomic>
-#include <vector>
-#include <string>
+#include <cstdint>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 #include "Block.hpp"
 #include "Tx.hpp"

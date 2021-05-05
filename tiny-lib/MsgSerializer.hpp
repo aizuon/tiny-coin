@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
-#include <vector>
 #include <memory>
+#include <vector>
 
 #include "TxOut.hpp"
 #include "TxOutPoint.hpp"

@@ -1,8 +1,8 @@
 #include "pch.hpp"
+#include "SendUTXOsMsg.hpp"
 
 #include <algorithm>
 
-#include "SendUTXOsMsg.hpp"
 #include "MsgCache.hpp"
 #include "NetClient.hpp"
 #include "UnspentTxOut.hpp"

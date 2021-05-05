@@ -1,8 +1,7 @@
 #include "pch.hpp"
+#include "RIPEMD160.hpp"
 
 #include <openssl/ripemd.h>
-
-#include "RIPEMD160.hpp"
 
 std::vector<uint8_t> RIPEMD160::HashBinary(const std::vector<uint8_t>& buffer)
 {

@@ -1,8 +1,8 @@
 #include "pch.hpp"
-
 #include "BlockInfoMsg.hpp"
-#include "Log.hpp"
+
 #include "Chain.hpp"
+#include "Log.hpp"
 
 BlockInfoMsg::BlockInfoMsg(const std::shared_ptr<::Block>& block)
 	: Block(block)

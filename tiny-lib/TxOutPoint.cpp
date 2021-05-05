@@ -1,5 +1,4 @@
 #include "pch.hpp"
-
 #include "TxOutPoint.hpp"
 
 TxOutPoint::TxOutPoint(const std::string& txId, int64_t txOutIdx)

@@ -1,21 +1,22 @@
 #include "pch.hpp"
-
-#include <exception>
-#include <algorithm>
-#include <boost/thread/thread.hpp>
-#include <boost/bind/bind.hpp>
-using namespace boost::placeholders;
-
 #include "PoW.hpp"
-#include "Log.hpp"
-#include "NetParams.hpp"
-#include "Utils.hpp"
+
+#include <algorithm>
+#include <exception>
+#include <boost/bind/bind.hpp>
+#include <boost/thread/thread.hpp>
+
 #include "Chain.hpp"
+#include "HashChecker.hpp"
+#include "Log.hpp"
 #include "Mempool.hpp"
 #include "MerkleTree.hpp"
-#include "HashChecker.hpp"
+#include "NetParams.hpp"
 #include "SHA256.hpp"
+#include "Utils.hpp"
 #include "Wallet.hpp"
+
+using namespace boost::placeholders;
 
 std::atomic_bool PoW::MineInterrupt = false;
 

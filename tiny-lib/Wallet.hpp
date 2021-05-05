@@ -1,8 +1,8 @@
 #pragma once
 #include <cstdint>
-#include <vector>
 #include <string>
 #include <tuple>
+#include <vector>
 
 #include "TxIn.hpp"
 #include "TxOut.hpp"

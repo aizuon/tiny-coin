@@ -1,17 +1,17 @@
 #include "pch.hpp"
 
 #include <cstdint>
-#include <vector>
-#include <string>
 #include <memory>
-#include "gtest/gtest.h"
+#include <string>
+#include <vector>
 
-#include "../tiny-lib/Utils.hpp"
 #include "../tiny-lib/MsgSerializer.hpp"
 #include "../tiny-lib/Tx.hpp"
 #include "../tiny-lib/TxIn.hpp"
 #include "../tiny-lib/TxOut.hpp"
 #include "../tiny-lib/TxOutPoint.hpp"
+#include "../tiny-lib/Utils.hpp"
+#include "gtest/gtest.h"
 
 TEST(MsgTest, SpendMsg)
 {
