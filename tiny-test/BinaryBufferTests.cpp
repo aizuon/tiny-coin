@@ -135,7 +135,7 @@ TEST(BinaryBufferTest, VectorConstructor)
 	std::vector<uint8_t> vec{2, 3, 4, 5};
 	BinaryBuffer buffer(vec);
 
-	uint8_t new_value = 6;
+	const uint8_t new_value = 6;
 
 	vec.push_back(new_value);
 	EXPECT_NE(vec, buffer.GetBuffer());
@@ -149,7 +149,7 @@ TEST(BinaryBufferTest, GrowthPolicy)
 {
 	BinaryBuffer buffer;
 
-	std::string str = "foo";
+	const std::string str = "foo";
 
 	buffer.Write(str);
 	buffer.Write(str);

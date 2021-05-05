@@ -8,5 +8,5 @@ class IMsg : public virtual IHandleable, public virtual ISerializable, public vi
 public:
 	virtual ~IMsg()
 	{
-	};
+	}
 };

@@ -27,7 +27,7 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t>> ECDSA::Generate()
 
 	const EC_GROUP* ec_group = EC_KEY_get0_group(ec_key);
 	auto pub_key_buffer = GetPubKeyFromPrivKey(ec_key, ec_group);
-	if (pub_key_buffer.size() == 0)
+	if (pub_key_buffer.empty())
 	{
 		EC_KEY_free(ec_key);
 
@@ -52,7 +52,7 @@ std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(const std::vector<uint8_t>& pri
 
 	const EC_GROUP* ec_group = EC_KEY_get0_group(ec_key);
 	auto pub_key_buffer = GetPubKeyFromPrivKey(ec_key, ec_group);
-	if (pub_key_buffer.size() == 0)
+	if (pub_key_buffer.empty())
 	{
 		EC_KEY_free(ec_key);
 

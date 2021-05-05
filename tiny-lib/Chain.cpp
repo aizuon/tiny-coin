@@ -53,7 +53,7 @@ int64_t Chain::GetMedianTimePast(size_t numLastBlocks)
 	if (numLastBlocks > ActiveChain.size())
 		return 0;
 
-	size_t first_idx = ActiveChain.size() - numLastBlocks;
+	const size_t first_idx = ActiveChain.size() - numLastBlocks;
 	size_t median_idx = first_idx + (numLastBlocks / 2);
 	if (numLastBlocks % 2 == 0)
 		median_idx -= 1;
@@ -86,7 +86,7 @@ int64_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 	{
 		return tx->IsCoinbase();
 	};
-	auto coinbase_it = std::find_if(txs.begin(), txs.end(), coinbase_pred);
+	auto coinbase_it = std::ranges::find_if(txs, coinbase_pred);
 	if (coinbase_it != txs.begin() || std::find_if(++coinbase_it, txs.end(), coinbase_pred) != txs.end())
 		throw BlockValidationException("First transaction must be coinbase and no more");
 
@@ -110,7 +110,7 @@ int64_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 	if (block->Timestamp <= GetMedianTimePast(11))
 		throw BlockValidationException("Timestamp is too old");
 
-	int64_t prev_block_chain_idx = -1;
+	int64_t prev_block_chain_idx;
 	if (block->PrevBlockHash.empty())
 	{
 		prev_block_chain_idx = ActiveChainIdx;
@@ -145,7 +145,7 @@ int64_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 		}
 		catch (const TxValidationException&)
 		{
-			std::string msg = fmt::format("Transaction {} failed to validate", nonCoinbaseTx->Id());
+			const std::string msg = fmt::format("Transaction {} failed to validate", nonCoinbaseTx->Id());
 
 			LOG_ERROR(msg);
 
@@ -162,7 +162,7 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 
 	const auto blockId = block->Id();
 
-	std::shared_ptr<Block> located_block = nullptr; //HACK: this could be a ref
+	std::shared_ptr<Block> located_block; //HACK: this could be a ref
 	if (!doingReorg)
 	{
 		auto [located_block2, located_block_height, located_block_chain_idx] = LocateBlockInAllChains(block->Id());
@@ -180,7 +180,7 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 		return -1;
 	}
 
-	int64_t chainIdx = -1;
+	int64_t chainIdx;
 	try
 	{
 		chainIdx = ValidateBlock(block);
@@ -295,7 +295,7 @@ std::vector<std::shared_ptr<Block>> Chain::DisconnectToFork(const std::shared_pt
 		disconnected_chain.push_back(DisconnectBlock(ActiveChain.back()));
 	}
 
-	std::reverse(disconnected_chain.begin(), disconnected_chain.end());
+	std::ranges::reverse(disconnected_chain);
 
 	return disconnected_chain;
 }
@@ -330,15 +330,15 @@ bool Chain::TryReorg(const std::vector<std::shared_ptr<Block>>& branch, int64_t 
 {
 	std::lock_guard lock(Mutex);
 
-	auto fork_block = ActiveChain[forkIdx];
+	const auto fork_block = ActiveChain[forkIdx];
 
-	auto oldActiveChain = DisconnectToFork(fork_block);
+	const auto oldActiveChain = DisconnectToFork(fork_block);
 
 	assert(branch.front()->PrevBlockHash == ActiveChain.back()->Id());
 
 	for (const auto& block : branch)
 	{
-		int64_t connectedBlockIdx = ConnectBlock(block, true);
+		const int64_t connectedBlockIdx = ConnectBlock(block, true);
 		if (connectedBlockIdx != ActiveChainIdx)
 		{
 			RollbackReorg(oldActiveChain, fork_block, branchIdx);
@@ -366,7 +366,7 @@ void Chain::RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveCh
 
 	for (const auto& block : oldActiveChain)
 	{
-		auto connectedBlockIdx = ConnectBlock(block, true);
+		const auto connectedBlockIdx = ConnectBlock(block, true);
 
 		assert(connectedBlockIdx == ActiveChainIdx);
 	}
@@ -463,7 +463,7 @@ void Chain::SaveToDisk()
 		chainData.WriteRaw(block->Serialize().GetBuffer());
 	}
 	auto& chainDataBuffer = chainData.GetBuffer();
-	chain_out.write((const char*)chainDataBuffer.data(), chainDataBuffer.size());
+	chain_out.write(reinterpret_cast<const char*>(chainDataBuffer.data()), chainDataBuffer.size());
 	chain_out.flush();
 	chain_out.close();
 }

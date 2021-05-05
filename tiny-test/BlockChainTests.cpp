@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
+#include <ranges>
 
 #include "gtest/gtest.h"
 
@@ -213,19 +214,19 @@ TEST(BlockChainTest, DependentTxsInSingleBlock)
 	}
 	ASSERT_FALSE(Mempool::Map.contains(tx1->Id()));
 	ASSERT_FALSE(Mempool::Map.contains(tx2->Id()));
-	auto map_it1 = std::find_if(UTXO::Map.begin(), UTXO::Map.end(),
-	                            [&tx1](const std::pair<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
-	                            {
-		                            const auto& [txOutPoint, utxo] = p;
-		                            return txOutPoint->TxId == tx1->Id() && txOutPoint->TxOutIdx == 0;
-	                            });
+	auto map_it1 = std::ranges::find_if(UTXO::Map,
+	                                    [&tx1](const std::pair<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
+	                                    {
+		                                    const auto& [txOutPoint, utxo] = p;
+		                                    return txOutPoint->TxId == tx1->Id() && txOutPoint->TxOutIdx == 0;
+	                                    });
 	ASSERT_EQ(map_it1, UTXO::Map.end());
-	auto map_it2 = std::find_if(UTXO::Map.begin(), UTXO::Map.end(),
-	                            [&tx2](const std::pair<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
-	                            {
-		                            const auto& [txOutPoint, utxo] = p;
-		                            return txOutPoint->TxId == tx2->Id() && txOutPoint->TxOutIdx == 0;
-	                            });
+	auto map_it2 = std::ranges::find_if(UTXO::Map,
+	                                    [&tx2](const std::pair<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
+	                                    {
+		                                    const auto& [txOutPoint, utxo] = p;
+		                                    return txOutPoint->TxId == tx2->Id() && txOutPoint->TxOutIdx == 0;
+	                                    });
 	ASSERT_NE(map_it2, UTXO::Map.end());
 }
 
@@ -267,7 +268,7 @@ TEST(BlockChainTest, Reorg)
 	ASSERT_TRUE(Mempool::Map.empty());
 	const std::array<std::string, 3> txIds{"eab1ea", "7bbb46", "c3c8ab"};
 	ASSERT_EQ(UTXO::Map.size(), txIds.size());
-	for (const auto& [k, v] : UTXO::Map)
+	for (const auto& k : UTXO::Map | std::views::keys)
 	{
 		bool found = false;
 		for (const auto& txId : txIds)
@@ -297,7 +298,7 @@ TEST(BlockChainTest, Reorg)
 	}
 	ASSERT_TRUE(Mempool::Map.empty());
 	ASSERT_EQ(UTXO::Map.size(), txIds.size());
-	for (const auto& [k, v] : UTXO::Map)
+	for (const auto& k : UTXO::Map | std::views::keys)
 	{
 		bool found = false;
 		for (const auto& txId : txIds)
@@ -331,7 +332,7 @@ TEST(BlockChainTest, Reorg)
 	}
 	ASSERT_TRUE(Mempool::Map.empty());
 	ASSERT_EQ(UTXO::Map.size(), txIds.size());
-	for (const auto& [k, v] : UTXO::Map)
+	for (const auto& k : UTXO::Map | std::views::keys)
 	{
 		bool found = false;
 		for (const auto& txId : txIds)
@@ -371,7 +372,7 @@ TEST(BlockChainTest, Reorg)
 	ASSERT_TRUE(Mempool::Map.empty());
 	const std::array<std::string, 5> txIds2{"eab1ea", "7bbb46", "c3c8ab", "f52068", "b3df02"};
 	ASSERT_EQ(UTXO::Map.size(), txIds2.size());
-	for (const auto& [k, v] : UTXO::Map)
+	for (const auto& k : UTXO::Map | std::views::keys)
 	{
 		bool found = false;
 		for (const auto& txId : txIds2)

@@ -10,16 +10,16 @@
 
 TEST(MerkleTreeTest, OneChain)
 {
-	std::string foo = "foo";
-	std::string bar = "bar";
-	std::vector tree{foo, bar};
+	const std::string foo = "foo";
+	const std::string bar = "bar";
+	const std::vector tree{foo, bar};
 
 	auto root = MerkleTree::GetRoot(tree);
-	auto fooh = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(foo)));
-	auto barh = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(bar)));
+	const auto fooh = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(foo)));
+	const auto barh = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(bar)));
 
 	EXPECT_TRUE(root != nullptr);
-	auto combinedh = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(fooh + barh)));
+	const auto combinedh = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(fooh + barh)));
 	EXPECT_TRUE(root->Value == combinedh);
 	EXPECT_TRUE(root->Children[0]->Value == fooh);
 	EXPECT_TRUE(root->Children[1]->Value == barh);

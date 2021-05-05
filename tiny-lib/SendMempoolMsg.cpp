@@ -1,5 +1,7 @@
 #include "pch.hpp"
 
+#include <ranges>
+
 #include "SendMempoolMsg.hpp"
 #include "Mempool.hpp"
 #include "MsgCache.hpp"
@@ -14,7 +16,7 @@ BinaryBuffer SendMempoolMsg::Serialize() const
 	BinaryBuffer buffer;
 
 	buffer.WriteSize(Mempool::Map.size());
-	for (const auto& [key, value] : Mempool::Map)
+	for (const auto& key : Mempool::Map | std::views::keys)
 	{
 		buffer.Write(key);
 	}

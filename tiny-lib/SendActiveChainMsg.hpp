@@ -15,6 +15,4 @@ public:
 	bool Deserialize(BinaryBuffer& buffer) override;
 
 	Opcode GetOpcode() const override;
-
-private:
 };

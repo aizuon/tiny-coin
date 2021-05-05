@@ -6,8 +6,10 @@
 #include <algorithm>
 #include <fstream>
 #include <iterator>
+#include <ranges>
 
 #include "Wallet.hpp"
+
 #include "Log.hpp"
 #include "NetParams.hpp"
 #include "Utils.hpp"
@@ -32,7 +34,7 @@ std::string Wallet::WalletPath = DefaultWalletPath;
 
 std::string Wallet::PubKeyToAddress(const std::vector<uint8_t>& pubKey)
 {
-	auto sha256 = SHA256::HashBinary(pubKey);
+	const auto sha256 = SHA256::HashBinary(pubKey);
 
 	auto ripe = RIPEMD160::HashBinary(sha256);
 
@@ -71,7 +73,7 @@ std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::Init
 		address = PubKeyToAddress(pubKey);
 
 		std::ofstream wallet_out(walletPath, std::ios::binary);
-		wallet_out.write((const char*)privKey.data(), privKey.size());
+		wallet_out.write(reinterpret_cast<const char*>(privKey.data()), privKey.size());
 		wallet_out.flush();
 		wallet_out.close();
 	}
@@ -99,8 +101,8 @@ std::shared_ptr<TxIn> Wallet::MakeTxIn(const std::vector<uint8_t>& privKey,
 	int32_t sequence = 0;
 
 	auto pubKey = ECDSA::GetPubKeyFromPrivKey(privKey);
-	auto spend_msg = MsgSerializer::BuildSpendMsg(txOutPoint, pubKey, sequence,
-	                                              std::vector{txOut});
+	const auto spend_msg = MsgSerializer::BuildSpendMsg(txOutPoint, pubKey, sequence,
+	                                                    std::vector{txOut});
 	auto unlock_sig = ECDSA::SignMsg(spend_msg, privKey);
 
 	return std::make_shared<TxIn>(txOutPoint, unlock_sig, pubKey, sequence);
@@ -108,8 +110,8 @@ std::shared_ptr<TxIn> Wallet::MakeTxIn(const std::vector<uint8_t>& privKey,
 
 void Wallet::SendValue(uint64_t value, const std::string& address, const std::vector<uint8_t>& privKey)
 {
-	auto pubKey = ECDSA::GetPubKeyFromPrivKey(privKey);
-	auto myAddress = PubKeyToAddress(pubKey);
+	const auto pubKey = ECDSA::GetPubKeyFromPrivKey(privKey);
+	const auto myAddress = PubKeyToAddress(pubKey);
 	auto my_coins = FindUTXOsForAddress(myAddress);
 	if (my_coins.empty())
 	{
@@ -117,15 +119,15 @@ void Wallet::SendValue(uint64_t value, const std::string& address, const std::ve
 
 		return;
 	}
-	std::sort(my_coins.begin(), my_coins.end(),
-	          [](const std::shared_ptr<UnspentTxOut>& a, const std::shared_ptr<UnspentTxOut>& b) -> bool
-	          {
-		          if (a->TxOut->Value > b->TxOut->Value)
-			          return true;
-		          if (a->TxOut->Value == b->TxOut->Value)
-			          return a->Height > b->Height;
-		          return false;
-	          });
+	std::ranges::sort(my_coins,
+	                  [](const std::shared_ptr<UnspentTxOut>& a, const std::shared_ptr<UnspentTxOut>& b) -> bool
+	                  {
+		                  if (a->TxOut->Value > b->TxOut->Value)
+			                  return true;
+		                  if (a->TxOut->Value == b->TxOut->Value)
+			                  return a->Height > b->Height;
+		                  return false;
+	                  });
 	std::unordered_set<std::shared_ptr<UnspentTxOut>> selected_coins;
 	for (const auto& coin : my_coins)
 	{
@@ -143,13 +145,13 @@ void Wallet::SendValue(uint64_t value, const std::string& address, const std::ve
 			break;
 		}
 	}
-	auto txOut = std::make_shared<TxOut>(value, address);
+	const auto txOut = std::make_shared<TxOut>(value, address);
 	std::vector<std::shared_ptr<TxIn>> txIns;
 	for (const auto& selected_coin : selected_coins)
 	{
 		txIns.push_back(MakeTxIn(privKey, selected_coin->TxOutPoint, txOut));
 	}
-	auto tx = std::make_shared<Tx>(txIns, std::vector{txOut}, -1);
+	const auto tx = std::make_shared<Tx>(txIns, std::vector{txOut}, -1);
 	LOG_INFO("Built transaction {}, broadcasting", tx->Id());
 	if (!NetClient::SendMsgRandom(TxInfoMsg(tx)))
 	{
@@ -254,7 +256,7 @@ std::vector<std::shared_ptr<UnspentTxOut>> Wallet::FindUTXOsForAddress(const std
 		return std::vector<std::shared_ptr<UnspentTxOut>>();
 	}
 
-	auto start = Utils::GetUnixTimestamp();
+	const auto start = Utils::GetUnixTimestamp();
 	while (MsgCache::SendUTXOsMsg == nullptr)
 	{
 		if (Utils::GetUnixTimestamp() - start > MsgCache::MAX_MSG_AWAIT_TIME_IN_SECS)
@@ -267,7 +269,7 @@ std::vector<std::shared_ptr<UnspentTxOut>> Wallet::FindUTXOsForAddress(const std
 	}
 
 	std::vector<std::shared_ptr<UnspentTxOut>> utxos;
-	for (const auto& [k, v] : MsgCache::SendUTXOsMsg->UTXO_Map)
+	for (const auto& v : MsgCache::SendUTXOsMsg->UTXO_Map | std::views::values)
 	{
 		if (v->TxOut->ToAddress == address)
 		{

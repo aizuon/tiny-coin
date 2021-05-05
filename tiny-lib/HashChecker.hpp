@@ -9,6 +9,4 @@ public:
 	static BIGNUM* TargetBitsToBN(uint8_t targetBits);
 
 	static bool IsValid(const std::string& hash, const BIGNUM* target_bn);
-
-private:
 };

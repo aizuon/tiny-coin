@@ -125,9 +125,9 @@ std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& PayToAddr, uint64_t va
 	BinaryBuffer tx_in_unlockSig;
 	tx_in_unlockSig.Reserve(sizeof(height));
 	tx_in_unlockSig.Write(height);
-	auto tx_in = std::make_shared<TxIn>(nullptr, tx_in_unlockSig.GetBuffer(), std::vector<uint8_t>(), -1);
+	const auto tx_in = std::make_shared<TxIn>(nullptr, tx_in_unlockSig.GetBuffer(), std::vector<uint8_t>(), -1);
 
-	auto tx_out = std::make_shared<TxOut>(value, PayToAddr);
+	const auto tx_out = std::make_shared<TxOut>(value, PayToAddr);
 
 	std::vector tx_ins{tx_in};
 	std::vector tx_outs{tx_out};
@@ -226,11 +226,11 @@ bool Tx::operator==(const Tx& obj) const
 
 void Tx::ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UnspentTxOut>& utxo) const
 {
-	auto pubKeyAsAddr = Wallet::PubKeyToAddress(txIn->UnlockPubKey);
+	const auto pubKeyAsAddr = Wallet::PubKeyToAddress(txIn->UnlockPubKey);
 	if (pubKeyAsAddr != utxo->TxOut->ToAddress)
 		throw TxUnlockException("Public key does not match");
 
-	auto spend_msg = MsgSerializer::BuildSpendMsg(txIn->ToSpend, txIn->UnlockPubKey, txIn->Sequence, TxOuts);
+	const auto spend_msg = MsgSerializer::BuildSpendMsg(txIn->ToSpend, txIn->UnlockPubKey, txIn->Sequence, TxOuts);
 	if (!ECDSA::VerifySig(txIn->UnlockSig, spend_msg, txIn->UnlockPubKey))
 	{
 		LOG_ERROR("Key verification failed");

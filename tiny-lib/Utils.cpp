@@ -25,7 +25,7 @@ std::vector<uint8_t> Utils::HexStringToByteArray(const std::string& str)
 
 	std::vector<uint8_t> vec(hash.size());
 
-	std::copy(hash.begin(), hash.end(), vec.data());
+	std::ranges::copy(hash, vec.data());
 
 	return vec;
 }
@@ -46,7 +46,7 @@ std::string Utils::ByteArrayToHexString_DEBUG(const std::vector<uint8_t>& vec)
 		ss << std::setw(2) << std::setfill('0') << static_cast<int>(b) << " ";
 
 	std::string output = ss.str();
-	std::transform(output.begin(), output.end(), output.begin(), std::toupper);
+	std::ranges::transform(output, output.begin(), std::toupper);
 
 	return output;
 }

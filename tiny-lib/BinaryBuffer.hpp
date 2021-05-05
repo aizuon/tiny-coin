@@ -71,7 +71,7 @@ public:
 			boost::endian::endian_reverse_inplace(obj);
 		}
 
-		uint32_t length = sizeof(T);
+		const uint32_t length = sizeof(T);
 		GrowIfNeeded(length);
 		memcpy(Buffer.data() + WriteOffset, &obj, length);
 		WriteOffset += length;
@@ -82,10 +82,10 @@ public:
 	{
 		std::lock_guard lock(Mutex);
 
-		uint32_t size = obj.size();
+		const uint32_t size = obj.size();
 		WriteSize(size);
 
-		uint32_t length = size * sizeof(T);
+		const uint32_t length = size * sizeof(T);
 		GrowIfNeeded(length);
 		for (auto o : obj)
 		{
@@ -98,7 +98,7 @@ public:
 	{
 		std::lock_guard lock(Mutex);
 
-		uint32_t length = obj.size() * sizeof(T);
+		const uint32_t length = obj.size() * sizeof(T);
 		GrowIfNeeded(length);
 		for (auto o : obj)
 		{
@@ -119,9 +119,9 @@ public:
 
 		std::lock_guard lock(Mutex);
 
-		uint32_t length = sizeof(T);
+		const uint32_t length = sizeof(T);
 
-		uint32_t finalOffset = ReadOffset + length;
+		const uint32_t finalOffset = ReadOffset + length;
 		if (Buffer.size() < finalOffset)
 			return false;
 
@@ -144,9 +144,9 @@ public:
 		if (!ReadSize(size))
 			return false;
 
-		uint32_t length = size * sizeof(T);
+		const uint32_t length = size * sizeof(T);
 
-		uint32_t finalOffset = ReadOffset + length;
+		const uint32_t finalOffset = ReadOffset + length;
 		if (Buffer.size() < finalOffset)
 			return false;
 
@@ -173,5 +173,5 @@ private:
 
 	static constexpr float BUFFER_GROW_FACTOR = 1.5f;
 
-	void GrowIfNeeded(uint32_t finalLength);
+	void GrowIfNeeded(uint32_t writeLength);
 };

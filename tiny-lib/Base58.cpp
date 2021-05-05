@@ -15,7 +15,7 @@ std::string Base58::Encode(const std::vector<uint8_t>& buffer)
 	BIGNUM* dv = BN_new();
 	BIGNUM* rem = BN_new();
 
-	auto hexString = Utils::ByteArrayToHexString(buffer);
+	const auto hexString = Utils::ByteArrayToHexString(buffer);
 
 	if (!BN_hex2bn(&bn, hexString.c_str()) || !BN_hex2bn(&bn58, "3a") || !BN_hex2bn(&bn00, "00"))
 	{
@@ -42,7 +42,7 @@ std::string Base58::Encode(const std::vector<uint8_t>& buffer)
 
 			return std::string();
 		}
-		char base58char = Table[BN_get_word(rem)];
+		const char base58char = Table[BN_get_word(rem)];
 		result += base58char;
 	}
 
@@ -53,7 +53,7 @@ std::string Base58::Encode(const std::vector<uint8_t>& buffer)
 	BN_free(bn);
 	BN_CTX_free(bnctx);
 
-	std::reverse(result.begin(), result.end());
+	std::ranges::reverse(result);
 
 	return result;
 }

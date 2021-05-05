@@ -41,7 +41,7 @@ int main(int ac, char** av)
 	auto [privKey, pubKey, address] = vm.contains("wallet")
 		                                  ? Wallet::InitWallet(vm["wallet"].as<std::string>())
 		                                  : Wallet::InitWallet();
-	auto port = vm["port"].as<uint16_t>();
+	const auto port = vm["port"].as<uint16_t>();
 	NetClient::ListenAsync(port);
 	NetClient::RunAsync();
 

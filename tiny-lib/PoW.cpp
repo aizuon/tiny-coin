@@ -32,7 +32,7 @@ uint8_t PoW::GetNextWorkRequired(const std::string& prevBlockHash)
 	auto& period_start_block = Chain::ActiveChain[std::max(
 		prev_block_height - (NetParams::DIFFICULTY_PERIOD_IN_BLOCKS - 1), 0LL)];
 	Chain::Mutex.unlock();
-	int64_t actual_time_taken = prev_block->Timestamp - period_start_block->Timestamp;
+	const int64_t actual_time_taken = prev_block->Timestamp - period_start_block->Timestamp;
 	if (actual_time_taken < NetParams::DIFFICULTY_PERIOD_IN_SECS_TARGET)
 		return prev_block->Bits + 1;
 	if (actual_time_taken > NetParams::DIFFICULTY_PERIOD_IN_SECS_TARGET)
@@ -58,8 +58,8 @@ std::shared_ptr<Block> PoW::AssembleAndSolveBlock(const std::string& payCoinbase
 	if (block->Txs.empty())
 		block = Mempool::SelectFromMempool(block);
 
-	auto fees = CalculateFees(block);
-	auto coinbaseTx = Tx::CreateCoinbase(payCoinbaseToAddress, GetBlockSubsidy() + fees, Chain::ActiveChain.size());
+	const auto fees = CalculateFees(block);
+	const auto coinbaseTx = Tx::CreateCoinbase(payCoinbaseToAddress, GetBlockSubsidy() + fees, Chain::ActiveChain.size());
 	block->Txs.insert(block->Txs.begin(), coinbaseTx);
 	block->MerkleHash = MerkleTree::GetRootOfTxs(block->Txs)->Value;
 
@@ -93,12 +93,12 @@ std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
 	uint8_t num_threads = std::thread::hardware_concurrency() / 2;
 	if (num_threads == 0)
 		num_threads = 1;
-	uint64_t chunk_size = std::numeric_limits<uint64_t>::max() / num_threads;
+	const uint64_t chunk_size = std::numeric_limits<uint64_t>::max() / num_threads;
 	std::atomic_bool found = false;
 	std::atomic<uint64_t> found_nonce = 0;
 	std::atomic<uint64_t> hash_count = 0;
 
-	auto start = Utils::GetUnixTimestamp();
+	const auto start = Utils::GetUnixTimestamp();
 	boost::thread_group threadpool;
 	for (uint8_t i = 0; i < num_threads; i++)
 	{
@@ -207,7 +207,7 @@ uint64_t PoW::CalculateFees(const std::shared_ptr<Block>& block)
 
 uint64_t PoW::GetBlockSubsidy()
 {
-	size_t halvings = Chain::ActiveChain.size() / NetParams::HALVE_SUBSIDY_AFTER_BLOCKS_NUM;
+	const size_t halvings = Chain::ActiveChain.size() / NetParams::HALVE_SUBSIDY_AFTER_BLOCKS_NUM;
 
 	if (halvings >= 64)
 		return 0;

@@ -99,13 +99,13 @@ std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, con
 	{
 		const auto& toSpend = txIn->ToSpend;
 
-		auto map_it = std::find_if(UnspentTxOut::Map.begin(), UnspentTxOut::Map.end(),
-		                           [&toSpend](
-		                           const std::pair<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
-		                           {
-			                           const auto& [txOutPoint, utxo] = p;
-			                           return *txOutPoint == *toSpend;
-		                           });
+		auto map_it = std::ranges::find_if(UnspentTxOut::Map,
+		                                   [&toSpend](
+		                                   const std::pair<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
+		                                   {
+			                                   const auto& [txOutPoint, utxo] = p;
+			                                   return *txOutPoint == *toSpend;
+		                                   });
 		if (map_it != UnspentTxOut::Map.end())
 			continue;
 

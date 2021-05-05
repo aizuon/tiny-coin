@@ -17,14 +17,14 @@ TEST(SerializationTest, TxSerialization)
 {
 	std::vector<std::shared_ptr<TxIn>> txIns;
 	auto toSpend = std::make_shared<TxOutPoint>("foo", 0);
-	auto txIn = std::make_shared<TxIn>(toSpend, std::vector<uint8_t>{0x00}, std::vector<uint8_t>{0x00}, 1);
+	const auto txIn = std::make_shared<TxIn>(toSpend, std::vector<uint8_t>{0x00}, std::vector<uint8_t>{0x00}, 1);
 	txIns.push_back(txIn);
 
 	std::vector<std::shared_ptr<TxOut>> txOuts;
-	auto txOut = std::make_shared<TxOut>(0, "foo");
+	const auto txOut = std::make_shared<TxOut>(0, "foo");
 	txOuts.push_back(txOut);
 
-	auto tx = std::make_shared<Tx>(txIns, txOuts, -1);
+	const auto tx = std::make_shared<Tx>(txIns, txOuts, -1);
 
 	auto serializedBuffer = tx->Serialize();
 
@@ -51,7 +51,7 @@ TEST(SerializationTest, TxSerialization)
 TEST(SerializationTest, TxInSerialization)
 {
 	auto toSpend = std::make_shared<TxOutPoint>("foo", 0);
-	auto txIn = std::make_shared<TxIn>(toSpend, std::vector<uint8_t>{0x00}, std::vector<uint8_t>{0x00}, 1);
+	const auto txIn = std::make_shared<TxIn>(toSpend, std::vector<uint8_t>{0x00}, std::vector<uint8_t>{0x00}, 1);
 
 	auto serializedBuffer = txIn->Serialize();
 
@@ -70,7 +70,7 @@ TEST(SerializationTest, TxInSerialization)
 
 TEST(SerializationTest, TxOutSerialization)
 {
-	auto txOut = std::make_shared<TxOut>(0, "foo");
+	const auto txOut = std::make_shared<TxOut>(0, "foo");
 
 	auto serializedBuffer = txOut->Serialize();
 
@@ -83,7 +83,7 @@ TEST(SerializationTest, TxOutSerialization)
 
 TEST(SerializationTest, TxOutPointSerialization)
 {
-	auto txOutPoint = std::make_shared<TxOutPoint>("foo", 0);
+	const auto txOutPoint = std::make_shared<TxOutPoint>("foo", 0);
 
 	auto serializedBuffer = txOutPoint->Serialize();
 

@@ -13,7 +13,7 @@ void Log::StartLog()
 	std::vector<spdlog::sink_ptr> logSinks;
 
 	char logFile[MAX_PATH];
-	std::string logFolder = "log\\";
+	const std::string logFolder = "log\\";
 	if (GetFileAttributes(logFolder.c_str()) == INVALID_FILE_ATTRIBUTES)
 		CreateDirectory(logFolder.c_str(), NULL);
 	SYSTEMTIME t;

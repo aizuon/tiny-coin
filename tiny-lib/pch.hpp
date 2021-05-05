@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iterator>
+#include <ranges>
 #include <random>
 
 #include <tbb/concurrent_vector.h>

@@ -13,5 +13,5 @@ public:
 
 	virtual ~IHandleable()
 	{
-	};
+	}
 };

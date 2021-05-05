@@ -19,7 +19,7 @@ std::vector<uint8_t> MsgSerializer::BuildSpendMsg(const std::shared_ptr<TxOutPoi
 		spendMessage.WriteRaw(txOut->Serialize().GetBuffer());
 	}
 
-	auto buffer = spendMessage.GetBuffer();
+	const auto buffer = spendMessage.GetBuffer();
 
 	auto hash = SHA256::DoubleHashBinary(buffer);
 

@@ -49,10 +49,10 @@ void BinaryBuffer::Write(const std::string& obj)
 {
 	std::lock_guard lock(Mutex);
 
-	uint32_t size = obj.size();
+	const uint32_t size = obj.size();
 	WriteSize(size);
 
-	uint32_t length = size * sizeof(std::string::value_type);
+	const uint32_t length = size * sizeof(std::string::value_type);
 	GrowIfNeeded(length);
 	for (auto o : obj)
 	{
@@ -64,7 +64,7 @@ void BinaryBuffer::WriteRaw(const std::string& obj)
 {
 	std::lock_guard lock(Mutex);
 
-	uint32_t length = obj.size();
+	const uint32_t length = obj.size();
 	GrowIfNeeded(length);
 	for (auto o : obj)
 	{
@@ -85,9 +85,9 @@ bool BinaryBuffer::Read(std::string& obj)
 	if (!ReadSize(size))
 		return false;
 
-	uint32_t length = size * sizeof(std::string::value_type);
+	const uint32_t length = size * sizeof(std::string::value_type);
 
-	uint32_t finalOffset = ReadOffset + length;
+	const uint32_t finalOffset = ReadOffset + length;
 	if (Buffer.size() < finalOffset)
 		return false;
 
@@ -114,9 +114,9 @@ bool BinaryBuffer::operator==(const BinaryBuffer& obj) const
 
 void BinaryBuffer::GrowIfNeeded(uint32_t writeLength)
 {
-	size_t finalLength = WriteOffset + writeLength;
-	bool reserve_needed = Buffer.capacity() <= finalLength;
-	bool resize_needed = Buffer.size() <= finalLength;
+	const size_t finalLength = WriteOffset + writeLength;
+	const bool reserve_needed = Buffer.capacity() <= finalLength;
+	const bool resize_needed = Buffer.size() <= finalLength;
 
 	if (reserve_needed)
 		Buffer.reserve(finalLength * BUFFER_GROW_FACTOR);

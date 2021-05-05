@@ -7,6 +7,8 @@
 #include <string>
 #include <memory>
 #include <algorithm>
+#include <iterator>
+#include <ranges>
 #include "gtest/gtest.h"
 
 #endif //PCH_H

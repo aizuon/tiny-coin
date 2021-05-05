@@ -57,7 +57,7 @@ void NetClient::Stop()
 
 void NetClient::Connect(const std::string& address, uint16_t port)
 {
-	auto endpoint = boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::from_string(address), port);
+	const auto endpoint = boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::from_string(address), port);
 	auto con = std::make_shared<Connection>(IO_Service);
 	try
 	{
@@ -74,7 +74,7 @@ void NetClient::Connect(const std::string& address, uint16_t port)
 
 void NetClient::ListenAsync(uint16_t port)
 {
-	auto endpoint = boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port);
+	const auto endpoint = boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port);
 	Acceptor.open(endpoint.protocol());
 	Acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
 	Acceptor.bind(endpoint);
@@ -84,7 +84,7 @@ void NetClient::ListenAsync(uint16_t port)
 
 void NetClient::SendMsg(std::shared_ptr<Connection>& con, const IMsg& msg)
 {
-	auto msgBuffer = PrepareSendBuffer(msg);
+	const auto msgBuffer = PrepareSendBuffer(msg);
 
 	Write(con, msgBuffer);
 }
@@ -106,7 +106,7 @@ void NetClient::BroadcastMsg(const IMsg& msg)
 	if (Connections.empty())
 		return;
 
-	auto msgBuffer = PrepareSendBuffer(msg);
+	const auto msgBuffer = PrepareSendBuffer(msg);
 
 	for (auto& con : Connections)
 		Write(con, msgBuffer);
@@ -117,7 +117,7 @@ std::shared_ptr<Connection> NetClient::GetRandomConnection()
 	if (Connections.empty())
 		return nullptr;
 
-	auto randomIdx = Random::GetInt(0, Connections.size() - 1);
+	const auto randomIdx = Random::GetInt(0, Connections.size() - 1);
 	return Connections[randomIdx];
 }
 
@@ -195,7 +195,7 @@ void NetClient::HandleMsg(std::shared_ptr<Connection>& con, BinaryBuffer& msg_bu
 	}
 	auto opcode2 = static_cast<Opcode>(opcode);
 
-	std::unique_ptr<IMsg> msg = nullptr;
+	std::unique_ptr<IMsg> msg;
 	switch (opcode2)
 	{
 	case Opcode::AddPeerMsg:
@@ -283,7 +283,7 @@ void NetClient::HandleMsg(std::shared_ptr<Connection>& con, BinaryBuffer& msg_bu
 
 BinaryBuffer NetClient::PrepareSendBuffer(const IMsg& msg)
 {
-	auto serializedMsg = msg.Serialize().GetBuffer();
+	const auto serializedMsg = msg.Serialize().GetBuffer();
 	auto opcode = static_cast<OpcodeType>(msg.GetOpcode());
 
 	BinaryBuffer msgBuffer;
@@ -313,11 +313,11 @@ void NetClient::Write(std::shared_ptr<Connection>& con, const BinaryBuffer& msg_
 
 void NetClient::RemoveConnection(std::shared_ptr<Connection>& con)
 {
-	auto vec_it = std::find_if(Connections.begin(), Connections.end(),
-	                           [&con](const std::shared_ptr<Connection>& o)
-	                           {
-		                           return con.get() == o.get();
-	                           });
+	const auto vec_it = std::ranges::find_if(Connections,
+	                                         [&con](const std::shared_ptr<Connection>& o)
+	                                         {
+		                                         return con.get() == o.get();
+	                                         });
 
 	if (vec_it != Connections.end())
 	{

@@ -12,7 +12,7 @@ BinaryBuffer TxIn::Serialize() const
 {
 	BinaryBuffer buffer;
 
-	bool has_toSpend = ToSpend != nullptr;
+	const bool has_toSpend = ToSpend != nullptr;
 	buffer.Write(has_toSpend);
 	if (has_toSpend)
 		buffer.WriteRaw(ToSpend->Serialize().GetBuffer());
