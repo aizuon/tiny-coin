@@ -1,5 +1,8 @@
 #include <cstdint>
+#include <cstdlib>
+#include <future>
 #include <string>
+#include <vector>
 #include <boost/program_options.hpp>
 
 #include "../tiny-lib/Log.hpp"
@@ -9,9 +12,16 @@
 
 namespace po = boost::program_options;
 
+void atexit_handler()
+{
+	Log::StopLog();
+}
+
 int main(int ac, char** av)
 {
 	Log::StartLog();
+	if (std::atexit(atexit_handler) != 0)
+		return EXIT_FAILURE;
 
 	po::options_description desc("allowed options");
 	desc.add_options()
@@ -43,6 +53,7 @@ int main(int ac, char** av)
 	NetClient::ListenAsync(port);
 	NetClient::RunAsync();
 
+	std::vector<std::future<void>> pendingConnections;
 	for (const auto& [k, v] : NetClient::InitialPeers)
 	{
 		if (v == port)
@@ -50,8 +61,10 @@ int main(int ac, char** av)
 			continue;
 		}
 
-		NetClient::Connect(k, v);
+		pendingConnections.emplace_back(std::async(std::launch::async, &NetClient::Connect, k, v));
 	}
+	for (const auto& pendingConnection : pendingConnections)
+		pendingConnection.wait();
 
 	if (vm.contains("mine"))
 	{
@@ -72,7 +85,5 @@ int main(int ac, char** av)
 
 	NetClient::Stop();
 
-	Log::StopLog();
-
-	return 0;
+	return EXIT_SUCCESS;
 }

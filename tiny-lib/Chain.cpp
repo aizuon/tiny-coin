@@ -292,7 +292,7 @@ std::vector<std::shared_ptr<Block>> Chain::DisconnectToFork(const std::shared_pt
 	const auto forkBlockId = forkBlock->Id();
 	while (ActiveChain.back()->Id() != forkBlockId)
 	{
-		disconnected_chain.push_back(DisconnectBlock(ActiveChain.back()));
+		disconnected_chain.emplace_back(DisconnectBlock(ActiveChain.back()));
 	}
 
 	std::ranges::reverse(disconnected_chain);

@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <exception>
 #include <fstream>
+#include <future>
 #include <iomanip>
 #include <iterator>
 #include <list>

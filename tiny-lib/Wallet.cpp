@@ -148,7 +148,7 @@ void Wallet::SendValue(uint64_t value, const std::string& address, const std::ve
 	std::vector<std::shared_ptr<TxIn>> txIns;
 	for (const auto& selected_coin : selected_coins)
 	{
-		txIns.push_back(MakeTxIn(privKey, selected_coin->TxOutPoint, txOut));
+		txIns.emplace_back(MakeTxIn(privKey, selected_coin->TxOutPoint, txOut));
 	}
 	const auto tx = std::make_shared<Tx>(txIns, std::vector{txOut}, -1);
 	LOG_INFO("Built transaction {}, broadcasting", tx->Id());
