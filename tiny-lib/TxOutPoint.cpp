@@ -5,7 +5,6 @@
 TxOutPoint::TxOutPoint(const std::string& txId, int64_t txOutIdx)
 	: TxId(txId), TxOutIdx(txOutIdx)
 {
-
 }
 
 BinaryBuffer TxOutPoint::Serialize() const

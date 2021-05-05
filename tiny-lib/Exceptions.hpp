@@ -11,7 +11,6 @@ public:
 	TxUnlockException(const char* msg);
 
 private:
-
 };
 
 class TxValidationException : public std::exception
@@ -23,7 +22,6 @@ public:
 	std::shared_ptr<Tx> ToOrphan;
 
 private:
-
 };
 
 class BlockValidationException : public std::exception
@@ -35,5 +33,4 @@ public:
 	std::shared_ptr<Block> ToOrphan;
 
 private:
-
 };

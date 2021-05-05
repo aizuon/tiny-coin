@@ -16,22 +16,24 @@
 #include "MerkleTree.hpp"
 #include "PoW.hpp"
 #include "HashChecker.hpp"
-#include "SHA256.hpp"
 #include "BlockInfoMsg.hpp"
 #include "NetClient.hpp"
 #include "TxOutPoint.hpp"
 #include "UnspentTxOut.hpp"
 
-const std::shared_ptr<TxIn> Chain::GenesisTxIn = std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{ 0x00 }, std::vector<uint8_t>(), 0);
-const std::shared_ptr<TxOut> Chain::GenesisTxOut = std::make_shared<TxOut>(5000000000, "143UVyz7ooiAv1pMqbwPPpnH4BV9ifJGFF");
-const std::shared_ptr<Tx> Chain::GenesisTx = std::make_shared<Tx>(std::vector<std::shared_ptr<TxIn>>{ Chain::GenesisTxIn },
-	std::vector<std::shared_ptr<TxOut>>{ Chain::GenesisTxOut }, 0);
-const std::shared_ptr<Block> Chain::GenesisBlock = std::make_shared<Block>(0, "", "7118894203235a955a908c0abfc6d8fe6edec47b0a04ce1bf7263da3b4366d22",
-	1501821412, 24, 10126761, std::vector<std::shared_ptr<Tx>>{ GenesisTx });
+const std::shared_ptr<TxIn> Chain::GenesisTxIn = std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{0x00},
+                                                                        std::vector<uint8_t>(), 0);
+const std::shared_ptr<TxOut> Chain::GenesisTxOut = std::make_shared<TxOut>(
+	5000000000, "143UVyz7ooiAv1pMqbwPPpnH4BV9ifJGFF");
+const std::shared_ptr<Tx> Chain::GenesisTx = std::make_shared<Tx>(std::vector{GenesisTxIn},
+                                                                  std::vector{GenesisTxOut}, 0);
+const std::shared_ptr<Block> Chain::GenesisBlock = std::make_shared<Block>(
+	0, "", "7118894203235a955a908c0abfc6d8fe6edec47b0a04ce1bf7263da3b4366d22",
+	1501821412, 24, 10126761, std::vector{GenesisTx});
 
-std::vector<std::shared_ptr<Block>> Chain::ActiveChain{ GenesisBlock };
-std::vector<std::vector<std::shared_ptr<Block>>> Chain::SideBranches{ };
-std::vector<std::shared_ptr<Block>> Chain::OrphanBlocks{ };
+std::vector<std::shared_ptr<Block>> Chain::ActiveChain{GenesisBlock};
+std::vector<std::vector<std::shared_ptr<Block>>> Chain::SideBranches{};
+std::vector<std::shared_ptr<Block>> Chain::OrphanBlocks{};
 
 std::recursive_mutex Chain::Mutex;
 
@@ -93,7 +95,6 @@ int64_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 		try
 		{
 			txs[i]->ValidateBasics(i == 0);
-
 		}
 		catch (const TxValidationException&)
 		{
@@ -118,11 +119,12 @@ int64_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 	{
 		auto [prev_block, prev_block_height, prev_block_chain_idx2] = LocateBlockInAllChains(block->PrevBlockHash);
 		if (prev_block == nullptr)
-			throw BlockValidationException(fmt::format("Previous block {} is not found in any chain", block->PrevBlockHash).c_str(), block);
+			throw BlockValidationException(
+				fmt::format("Previous block {} is not found in any chain", block->PrevBlockHash).c_str(), block);
 
 		if (prev_block_chain_idx2 != ActiveChainIdx)
 			return prev_block_chain_idx2;
-		else if (prev_block->Id() != ActiveChain.back()->Id())
+		if (prev_block->Id() != ActiveChain.back()->Id())
 			return prev_block_chain_idx2 + 1;
 
 		prev_block_chain_idx = prev_block_chain_idx2;
@@ -131,7 +133,7 @@ int64_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 	if (PoW::GetNextWorkRequired(block->PrevBlockHash) != block->Bits)
 		throw BlockValidationException("Bits are incorrect");
 
-	std::vector<std::shared_ptr<Tx>> nonCoinbaseTxs(block->Txs.begin() + 1, block->Txs.end());
+	std::vector nonCoinbaseTxs(block->Txs.begin() + 1, block->Txs.end());
 	Tx::ValidateRequest req;
 	req.SiblingsInBlock = nonCoinbaseTxs;
 	req.Allow_UTXO_FromMempool = false;
@@ -313,7 +315,8 @@ bool Chain::ReorgIfNecessary()
 		size_t branchHeight = chain.size() + fork_heigh;
 		if (branchHeight > GetCurrentHeight())
 		{
-			LOG_INFO("Attempting reorg of idx {} to active chain, new height of {} vs. {}", branch_idx, branchHeight, fork_heigh);
+			LOG_INFO("Attempting reorg of idx {} to active chain, new height of {} vs. {}", branch_idx, branchHeight,
+			         fork_heigh);
 
 			reorged |= TryReorg(chain, branch_idx, fork_heigh);
 		}
@@ -352,7 +355,8 @@ bool Chain::TryReorg(const std::vector<std::shared_ptr<Block>>& branch, int64_t 
 	return true;
 }
 
-void Chain::RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveChain, const std::shared_ptr<Block>& forkBlock, int64_t branchIdx)
+void Chain::RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveChain,
+                          const std::shared_ptr<Block>& forkBlock, int64_t branchIdx)
 {
 	std::lock_guard lock(Mutex);
 
@@ -368,7 +372,8 @@ void Chain::RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveCh
 	}
 }
 
-std::pair<std::shared_ptr<Block>, int64_t> Chain::LocateBlockInChain(const std::string& blockHash, const std::vector<std::shared_ptr<Block>>& chain)
+std::pair<std::shared_ptr<Block>, int64_t> Chain::LocateBlockInChain(const std::string& blockHash,
+                                                                     const std::vector<std::shared_ptr<Block>>& chain)
 {
 	std::lock_guard lock(Mutex);
 
@@ -377,22 +382,22 @@ std::pair<std::shared_ptr<Block>, int64_t> Chain::LocateBlockInChain(const std::
 	{
 		if (block->Id() == blockHash)
 		{
-			return { block, height };
+			return {block, height};
 		}
 
 		height++;
 	}
 
-	return { nullptr, -1 };
+	return {nullptr, -1};
 }
 
 std::tuple<std::shared_ptr<Block>, int64_t> Chain::LocateBlockInActiveChain(const std::string& blockHash)
 {
 	auto [located_block, located_block_height] = LocateBlockInChain(blockHash, ActiveChain);
 	if (located_block != nullptr)
-		return { located_block, located_block_height };
+		return {located_block, located_block_height};
 
-	return { located_block, located_block_height };
+	return {located_block, located_block_height};
 }
 
 std::tuple<std::shared_ptr<Block>, int64_t, int64_t> Chain::LocateBlockInAllChains(const std::string& blockHash)
@@ -402,21 +407,22 @@ std::tuple<std::shared_ptr<Block>, int64_t, int64_t> Chain::LocateBlockInAllChai
 	int64_t chain_idx = 0;
 	auto [located_block, located_block_height] = LocateBlockInActiveChain(blockHash);
 	if (located_block != nullptr)
-		return { located_block, located_block_height, chain_idx };
+		return {located_block, located_block_height, chain_idx};
 	chain_idx++;
 
 	for (const auto& side_chain : SideBranches)
 	{
 		auto [located_block, located_block_height] = LocateBlockInChain(blockHash, side_chain);
 		if (located_block != nullptr)
-			return { located_block, located_block_height, chain_idx };
+			return {located_block, located_block_height, chain_idx};
 		chain_idx++;
 	}
 
-	return { nullptr, -1, -1 };
+	return {nullptr, -1, -1};
 }
 
-std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> Chain::FindTxOutForTxIn(const std::shared_ptr<TxIn>& txIn, const std::vector<std::shared_ptr<Block>>& chain)
+std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> Chain::FindTxOutForTxIn(
+	const std::shared_ptr<TxIn>& txIn, const std::vector<std::shared_ptr<Block>>& chain)
 {
 	std::lock_guard lock(Mutex);
 
@@ -429,15 +435,16 @@ std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> 
 			{
 				const auto& txOut = tx->TxOuts[toSpend->TxOutIdx];
 
-				return { txOut, tx, toSpend->TxOutIdx, tx->IsCoinbase(), height };
+				return {txOut, tx, toSpend->TxOutIdx, tx->IsCoinbase(), height};
 			}
 		}
 	}
 
-	return { nullptr, nullptr, -1, false, -1 };
+	return {nullptr, nullptr, -1, false, -1};
 }
 
-std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> Chain::FindTxOutForTxInInActiveChain(const std::shared_ptr<TxIn>& txIn)
+std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> Chain::FindTxOutForTxInInActiveChain(
+	const std::shared_ptr<TxIn>& txIn)
 {
 	return FindTxOutForTxIn(txIn, ActiveChain);
 }
@@ -468,7 +475,7 @@ void Chain::LoadFromDisk()
 	std::ifstream chain_in(ChainPath, std::ios::binary);
 	if (chain_in.good())
 	{
-		BinaryBuffer chainData(std::vector<uint8_t>(std::istreambuf_iterator<char>(chain_in), {}));
+		BinaryBuffer chainData(std::vector<uint8_t>(std::istreambuf_iterator(chain_in), {}));
 		uint32_t blockSize = 0;
 		if (chainData.ReadSize(blockSize))
 		{

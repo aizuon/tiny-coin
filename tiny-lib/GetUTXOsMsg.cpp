@@ -1,7 +1,5 @@
 #include "pch.hpp"
 
-#include <algorithm>
-
 #include "GetUTXOsMsg.hpp"
 #include "NetClient.hpp"
 #include "SendUTXOsMsg.hpp"

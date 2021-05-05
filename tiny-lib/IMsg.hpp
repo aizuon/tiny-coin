@@ -6,5 +6,7 @@
 class IMsg : public virtual IHandleable, public virtual ISerializable, public virtual IDeserializable
 {
 public:
-	virtual ~IMsg() {};
+	virtual ~IMsg()
+	{
+	};
 };

@@ -6,9 +6,9 @@
 
 int main(int argc, char** argv)
 {
-    ::testing::InitGoogleTest(&argc, argv);
+	testing::InitGoogleTest(&argc, argv);
 
-    Log::StartLog();
+	Log::StartLog();
 
-    return RUN_ALL_TESTS();
+	return RUN_ALL_TESTS();
 }

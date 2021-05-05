@@ -11,5 +11,4 @@ public:
 	static bool IsValid(const std::string& hash, const BIGNUM* target_bn);
 
 private:
-
 };

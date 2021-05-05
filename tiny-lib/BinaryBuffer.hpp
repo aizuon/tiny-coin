@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <cassert>
 #include <vector>
 #include <string>
 #include <mutex>
@@ -19,10 +20,10 @@ public:
 	BinaryBuffer& operator=(const BinaryBuffer& obj);
 	BinaryBuffer& operator=(BinaryBuffer&& obj) noexcept;
 
-    inline const std::vector<uint8_t>& GetBuffer() const
-    {
-        return Buffer;
-    }
+	inline const std::vector<uint8_t>& GetBuffer() const
+	{
+		return Buffer;
+	}
 
 	inline std::vector<uint8_t>& GetWritableBuffer()
 	{
@@ -46,8 +47,7 @@ public:
 
 	inline void GrowTo(uint32_t size)
 	{
-		if (size < Buffer.size())
-			return;
+		assert(size < Buffer.size());
 
 		Buffer.resize(size);
 	}
@@ -59,9 +59,9 @@ public:
 
 	void WriteSize(uint32_t obj);
 
-    template<typename T>
-    void Write(T obj)
-    {
+	template <typename T>
+	void Write(T obj)
+	{
 		static_assert(std::is_arithmetic_v<T>);
 
 		std::lock_guard lock(Mutex);
@@ -75,9 +75,9 @@ public:
 		GrowIfNeeded(length);
 		memcpy(Buffer.data() + WriteOffset, &obj, length);
 		WriteOffset += length;
-    }
+	}
 
-	template<typename T>
+	template <typename T>
 	void Write(const std::vector<T>& obj)
 	{
 		std::lock_guard lock(Mutex);
@@ -93,7 +93,7 @@ public:
 		}
 	}
 
-	template<typename T>
+	template <typename T>
 	void WriteRaw(const std::vector<T>& obj)
 	{
 		std::lock_guard lock(Mutex);
@@ -112,7 +112,7 @@ public:
 
 	bool ReadSize(uint32_t& obj);
 
-	template<typename T>
+	template <typename T>
 	bool Read(T& obj)
 	{
 		static_assert(std::is_arithmetic_v<T>);
@@ -135,7 +135,7 @@ public:
 		return true;
 	}
 
-	template<typename T>
+	template <typename T>
 	bool Read(std::vector<T>& obj)
 	{
 		std::lock_guard lock(Mutex);

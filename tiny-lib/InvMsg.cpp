@@ -9,12 +9,12 @@
 InvMsg::InvMsg(const std::vector<std::shared_ptr<Block>>& blocks)
 	: Blocks(blocks)
 {
-
 }
 
 void InvMsg::Handle(std::shared_ptr<Connection>& con)
 {
-	LOG_INFO("Recieved initial sync from {}:{}", con->Socket.remote_endpoint().address().to_string(), con->Socket.remote_endpoint().port());
+	LOG_INFO("Recieved initial sync from {}:{}", con->Socket.remote_endpoint().address().to_string(),
+	         con->Socket.remote_endpoint().port());
 
 	std::vector<std::shared_ptr<Block>> newBlocks;
 	for (const auto& block : Blocks)

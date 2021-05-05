@@ -11,5 +11,7 @@ public:
 
 	virtual Opcode GetOpcode() const = 0;
 
-	virtual ~IHandleable() {};
+	virtual ~IHandleable()
+	{
+	};
 };

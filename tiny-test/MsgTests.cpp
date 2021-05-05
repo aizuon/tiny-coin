@@ -17,7 +17,7 @@ TEST(MsgTest, SpendMsg)
 {
 	std::vector<std::shared_ptr<TxIn>> txIns;
 	auto toSpend = std::make_shared<TxOutPoint>("foo", 0);
-	auto txIn = std::make_shared<TxIn>(toSpend, std::vector <uint8_t>{ 0x00 }, std::vector <uint8_t>{ 0x00 }, 1);
+	auto txIn = std::make_shared<TxIn>(toSpend, std::vector<uint8_t>{0x00}, std::vector<uint8_t>{0x00}, 1);
 	txIns.push_back(txIn);
 
 	std::vector<std::shared_ptr<TxOut>> txOuts;

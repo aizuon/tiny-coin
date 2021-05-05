@@ -67,12 +67,9 @@ void Mempool::AddTxToMempool(const std::shared_ptr<Tx>& tx)
 
 			return;
 		}
-		else
-		{
-			LOG_ERROR("Transaction {} rejected", txId);
+		LOG_ERROR("Transaction {} rejected", txId);
 
-			return;
-		}
+		return;
 	}
 
 	Map[txId] = tx;
@@ -87,7 +84,8 @@ bool Mempool::CheckBlockSize(const std::shared_ptr<Block>& block)
 	return block->Serialize().GetSize() < NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES;
 }
 
-std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, const std::string& txId, std::set<std::string>& addedToBlock)
+std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, const std::string& txId,
+                                              std::set<std::string>& addedToBlock)
 {
 	if (addedToBlock.contains(txId))
 		return block;
@@ -102,11 +100,12 @@ std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, con
 		const auto& toSpend = txIn->ToSpend;
 
 		auto map_it = std::find_if(UnspentTxOut::Map.begin(), UnspentTxOut::Map.end(),
-			[&toSpend](const std::pair<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
-			{
-				const auto& [txOutPoint, utxo] = p;
-				return *txOutPoint == *toSpend;
-			});
+		                           [&toSpend](
+		                           const std::pair<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
+		                           {
+			                           const auto& [txOutPoint, utxo] = p;
+			                           return *txOutPoint == *toSpend;
+		                           });
 		if (map_it != UnspentTxOut::Map.end())
 			continue;
 
@@ -142,8 +141,5 @@ std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, con
 
 		return newBlock;
 	}
-	else
-	{
-		return block;
-	}
+	return block;
 }

@@ -1,5 +1,4 @@
 #pragma once
-#include <cstdint>
 #include <vector>
 #include <string>
 
@@ -14,8 +13,7 @@ public:
 	BinaryBuffer Serialize() const override;
 	bool Deserialize(BinaryBuffer& buffer) override;
 
-	Opcode GetOpcode() const;
+	Opcode GetOpcode() const override;
 
 private:
-
 };

@@ -7,7 +7,6 @@
 #include "gtest/gtest.h"
 
 #include "../tiny-lib/BinaryBuffer.hpp"
-#include "../tiny-lib/Block.hpp"
 #include "../tiny-lib/Tx.hpp"
 #include "../tiny-lib/TxIn.hpp"
 #include "../tiny-lib/TxOut.hpp"
@@ -18,7 +17,7 @@ TEST(SerializationTest, TxSerialization)
 {
 	std::vector<std::shared_ptr<TxIn>> txIns;
 	auto toSpend = std::make_shared<TxOutPoint>("foo", 0);
-	auto txIn = std::make_shared<TxIn>(toSpend, std::vector <uint8_t>{ 0x00 }, std::vector <uint8_t>{ 0x00 }, 1);
+	auto txIn = std::make_shared<TxIn>(toSpend, std::vector<uint8_t>{0x00}, std::vector<uint8_t>{0x00}, 1);
 	txIns.push_back(txIn);
 
 	std::vector<std::shared_ptr<TxOut>> txOuts;
@@ -52,7 +51,7 @@ TEST(SerializationTest, TxSerialization)
 TEST(SerializationTest, TxInSerialization)
 {
 	auto toSpend = std::make_shared<TxOutPoint>("foo", 0);
-	auto txIn = std::make_shared<TxIn>(toSpend, std::vector <uint8_t>{ 0x00 }, std::vector <uint8_t>{ 0x00 }, 1);
+	auto txIn = std::make_shared<TxIn>(toSpend, std::vector<uint8_t>{0x00}, std::vector<uint8_t>{0x00}, 1);
 
 	auto serializedBuffer = txIn->Serialize();
 

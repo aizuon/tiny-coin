@@ -1,7 +1,4 @@
 #pragma once
-#include <cstdint>
-#include <vector>
-
 #include "BinaryBuffer.hpp"
 
 class ISerializable
@@ -9,5 +6,7 @@ class ISerializable
 public:
 	virtual BinaryBuffer Serialize() const = 0;
 
-	virtual ~ISerializable() {};
+	virtual ~ISerializable()
+	{
+	};
 };

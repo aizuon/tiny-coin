@@ -26,5 +26,6 @@ public:
 private:
 	static bool CheckBlockSize(const std::shared_ptr<Block>& block);
 
-	static std::shared_ptr<Block> TryAddToBlock(std::shared_ptr<Block>& block, const std::string& txId, std::set<std::string>& addedToBlock);
+	static std::shared_ptr<Block> TryAddToBlock(std::shared_ptr<Block>& block, const std::string& txId,
+	                                            std::set<std::string>& addedToBlock);
 };

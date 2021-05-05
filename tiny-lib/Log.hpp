@@ -1,11 +1,9 @@
 #pragma once
-#include <string>
 #include <memory>
 #ifndef SPDLOG_WCHAR_TO_UTF8_SUPPORT
 #define SPDLOG_WCHAR_TO_UTF8_SUPPORT
 #endif
 #include <spdlog/spdlog.h>
-#include <spdlog/fmt/ostr.h>
 
 class Log
 {
@@ -13,10 +11,10 @@ public:
 	static void StartLog();
 	static void StopLog();
 
-	static inline std::shared_ptr<spdlog::logger>& GetLogger() { return s_Logger; }
+	static inline std::shared_ptr<spdlog::logger>& GetLogger() { return Logger; }
 
 private:
-	static std::shared_ptr<spdlog::logger> s_Logger;
+	static std::shared_ptr<spdlog::logger> Logger;
 };
 
 #define LOG_TRACE(...)    Log::GetLogger()->trace(__VA_ARGS__)

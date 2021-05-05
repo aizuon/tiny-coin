@@ -6,7 +6,6 @@
 AddPeerMsg::AddPeerMsg(const std::string& hostname, uint16_t port)
 	: Hostname(hostname), Port(port)
 {
-
 }
 
 void AddPeerMsg::Handle(std::shared_ptr<Connection>& con)

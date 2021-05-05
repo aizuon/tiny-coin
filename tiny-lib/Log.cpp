@@ -6,7 +6,7 @@
 
 #include "Log.hpp"
 
-std::shared_ptr<spdlog::logger> Log::s_Logger;
+std::shared_ptr<spdlog::logger> Log::Logger;
 
 void Log::StartLog()
 {
@@ -18,7 +18,8 @@ void Log::StartLog()
 		CreateDirectory(logFolder.c_str(), NULL);
 	SYSTEMTIME t;
 	GetSystemTime(&t);
-	sprintf_s(logFile, MAX_PATH, "TinyCoin_%4d%02d%02d_%02d%02d%02d.log", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
+	sprintf_s(logFile, MAX_PATH, "TinyCoin_%4d%02d%02d_%02d%02d%02d.log", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute,
+	          t.wSecond);
 	std::string path = logFolder + std::string(logFile);
 	logSinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_st>(path));
 	logSinks[0]->set_pattern("[ %T ] [ %l ] [ %n ] %v");
@@ -28,15 +29,16 @@ void Log::StartLog()
 
 	spdlog::init_thread_pool(128, 1);
 
-	s_Logger = std::make_shared<spdlog::async_logger>("tc", logSinks.begin(), logSinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
-	s_Logger->set_level(spdlog::level::trace);
-	s_Logger->flush_on(spdlog::level::trace);
-	spdlog::register_logger(s_Logger);
-	spdlog::set_default_logger(s_Logger);
+	Logger = std::make_shared<spdlog::async_logger>("tc", logSinks.begin(), logSinks.end(), spdlog::thread_pool(),
+	                                                  spdlog::async_overflow_policy::block);
+	Logger->set_level(spdlog::level::trace);
+	Logger->flush_on(spdlog::level::trace);
+	spdlog::register_logger(Logger);
+	spdlog::set_default_logger(Logger);
 }
 
 void Log::StopLog()
 {
-	s_Logger->flush();
+	Logger->flush();
 	spdlog::shutdown();
 }

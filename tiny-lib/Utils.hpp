@@ -14,7 +14,7 @@ public:
 
 	static int64_t GetUnixTimestamp();
 
-    static const bool IsBigEndian;
+	static const bool IsBigEndian;
 
 private:
 	static bool IsBigEndianCast();

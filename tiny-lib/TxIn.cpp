@@ -2,10 +2,10 @@
 
 #include "TxIn.hpp"
 
-TxIn::TxIn(const std::shared_ptr<TxOutPoint>& toSpend, const std::vector<uint8_t>& unlockSig, const std::vector<uint8_t>& unlockPubKey, int32_t sequence)
+TxIn::TxIn(const std::shared_ptr<TxOutPoint>& toSpend, const std::vector<uint8_t>& unlockSig,
+           const std::vector<uint8_t>& unlockPubKey, int32_t sequence)
 	: ToSpend(toSpend), UnlockSig(unlockSig), UnlockPubKey(unlockPubKey), Sequence(sequence)
 {
-
 }
 
 BinaryBuffer TxIn::Serialize() const

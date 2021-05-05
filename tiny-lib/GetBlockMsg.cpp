@@ -9,7 +9,6 @@
 GetBlockMsg::GetBlockMsg(const std::string& fromBlockId)
 	: FromBlockId(fromBlockId)
 {
-
 }
 
 void GetBlockMsg::Handle(std::shared_ptr<Connection>& con)

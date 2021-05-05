@@ -6,11 +6,12 @@
 #include "Utils.hpp"
 #include "SHA256.hpp"
 
-Block::Block(uint64_t version, const std::string& prevBlockHash, const std::string& markleHash, int64_t timestamp, uint8_t bits, uint64_t nonce,
-	const std::vector<std::shared_ptr<Tx>>& txs)
-	: Version(version), PrevBlockHash(prevBlockHash), MerkleHash(markleHash), Timestamp(timestamp), Bits(bits), Nonce(nonce), Txs(txs)
+Block::Block(uint64_t version, const std::string& prevBlockHash, const std::string& markleHash, int64_t timestamp,
+             uint8_t bits, uint64_t nonce,
+             const std::vector<std::shared_ptr<Tx>>& txs)
+	: Version(version), PrevBlockHash(prevBlockHash), MerkleHash(markleHash), Timestamp(timestamp), Bits(bits),
+	  Nonce(nonce), Txs(txs)
 {
-
 }
 
 std::string Block::Header(uint64_t nonce /*= 0*/) const

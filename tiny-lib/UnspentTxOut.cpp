@@ -5,10 +5,10 @@
 #include "UnspentTxOut.hpp"
 #include "Log.hpp"
 
-UnspentTxOut::UnspentTxOut(const std::shared_ptr<::TxOut>& txOut, const std::shared_ptr<::TxOutPoint>& txOutPoint, bool isCoinbase, int64_t height)
+UnspentTxOut::UnspentTxOut(const std::shared_ptr<::TxOut>& txOut, const std::shared_ptr<::TxOutPoint>& txOutPoint,
+                           bool isCoinbase, int64_t height)
 	: TxOut(txOut), TxOutPoint(txOutPoint), IsCoinbase(isCoinbase), Height(height)
 {
-
 }
 
 BinaryBuffer UnspentTxOut::Serialize() const
@@ -60,9 +60,10 @@ bool UnspentTxOut::Deserialize(BinaryBuffer& buffer)
 	return true;
 }
 
-std::unordered_map<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>> UnspentTxOut::Map;
+std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>> UnspentTxOut::Map;
 
-void UnspentTxOut::AddToMap(std::shared_ptr<::TxOut> txOut, const std::string& txId, int64_t idx, bool isCoinbase, int64_t height)
+void UnspentTxOut::AddToMap(std::shared_ptr<::TxOut> txOut, const std::string& txId, int64_t idx, bool isCoinbase,
+                            int64_t height)
 {
 	auto txOutPoint = std::make_shared<::TxOutPoint>(txId, idx);
 
@@ -76,16 +77,18 @@ void UnspentTxOut::AddToMap(std::shared_ptr<::TxOut> txOut, const std::string& t
 void UnspentTxOut::RemoveFromMap(const std::string& txId, int64_t idx)
 {
 	auto map_it = std::find_if(Map.begin(), Map.end(),
-		[&txId, idx](const std::pair<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
-		{
-			const auto& [txOutPoint, utxo] = p;
-			return txOutPoint->TxId == txId && txOutPoint->TxOutIdx == idx;
-		});
+	                           [&txId, idx](
+	                           const std::pair<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
+	                           {
+		                           const auto& [txOutPoint, utxo] = p;
+		                           return txOutPoint->TxId == txId && txOutPoint->TxOutIdx == idx;
+	                           });
 	if (map_it != Map.end())
 		Map.erase(map_it);
 }
 
-std::shared_ptr<UnspentTxOut> UnspentTxOut::FindInList(const std::shared_ptr<TxIn>& txIn, const std::vector<std::shared_ptr<Tx>>& txs)
+std::shared_ptr<UnspentTxOut> UnspentTxOut::FindInList(const std::shared_ptr<TxIn>& txIn,
+                                                       const std::vector<std::shared_ptr<Tx>>& txs)
 {
 	for (const auto& tx : txs)
 	{
