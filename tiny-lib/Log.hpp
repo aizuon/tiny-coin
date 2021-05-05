@@ -8,7 +8,7 @@
 class Log
 {
 public:
-	static void StartLog();
+	static void StartLog(bool async = true);
 	static void StopLog();
 
 	static inline std::shared_ptr<spdlog::logger>& GetLogger() { return Logger; }
