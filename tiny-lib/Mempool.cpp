@@ -37,7 +37,7 @@ std::shared_ptr<Block> Mempool::SelectFromMempool(const std::shared_ptr<Block>& 
 	auto newBlock = std::make_shared<Block>(*block);
 
 	std::set<std::string> addedToBlock;
-	for (const auto& [txId, tx] : Map)
+	for (const auto& txId : Map | std::ranges::views::keys)
 		newBlock = TryAddToBlock(newBlock, txId, addedToBlock);
 
 	return newBlock;

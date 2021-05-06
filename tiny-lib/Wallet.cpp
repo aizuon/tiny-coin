@@ -19,7 +19,6 @@
 #include "MsgCache.hpp"
 #include "MsgSerializer.hpp"
 #include "NetClient.hpp"
-#include "NetParams.hpp"
 #include "RIPEMD160.hpp"
 #include "SendActiveChainMsg.hpp"
 #include "SendMempoolMsg.hpp"
@@ -94,7 +93,7 @@ std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::Init
 	return InitWallet(WalletPath);
 }
 
-std::shared_ptr<TxIn> Wallet::MakeTxIn(const std::vector<uint8_t>& privKey,
+std::shared_ptr<TxIn> Wallet::BuildTxIn(const std::vector<uint8_t>& privKey,
                                        const std::shared_ptr<TxOutPoint>& txOutPoint,
                                        const std::shared_ptr<TxOut>& txOut)
 {
@@ -108,37 +107,8 @@ std::shared_ptr<TxIn> Wallet::MakeTxIn(const std::vector<uint8_t>& privKey,
 	return std::make_shared<TxIn>(txOutPoint, unlock_sig, pubKey, sequence);
 }
 
-std::shared_ptr<Tx> Wallet::BuildTx_Miner(uint64_t value, const std::string& address,
-                                          const std::vector<uint8_t>& privKey)
-{
-	const auto pubKey = ECDSA::GetPubKeyFromPrivKey(privKey);
-	const auto myAddress = PubKeyToAddress(pubKey);
-	auto my_coins = FindUTXOsForAddress_Miner(myAddress);
-	if (my_coins.empty())
-	{
-		LOG_ERROR("No coins found");
-
-		return nullptr;
-	}
-
-	return BuildTxFromUTXOs(my_coins, value, address, privKey);
-}
-
-std::shared_ptr<Tx> Wallet::BuildTx(uint64_t value, const std::string& address, const std::vector<uint8_t>& privKey)
-{
-	const auto pubKey = ECDSA::GetPubKeyFromPrivKey(privKey);
-	const auto myAddress = PubKeyToAddress(pubKey);
-	auto my_coins = FindUTXOsForAddress(myAddress);
-	if (my_coins.empty())
-	{
-		LOG_ERROR("No coins found");
-
-		return nullptr;
-	}
-	return BuildTxFromUTXOs(my_coins, value, address, privKey);
-}
-
-std::shared_ptr<Tx> Wallet::SendValue_Miner(uint64_t value, const std::string& address, const std::vector<uint8_t>& privKey)
+std::shared_ptr<Tx> Wallet::SendValue_Miner(uint64_t value, const std::string& address,
+                                            const std::vector<uint8_t>& privKey)
 {
 	auto tx = BuildTx_Miner(value, address, privKey);
 	if (tx == nullptr)
@@ -327,7 +297,77 @@ uint64_t Wallet::GetBalance(const std::string& address)
 void Wallet::PrintBalance(const std::string& address)
 {
 	uint64_t balance = GetBalance(address);
-	LOG_INFO("Address {} holds {} coins", address, static_cast<double>(balance) / NetParams::COIN);
+	LOG_INFO("Address {} holds {} coins", address, balance);
+}
+
+std::shared_ptr<Tx> Wallet::BuildTxFromUTXOs(std::vector<std::shared_ptr<UTXO>>& utxos, uint64_t value,
+	const std::string& address, const std::vector<uint8_t>& privKey)
+{
+	std::ranges::sort(utxos,
+		[](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
+		{
+			return a->TxOut->Value < b->TxOut->Value;
+		});
+	std::ranges::sort(utxos,
+		[](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
+		{
+			return a->Height < b->Height;
+		});
+	std::unordered_set<std::shared_ptr<UTXO>> selected_utxos;
+	for (const auto& coin : utxos)
+	{
+		if (!selected_utxos.contains(coin))
+		{
+			selected_utxos.insert(selected_utxos.end(), coin);
+		}
+		uint64_t sum = 0;
+		for (const auto& selected_coin : selected_utxos)
+		{
+			sum += selected_coin->TxOut->Value;
+		}
+		if (sum > value)
+		{
+			break;
+		}
+	}
+	const auto txOut = std::make_shared<TxOut>(value, address);
+	std::vector<std::shared_ptr<TxIn>> txIns;
+	for (const auto& selected_coin : selected_utxos)
+	{
+		txIns.emplace_back(BuildTxIn(privKey, selected_coin->TxOutPoint, txOut));
+	}
+	auto tx = std::make_shared<Tx>(txIns, std::vector{ txOut }, -1);
+	return tx;
+}
+
+std::shared_ptr<Tx> Wallet::BuildTx_Miner(uint64_t value, const std::string& address,
+	const std::vector<uint8_t>& privKey)
+{
+	const auto pubKey = ECDSA::GetPubKeyFromPrivKey(privKey);
+	const auto myAddress = PubKeyToAddress(pubKey);
+	auto my_coins = FindUTXOsForAddress_Miner(myAddress);
+	if (my_coins.empty())
+	{
+		LOG_ERROR("No coins found");
+
+		return nullptr;
+	}
+
+	return BuildTxFromUTXOs(my_coins, value, address, privKey);
+}
+
+std::shared_ptr<Tx> Wallet::BuildTx(uint64_t value, const std::string& address, const std::vector<uint8_t>& privKey)
+{
+	const auto pubKey = ECDSA::GetPubKeyFromPrivKey(privKey);
+	const auto myAddress = PubKeyToAddress(pubKey);
+	auto my_coins = FindUTXOsForAddress(myAddress);
+	if (my_coins.empty())
+	{
+		LOG_ERROR("No coins found");
+
+		return nullptr;
+	}
+	return BuildTxFromUTXOs(my_coins, value, address, privKey);
 }
 
 std::vector<std::shared_ptr<UTXO>> Wallet::FindUTXOsForAddress_Miner(const std::string& address)
@@ -376,44 +416,4 @@ std::vector<std::shared_ptr<UTXO>> Wallet::FindUTXOsForAddress(const std::string
 		}
 	}
 	return utxos;
-}
-
-std::shared_ptr<Tx> Wallet::BuildTxFromUTXOs(std::vector<std::shared_ptr<UTXO>>& utxos, uint64_t value,
-                                             const std::string& address, const std::vector<uint8_t>& privKey)
-{
-	std::ranges::sort(utxos,
-	                  [](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
-	                  {
-		                  return a->TxOut->Value < b->TxOut->Value;
-	                  });
-	std::ranges::sort(utxos,
-	                  [](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
-	                  {
-		                  return a->Height < b->Height;
-	                  });
-	std::unordered_set<std::shared_ptr<UTXO>> selected_utxos;
-	for (const auto& coin : utxos)
-	{
-		if (!selected_utxos.contains(coin))
-		{
-			selected_utxos.insert(selected_utxos.end(), coin);
-		}
-		uint64_t sum = 0;
-		for (const auto& selected_coin : selected_utxos)
-		{
-			sum += selected_coin->TxOut->Value;
-		}
-		if (sum > value)
-		{
-			break;
-		}
-	}
-	const auto txOut = std::make_shared<TxOut>(value, address);
-	std::vector<std::shared_ptr<TxIn>> txIns;
-	for (const auto& selected_coin : selected_utxos)
-	{
-		txIns.emplace_back(MakeTxIn(privKey, selected_coin->TxOutPoint, txOut));
-	}
-	auto tx = std::make_shared<Tx>(txIns, std::vector{txOut}, -1);
-	return tx;
 }

@@ -25,14 +25,13 @@ public:
 	InitWallet(const std::string& walletPath);
 	static std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> InitWallet();
 
-	static std::shared_ptr<TxIn> MakeTxIn(const std::vector<uint8_t>& privKey,
+	static std::shared_ptr<TxIn> BuildTxIn(const std::vector<uint8_t>& privKey,
 	                                      const std::shared_ptr<TxOutPoint>& txOutPoint,
 	                                      const std::shared_ptr<TxOut>& txOut);
-	static std::shared_ptr<Tx> BuildTx_Miner(uint64_t value, const std::string& address,
-	                                         const std::vector<uint8_t>& privKey);
-	static std::shared_ptr<Tx> BuildTx(uint64_t value, const std::string& address, const std::vector<uint8_t>& privKey);
-	static std::shared_ptr<Tx> SendValue_Miner(uint64_t value, const std::string& address, const std::vector<uint8_t>& privKey);
-	static std::shared_ptr<Tx> SendValue(uint64_t value, const std::string& address, const std::vector<uint8_t>& privKey);
+	static std::shared_ptr<Tx> SendValue_Miner(uint64_t value, const std::string& address,
+	                                           const std::vector<uint8_t>& privKey);
+	static std::shared_ptr<Tx> SendValue(uint64_t value, const std::string& address,
+	                                     const std::vector<uint8_t>& privKey);
 
 	struct TxStatusResponse
 	{
@@ -57,6 +56,10 @@ private:
 	static std::shared_ptr<Tx> BuildTxFromUTXOs(std::vector<std::shared_ptr<UnspentTxOut>>& utxos, uint64_t value,
 	                                            const std::string& address,
 	                                            const std::vector<uint8_t>& privKey);
+
+	static std::shared_ptr<Tx> BuildTx_Miner(uint64_t value, const std::string& address,
+		const std::vector<uint8_t>& privKey);
+	static std::shared_ptr<Tx> BuildTx(uint64_t value, const std::string& address, const std::vector<uint8_t>& privKey);
 
 	static std::vector<std::shared_ptr<UnspentTxOut>> FindUTXOsForAddress_Miner(const std::string& address);
 	static std::vector<std::shared_ptr<UnspentTxOut>> FindUTXOsForAddress(const std::string& address);

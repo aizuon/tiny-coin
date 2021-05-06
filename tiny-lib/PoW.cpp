@@ -2,6 +2,7 @@
 #include "PoW.hpp"
 
 #include <exception>
+#include <ranges>
 #include <boost/bind/bind.hpp>
 #include <boost/thread/thread.hpp>
 
@@ -138,12 +139,12 @@ std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
 
 void PoW::MineForever()
 {
-	auto [privKey, pubKey, myAddress] = Wallet::InitWallet();
+	const auto [privKey, pubKey, myAddress] = Wallet::InitWallet();
 	Chain::LoadFromDisk();
 
 	while (true)
 	{
-		auto block = AssembleAndSolveBlock(myAddress);
+		const auto block = AssembleAndSolveBlock(myAddress);
 
 		if (block != nullptr)
 		{
@@ -175,7 +176,7 @@ void PoW::MineChunk(const std::shared_ptr<Block>& block, BIGNUM* target_bn, uint
 
 std::shared_ptr<TxOut> PoW::Find_UTXO(const std::shared_ptr<Block>& block, const std::shared_ptr<TxIn>& txIn)
 {
-	for (const auto& [txOutPoint, utxo] : UTXO::Map)
+	for (const auto& utxo : UTXO::Map | std::ranges::views::values)
 	{
 		if (txIn->ToSpend->TxId == utxo->TxOutPoint->TxId && txIn->ToSpend->TxOutIdx == utxo->TxOutPoint->TxOutIdx)
 		{
