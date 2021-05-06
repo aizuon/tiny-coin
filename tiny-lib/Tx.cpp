@@ -121,14 +121,14 @@ bool Tx::Deserialize(BinaryBuffer& buffer)
 	return true;
 }
 
-std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& PayToAddr, uint64_t value, int64_t height)
+std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& payToAddr, uint64_t value, int64_t height)
 {
 	BinaryBuffer tx_in_unlockSig;
 	tx_in_unlockSig.Reserve(sizeof(height));
 	tx_in_unlockSig.Write(height);
-	const auto tx_in = std::make_shared<TxIn>(nullptr, tx_in_unlockSig.GetBuffer(), std::vector<uint8_t>(), -1);
+	const auto tx_in = std::make_shared<TxIn>(nullptr, tx_in_unlockSig.GetBuffer(), std::vector<uint8_t>(), 0);
 
-	const auto tx_out = std::make_shared<TxOut>(value, PayToAddr);
+	const auto tx_out = std::make_shared<TxOut>(value, payToAddr);
 
 	std::vector tx_ins{tx_in};
 	std::vector tx_outs{tx_out};

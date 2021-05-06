@@ -33,7 +33,7 @@ public:
 	BinaryBuffer Serialize() const override;
 	bool Deserialize(BinaryBuffer& buffer) override;
 
-	static std::shared_ptr<Tx> CreateCoinbase(const std::string& PayToAddr, uint64_t value, int64_t height);
+	static std::shared_ptr<Tx> CreateCoinbase(const std::string& payToAddr, uint64_t value, int64_t height);
 
 	struct ValidateRequest
 	{

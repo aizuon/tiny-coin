@@ -9,11 +9,13 @@
 #include <unordered_set>
 
 #include "Base58.hpp"
+#include "Chain.hpp"
 #include "ECDSA.hpp"
 #include "GetActiveChainMsg.hpp"
 #include "GetMempoolMsg.hpp"
 #include "GetUTXOsMsg.hpp"
 #include "Log.hpp"
+#include "Mempool.hpp"
 #include "MsgCache.hpp"
 #include "MsgSerializer.hpp"
 #include "NetClient.hpp"
@@ -106,7 +108,23 @@ std::shared_ptr<TxIn> Wallet::MakeTxIn(const std::vector<uint8_t>& privKey,
 	return std::make_shared<TxIn>(txOutPoint, unlock_sig, pubKey, sequence);
 }
 
-void Wallet::SendValue(uint64_t value, const std::string& address, const std::vector<uint8_t>& privKey)
+std::shared_ptr<Tx> Wallet::BuildTx_Miner(uint64_t value, const std::string& address,
+                                          const std::vector<uint8_t>& privKey)
+{
+	const auto pubKey = ECDSA::GetPubKeyFromPrivKey(privKey);
+	const auto myAddress = PubKeyToAddress(pubKey);
+	auto my_coins = FindUTXOsForAddress_Miner(myAddress);
+	if (my_coins.empty())
+	{
+		LOG_ERROR("No coins found");
+
+		return nullptr;
+	}
+
+	return BuildTxFromUTXOs(my_coins, value, address, privKey);
+}
+
+std::shared_ptr<Tx> Wallet::BuildTx(uint64_t value, const std::string& address, const std::vector<uint8_t>& privKey)
 {
 	const auto pubKey = ECDSA::GetPubKeyFromPrivKey(privKey);
 	const auto myAddress = PubKeyToAddress(pubKey);
@@ -115,51 +133,76 @@ void Wallet::SendValue(uint64_t value, const std::string& address, const std::ve
 	{
 		LOG_ERROR("No coins found");
 
-		return;
+		return nullptr;
 	}
-	std::ranges::sort(my_coins,
-	                  [](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
-	                  {
-		                  return a->TxOut->Value < b->TxOut->Value;
-	                  });
-	std::ranges::sort(my_coins,
-	                  [](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
-	                  {
-		                  return a->Height < b->Height;
-	                  });
-	std::unordered_set<std::shared_ptr<UTXO>> selected_coins;
-	for (const auto& coin : my_coins)
-	{
-		if (!selected_coins.contains(coin))
-		{
-			selected_coins.insert(selected_coins.end(), coin);
-		}
-		uint64_t sum = 0;
-		for (const auto& selected_coin : selected_coins)
-		{
-			sum += selected_coin->TxOut->Value;
-		}
-		if (sum > value)
-		{
-			break;
-		}
-	}
-	const auto txOut = std::make_shared<TxOut>(value, address);
-	std::vector<std::shared_ptr<TxIn>> txIns;
-	for (const auto& selected_coin : selected_coins)
-	{
-		txIns.emplace_back(MakeTxIn(privKey, selected_coin->TxOutPoint, txOut));
-	}
-	const auto tx = std::make_shared<Tx>(txIns, std::vector{txOut}, -1);
+	return BuildTxFromUTXOs(my_coins, value, address, privKey);
+}
+
+std::shared_ptr<Tx> Wallet::SendValue_Miner(uint64_t value, const std::string& address, const std::vector<uint8_t>& privKey)
+{
+	auto tx = BuildTx_Miner(value, address, privKey);
+	if (tx == nullptr)
+		return nullptr;
+	LOG_INFO("Built transaction {}, adding to mempool", tx->Id());
+	Mempool::AddTxToMempool(tx);
+	NetClient::SendMsgRandom(TxInfoMsg(tx));
+
+	return tx;
+}
+
+std::shared_ptr<Tx> Wallet::SendValue(uint64_t value, const std::string& address, const std::vector<uint8_t>& privKey)
+{
+	auto tx = BuildTx(value, address, privKey);
+	if (tx == nullptr)
+		return nullptr;
 	LOG_INFO("Built transaction {}, broadcasting", tx->Id());
 	if (!NetClient::SendMsgRandom(TxInfoMsg(tx)))
 	{
 		LOG_ERROR("No connection to send transaction");
 	}
+
+	return tx;
 }
 
-void Wallet::PrintTxStatus(const std::string& txId)
+Wallet::TxStatusResponse Wallet::GetTxStatus_Miner(const std::string& txId)
 {
+	TxStatusResponse ret;
+
+	for (const auto& tx : Mempool::Map | std::views::keys)
+	{
+		if (tx == txId)
+		{
+			ret.Status = TxStatus::Mempool;
+
+			return ret;
+		}
+	}
+
+	for (int64_t height = 0; height < Chain::ActiveChain.size(); height++)
+	{
+		const auto& block = Chain::ActiveChain[height];
+		for (const auto& tx : block->Txs)
+		{
+			if (tx->Id() == txId)
+			{
+				ret.Status = TxStatus::Mined;
+				ret.BlockId = block->Id();
+				ret.BlockHeight = height;
+
+				return ret;
+			}
+		}
+	}
+
+	ret.Status = TxStatus::NotFound;
+
+	return ret;
+}
+
+Wallet::TxStatusResponse Wallet::GetTxStatus(const std::string& txId)
+{
+	TxStatusResponse ret;
+
 	if (MsgCache::SendMempoolMsg != nullptr)
 		MsgCache::SendMempoolMsg = nullptr;
 
@@ -167,7 +210,7 @@ void Wallet::PrintTxStatus(const std::string& txId)
 	{
 		LOG_ERROR("No connection to ask mempool");
 
-		return;
+		return ret;
 	}
 
 	auto start = Utils::GetUnixTimestamp();
@@ -177,7 +220,7 @@ void Wallet::PrintTxStatus(const std::string& txId)
 		{
 			LOG_ERROR("Timeout on GetMempoolMsg");
 
-			return;
+			return ret;
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
@@ -186,9 +229,9 @@ void Wallet::PrintTxStatus(const std::string& txId)
 	{
 		if (tx == txId)
 		{
-			LOG_INFO("Transaction {} is in mempool", txId);
+			ret.Status = TxStatus::Mempool;
 
-			return;
+			return ret;
 		}
 	}
 
@@ -199,7 +242,7 @@ void Wallet::PrintTxStatus(const std::string& txId)
 	{
 		LOG_ERROR("No connection to ask active chain");
 
-		return;
+		return ret;
 	}
 
 	start = Utils::GetUnixTimestamp();
@@ -209,7 +252,7 @@ void Wallet::PrintTxStatus(const std::string& txId)
 		{
 			LOG_ERROR("Timeout on GetActiveChainMsg");
 
-			return;
+			return ret;
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
@@ -221,14 +264,54 @@ void Wallet::PrintTxStatus(const std::string& txId)
 		{
 			if (tx->Id() == txId)
 			{
-				LOG_INFO("Transaction {} is mined in {} at height {}", txId, block->Id(), height);
+				ret.Status = TxStatus::Mined;
+				ret.BlockId = block->Id();
+				ret.BlockHeight = height;
 
-				return;
+				return ret;
 			}
 		}
 	}
 
-	LOG_INFO("Transaction {} not found", txId);
+	ret.Status = TxStatus::NotFound;
+
+	return ret;
+}
+
+void Wallet::PrintTxStatus(const std::string& txId)
+{
+	auto response = GetTxStatus(txId);
+	switch (response.Status)
+	{
+	case TxStatus::Mempool:
+		{
+			LOG_INFO("Transaction {} is in mempool", txId);
+
+			break;
+		}
+	case TxStatus::Mined:
+		{
+			LOG_INFO("Transaction {} is mined in {} at height {}", txId, response.BlockId, response.BlockHeight);
+
+			break;
+		}
+	case TxStatus::NotFound:
+		{
+			LOG_INFO("Transaction {} not found", txId);
+
+			break;
+		}
+	}
+}
+
+uint64_t Wallet::GetBalance_Miner(const std::string& address)
+{
+	auto utxos = FindUTXOsForAddress_Miner(address);
+	uint64_t value = 0;
+	for (const auto& utxo : utxos)
+		value += utxo->TxOut->Value;
+
+	return value;
 }
 
 uint64_t Wallet::GetBalance(const std::string& address)
@@ -238,9 +321,26 @@ uint64_t Wallet::GetBalance(const std::string& address)
 	for (const auto& utxo : utxos)
 		value += utxo->TxOut->Value;
 
-	LOG_INFO("Address {} holds {} coins", address, value / NetParams::COIN);
-
 	return value;
+}
+
+void Wallet::PrintBalance(const std::string& address)
+{
+	uint64_t balance = GetBalance(address);
+	LOG_INFO("Address {} holds {} coins", address, static_cast<double>(balance) / NetParams::COIN);
+}
+
+std::vector<std::shared_ptr<UTXO>> Wallet::FindUTXOsForAddress_Miner(const std::string& address)
+{
+	std::vector<std::shared_ptr<UTXO>> utxos;
+	for (const auto& v : UTXO::Map | std::views::values)
+	{
+		if (v->TxOut->ToAddress == address)
+		{
+			utxos.push_back(v);
+		}
+	}
+	return utxos;
 }
 
 std::vector<std::shared_ptr<UTXO>> Wallet::FindUTXOsForAddress(const std::string& address)
@@ -276,4 +376,44 @@ std::vector<std::shared_ptr<UTXO>> Wallet::FindUTXOsForAddress(const std::string
 		}
 	}
 	return utxos;
+}
+
+std::shared_ptr<Tx> Wallet::BuildTxFromUTXOs(std::vector<std::shared_ptr<UTXO>>& utxos, uint64_t value,
+                                             const std::string& address, const std::vector<uint8_t>& privKey)
+{
+	std::ranges::sort(utxos,
+	                  [](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
+	                  {
+		                  return a->TxOut->Value < b->TxOut->Value;
+	                  });
+	std::ranges::sort(utxos,
+	                  [](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
+	                  {
+		                  return a->Height < b->Height;
+	                  });
+	std::unordered_set<std::shared_ptr<UTXO>> selected_utxos;
+	for (const auto& coin : utxos)
+	{
+		if (!selected_utxos.contains(coin))
+		{
+			selected_utxos.insert(selected_utxos.end(), coin);
+		}
+		uint64_t sum = 0;
+		for (const auto& selected_coin : selected_utxos)
+		{
+			sum += selected_coin->TxOut->Value;
+		}
+		if (sum > value)
+		{
+			break;
+		}
+	}
+	const auto txOut = std::make_shared<TxOut>(value, address);
+	std::vector<std::shared_ptr<TxIn>> txIns;
+	for (const auto& selected_coin : selected_utxos)
+	{
+		txIns.emplace_back(MakeTxIn(privKey, selected_coin->TxOutPoint, txOut));
+	}
+	auto tx = std::make_shared<Tx>(txIns, std::vector{txOut}, -1);
+	return tx;
 }

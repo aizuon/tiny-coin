@@ -112,6 +112,7 @@
     <ClInclude Include="Connection.hpp">
       <Filter>P2P</Filter>
     </ClInclude>
+    <ClInclude Include="Enums.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />

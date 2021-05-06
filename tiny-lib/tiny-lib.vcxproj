@@ -27,6 +27,7 @@
     <ClInclude Include="Chain.hpp" />
     <ClInclude Include="Connection.hpp" />
     <ClInclude Include="ECDSA.hpp" />
+    <ClInclude Include="Enums.hpp" />
     <ClInclude Include="Exceptions.hpp" />
     <ClInclude Include="GetActiveChainMsg.hpp" />
     <ClInclude Include="GetBlockMsg.hpp" />
