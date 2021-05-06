@@ -72,7 +72,7 @@ int main(int ac, char** av)
 	}
 	else if (vm.contains("balance"))
 	{
-		Wallet::GetBalance(address);
+		Wallet::PrintBalance(address);
 	}
 	else if (vm.contains("tx_status"))
 	{
