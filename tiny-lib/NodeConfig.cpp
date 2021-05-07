@@ -1,4 +1,4 @@
 #include "pch.hpp"
 #include "NodeConfig.hpp"
 
-NodeType NodeConfig::Type = Unspecified;
+NodeType NodeConfig::Type = NodeType::Unspecified;

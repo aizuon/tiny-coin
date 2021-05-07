@@ -1,15 +1,17 @@
 #include <cstdint>
 #include <cstdlib>
 #include <future>
+#include <iostream>
 #include <string>
 #include <vector>
 #include <boost/program_options.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include "../tiny-lib/Log.hpp"
 #include "../tiny-lib/NetClient.hpp"
+#include "../tiny-lib/NodeConfig.hpp"
 #include "../tiny-lib/PoW.hpp"
 #include "../tiny-lib/Wallet.hpp"
-#include "../tiny-lib/NodeConfig.hpp"
 
 namespace po = boost::program_options;
 
@@ -18,7 +20,7 @@ void atexit_handler()
 	Log::StopLog();
 }
 
-int main(int ac, char** av)
+int main(int argc, char** argv)
 {
 	Log::StartLog();
 	if (std::atexit(atexit_handler) != 0)
@@ -26,34 +28,45 @@ int main(int ac, char** av)
 
 	po::options_description desc("allowed options");
 	desc.add_options()
-		("wallet", po::value<std::string>(), "path to wallet")
-		("mine", "sets up a mining node")
+		("node_type", po::value<std::string>(), "specify node type")
 		("port", po::value<uint16_t>(), "port to listen on network connections")
-		("balance", "shows balance for this wallet")
-		("send_address", po::value<std::string>(), "sends coins to address")
-		("send_value", po::value<uint64_t>(), "sends coins to address")
-		("tx_status", po::value<std::string>(), "shows status for transaction");
+		("wallet", po::value<std::string>(), "path to wallet");
 
 	po::variables_map vm;
-	po::store(po::parse_command_line(ac, av, desc), vm);
+	po::store(po::parse_command_line(argc, argv, desc), vm);
 	po::notify(vm);
 
 	if (!vm.contains("port"))
 	{
 		LOG_ERROR("A port for network connection must be specified");
 
-		Log::StopLog();
+		return EXIT_FAILURE;
+	}
+
+	if (!vm.contains("node_type"))
+	{
+		LOG_ERROR("Node type must be specified");
 
 		return EXIT_FAILURE;
 	}
 
-	if (vm.contains("mine"))
+	if (vm["node_type"].as<std::string>() == "miner")
 	{
-		NodeConfig::Type = NodeConfig::Type | Miner;
+		NodeConfig::Type = NodeType::Miner;
+	}
+	else if (vm["node_type"].as<std::string>() == "wallet")
+	{
+		NodeConfig::Type = NodeType::Wallet;
+	}
+	else if (vm["node_type"].as<std::string>() == "full")
+	{
+		NodeConfig::Type = NodeType::Full; //TODO: implement full node
 	}
 	else
 	{
-		NodeConfig::Type = NodeConfig::Type | Wallet;
+		LOG_ERROR("Invalid node type");
+
+		return EXIT_FAILURE;
 	}
 
 	const auto [privKey, pubKey, address] = vm.contains("wallet")
@@ -76,23 +89,65 @@ int main(int ac, char** av)
 	for (const auto& pendingConnection : pendingConnections)
 		pendingConnection.wait();
 
-	if (NodeConfig::Type & Miner)
+	if (NodeConfig::Type == NodeType::Miner)
 	{
 		PoW::MineForever();
 	}
 	else
 	{
-		if (vm.contains("balance"))
+		std::string wallet_address = "address ";
+		std::string balance_address = "balance ";
+		std::string balance_own = "balance";
+		std::string send = "send ";
+		std::string tx_status = "tx_status ";
+		while (true)
 		{
-			Wallet::PrintBalance(address);
-		}
-		else if (vm.contains("tx_status"))
-		{
-			Wallet::PrintTxStatus(vm["tx_status"].as<std::string>());
-		}
-		else if (vm.contains("send_address") && vm.contains("send_value"))
-		{
-			Wallet::SendValue(vm["send_value"].as<uint64_t>(), vm["send_address"].as<std::string>(), privKey);
+			std::string command;
+			std::getline(std::cin, command);
+
+			if (command == "exit" || command == "quit")
+			{
+				break;
+			}
+
+			if (command.starts_with(wallet_address))
+			{
+				command.erase(0, wallet_address.length());
+				Wallet::PrintWalletAddress(command);
+			}
+			else if (command.starts_with(balance_address))
+			{
+				command.erase(0, balance_address.length());
+				Wallet::PrintBalance(command);
+			}
+			else if (command.starts_with(balance_own))
+			{
+				Wallet::PrintBalance(address);
+			}
+			else if (command.starts_with(send))
+			{
+				command.erase(0, send.length());
+				std::vector<std::string> send_args;
+				boost::split(send_args, command, boost::is_any_of(" "));
+				if (send_args.size() != 2)
+				{
+					LOG_ERROR("Send command requires 2 arguments, receiver address and send value");
+
+					continue;
+				}
+				const auto& send_address = send_args[0];
+				const auto& send_value = send_args[1];
+				Wallet::SendValue(std::stoull(send_value), send_address, privKey);
+			}
+			else if (command.starts_with(tx_status))
+			{
+				command.erase(0, tx_status.length());
+				Wallet::PrintTxStatus(command);
+			}
+			else
+			{
+				LOG_ERROR("Unknown command");
+			}
 		}
 	}
 

@@ -9,12 +9,12 @@ enum class TxStatus : uint8_t
 	NotFound
 };
 
-enum NodeType : uint8_t
+enum class NodeType : uint8_t
 {
 	Unspecified = 0,
 	Miner = 1,
 	Wallet = 2,
-	Full = Miner | Wallet //TODO: implement full node
+	Full = Miner | Wallet
 };
 
 using NodeTypeType = std::underlying_type<NodeType>::type;
@@ -22,4 +22,14 @@ using NodeTypeType = std::underlying_type<NodeType>::type;
 inline NodeType operator|(NodeType a, NodeType b)
 {
 	return static_cast<NodeType>(static_cast<NodeTypeType>(a) | static_cast<NodeTypeType>(b));
+}
+
+inline NodeType& operator|=(NodeType& a, NodeType b)
+{
+	return reinterpret_cast<NodeType&>(reinterpret_cast<int&>(a) |= static_cast<int>(b));
+}
+
+inline bool operator&(NodeType a, NodeType b)
+{
+	return static_cast<NodeTypeType>(a) & static_cast<NodeTypeType>(b);
 }

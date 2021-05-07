@@ -9,7 +9,7 @@
 void PeerHelloMsg::Handle(std::shared_ptr<Connection>& con)
 {
 	con->NodeType = NodeType;
-	if (con->NodeType & Miner)
+	if (con->NodeType & NodeType::Miner)
 	{
 		std::lock_guard lock(NetClient::ConnectionsMutex);
 

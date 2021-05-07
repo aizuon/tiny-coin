@@ -21,6 +21,8 @@ class Wallet
 public:
 	static std::string PubKeyToAddress(const std::vector<uint8_t>& pubKey);
 
+	static std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> GetWallet(const std::string& walletPath);
+	static void PrintWalletAddress(const std::string& walletPath);
 	static std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string>
 	InitWallet(const std::string& walletPath);
 	static std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> InitWallet();

@@ -48,10 +48,8 @@ std::string Wallet::PubKeyToAddress(const std::vector<uint8_t>& pubKey)
 	return PubKeyHashVersion + Base58::Encode(ripe);
 }
 
-std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::InitWallet(const std::string& walletPath)
+std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::GetWallet(const std::string& walletPath)
 {
-	WalletPath = walletPath;
-
 	std::vector<uint8_t> privKey;
 	std::vector<uint8_t> pubKey;
 	std::string address;
@@ -76,6 +74,22 @@ std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::Init
 		wallet_out.flush();
 		wallet_out.close();
 	}
+
+	return {privKey, pubKey, address};
+}
+
+void Wallet::PrintWalletAddress(const std::string& walletPath)
+{
+	const auto [privKey, pubKey, address] = GetWallet(walletPath);
+
+	LOG_INFO("{} belongs to address is {}", walletPath, address);
+}
+
+std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::InitWallet(const std::string& walletPath)
+{
+	WalletPath = walletPath;
+
+	const auto [privKey, pubKey, address] = GetWallet(WalletPath);
 
 	static bool printedAddress = false;
 	if (!printedAddress)

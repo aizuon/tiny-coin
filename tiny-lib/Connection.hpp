@@ -14,5 +14,5 @@ public:
 
 	std::mutex WriteMutex;
 
-	NodeType NodeType = Unspecified;
+	NodeType NodeType = NodeType::Unspecified;
 };

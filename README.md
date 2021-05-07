@@ -16,52 +16,58 @@ Windows 10 with Visual Studio 2019 for build environment and vcpkg for library m
 
 ## Quick start
 
-- Run a miner instance
+- Run a miner node
   ```
-  $ tiny-sandbox.exe --port 9901 --wallet miner.dat --mine
+  $ tiny-sandbox.exe --port 9901 --node_type miner --wallet miner.dat
   
-  [ 03:04:45 ] [ tc ] Generating new wallet miner.dat
-  [ 03:04:45 ] [ tc ] Your address is 172eJPtmt5wMq71bnT1fS55FYLHw1syhWB
-  [ 03:04:47 ] [ tc ] Load chain failed, starting from genesis
+  [ 17:17:23 ] [ tc ] Generating new wallet miner.dat
+  [ 17:17:25 ] [ tc ] Your address is 172eJPtmt5wMq71bnT1fS55FYLHw1syhWB
+  [ 17:17:26 ] [ tc ] Load chain failed, starting from genesis
   ```
 - Wait for a few blocks to go by
   ```
-  [ 03:04:47 ] [ tc ] Block found => 1 s, 726 KH/s, 0000001ec4d7580bf8b0459af362857d148112c8a38e5b039ca423558bf28ca3, 13835058055282350115
-  [ 03:04:47 ] [ tc ] Connecting block 0000001ec4d7580bf8b0459af362857d148112c8a38e5b039ca423558bf28ca3 to chain 0
-  [ 03:04:47 ] [ tc ] Adding TxOutPoint f353379e1dce17f3964bd1e673eb268faabaf8e6a24cc866f46389f54d920b25 to UTXO map
-  [ 03:04:47 ] [ tc ] Block accepted with height 1 and txs 1
-  [ 03:04:47 ] [ tc ] Saving chain with 2 blocks
+  [ 17:17:27 ] [ tc ] Block found => 2 s, 835 KH/s, 000000fe05062373c95152a779915f25d75cfc519395a120d3bba466b88b9bc5, 422750
+  [ 17:17:27 ] [ tc ] Connecting block 000000fe05062373c95152a779915f25d75cfc519395a120d3bba466b88b9bc5 to chain 0
+  [ 17:17:27 ] [ tc ] Adding TxOutPoint f353379e1dce17f3964bd1e673eb268faabaf8e6a24cc866f46389f54d920b25 to UTXO map
+  [ 17:17:27 ] [ tc ] Block accepted with height 1 and txs 1
+  [ 17:17:27 ] [ tc ] Saving chain with 2 blocks
   ...
+  ```
+- Run a wallet node
+  ```
+  $ tiny-sandbox.exe --port 9902 --node_type wallet --wallet miner.dat
+  
+  [ 17:17:31 ] [ tc ] Your address is 172eJPtmt5wMq71bnT1fS55FYLHw1syhWB
   ```
 - Generate an empty wallet
   ```
-  $ tiny-sandbox.exe --port 9902 --wallet receiver.dat --balance
-  
-  [ 03:04:53 ] [ tc ] Generating new wallet receiver.dat
-  [ 03:04:53 ] [ tc ] Your address is 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi
-  [ 03:04:55 ] [ tc ] Address 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi holds 0 coins
+  $ address receiver.dat
+
+  [ 17:21:06 ] [ tc ] receiver.dat belongs to address is 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi
   ```
 - Send coins from miner wallet to empty wallet
   ```
-  $ tiny-sandbox.exe --port 9902 --wallet miner.dat --send_address 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi --send_value 50
+  $ send 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi 50
   
-  [ 03:05:27 ] [ tc ] Built transaction bc74ea19c1eb5fd5d5571d2926f7f247e8c54844085aeb4902dddd3c587d934b, broadcasting
+  [ 17:21:52 ] [ tc ] Built transaction df02039631785fe23eb047bf8222f6cb89e767c6ee9e56c2e06d14ac0624c843, broadcasting
   ```
 - Wait for transaction to get mined in a block
   ```
-  [ 03:05:33 ] [ tc ] Added transaction bc74ea19c1eb5fd5d5571d2926f7f247e8c54844085aeb4902dddd3c587d934b to block 3d202ec5dda4e5bad64c52d29cb03d9342c9eac9062503613665fb606da15e51
-  [ 03:05:50 ] [ tc ] Block found => 17 s, 1177 KH/s, 00000079f33dc7c0b50d51a425b8eae0c3bf406f71094b33a016aee05fdf26c7, 13835058055287314157
-  [ 03:05:50 ] [ tc ] Connecting block 00000079f33dc7c0b50d51a425b8eae0c3bf406f71094b33a016aee05fdf26c7 to chain 0
-  [ 03:05:50 ] [ tc ] Adding TxOutPoint e08baa6462a7a406879248f914cf8bb5a1758a73129f07f82aea7209769a754e to UTXO map
-  [ 03:05:50 ] [ tc ] Adding TxOutPoint bc74ea19c1eb5fd5d5571d2926f7f247e8c54844085aeb4902dddd3c587d934b to UTXO map
-  [ 03:05:50 ] [ tc ] Block accepted with height 8 and txs 2
-  [ 03:05:50 ] [ tc ] Saving chain with 9 blocks
+  ...
+  [ 17:22:03 ] [ tc ] Added transaction df02039631785fe23eb047bf8222f6cb89e767c6ee9e56c2e06d14ac0624c843 to block 02f30dcb19d2fdda6a2e2dd556aacb22197f0d66170c37d5bc3bc479a7cd583f
+  [ 17:22:28 ] [ tc ] Block found => 25 s, 1146 KH/s, 0000009d480d7d6fb74541c35553a4e030461d3ee890312c152d209f12fa9dfd, 9223372036861901087
+  [ 17:22:28 ] [ tc ] Connecting block 0000009d480d7d6fb74541c35553a4e030461d3ee890312c152d209f12fa9dfd to chain 0
+  [ 17:22:28 ] [ tc ] Adding TxOutPoint 1972eeeea6949504e763fd0c22de36091ffddb734b546db3336c78d169c1a294 to UTXO map
+  [ 17:22:28 ] [ tc ] Adding TxOutPoint df02039631785fe23eb047bf8222f6cb89e767c6ee9e56c2e06d14ac0624c843 to UTXO map
+  [ 17:22:28 ] [ tc ] Block accepted with height 23 and txs 2
+  [ 17:22:28 ] [ tc ] Saving chain with 24 blocks
+  ...
   ```
-- Check balance of reciever wallet
+- Check balance of receiver wallet
   ```
-  $ tiny-sandbox.exe --port 9902 --wallet receiver.dat --balance
-  
-  [ 03:05:54 ] [ tc ] Address 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi holds 50 coins
+  $ balance 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi
+
+  [ 17:23:41 ] [ tc ] Address 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi holds 50 coins
   ```
 
 ## TODO
@@ -72,3 +78,4 @@ Windows 10 with Visual Studio 2019 for build environment and vcpkg for library m
 - Orphan blocks
 - Chainwork
 - Peer discovery
+- Full node

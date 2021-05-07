@@ -58,7 +58,8 @@ void NetClient::Stop()
 	ConnectionsMutex.unlock();
 
 	IO_Service.stop();
-	IO_Thread.join();
+	if (IO_Thread.joinable())
+		IO_Thread.join();
 
 	ConnectionsMutex.lock();
 	MinerConnections.clear();
@@ -361,7 +362,7 @@ void NetClient::RemoveConnection(std::shared_ptr<Connection>& con)
 			soc.shutdown(boost::asio::socket_base::shutdown_both);
 			soc.close();
 		}
-		if (con->NodeType & Miner)
+		if (con->NodeType & NodeType::Miner)
 		{
 			const auto vec_it2 = std::ranges::find_if(MinerConnections,
 			                                          [&con](const std::shared_ptr<Connection>& o)
