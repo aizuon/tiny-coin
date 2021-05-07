@@ -10,7 +10,6 @@ Windows 10 with Visual Studio 2019 for build environment and vcpkg for library m
 
 - openssl
 - boost
-- tbb
 - fmt
 - spdlog
 

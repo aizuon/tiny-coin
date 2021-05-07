@@ -13,10 +13,14 @@ BinaryBuffer SendActiveChainMsg::Serialize() const
 {
 	BinaryBuffer buffer;
 
-	buffer.WriteSize(Chain::ActiveChain.size());
-	for (const auto& block : Chain::ActiveChain)
 	{
-		buffer.WriteRaw(block->Serialize().GetBuffer());
+		std::lock_guard lock(Chain::Mutex);
+
+		buffer.WriteSize(Chain::ActiveChain.size());
+		for (const auto& block : Chain::ActiveChain)
+		{
+			buffer.WriteRaw(block->Serialize().GetBuffer());
+		}
 	}
 
 	return buffer;

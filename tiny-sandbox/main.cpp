@@ -128,7 +128,7 @@ int main(int argc, char** argv)
 			{
 				command.erase(0, send.length());
 				std::vector<std::string> send_args;
-				boost::split(send_args, command, boost::is_any_of(" "));
+				split(send_args, command, boost::is_any_of(" "));
 				if (send_args.size() != 2)
 				{
 					LOG_ERROR("Send command requires 2 arguments, receiver address and send value");

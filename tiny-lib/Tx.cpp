@@ -148,22 +148,8 @@ void Tx::Validate(const ValidateRequest& req) const
 	{
 		const auto& txIn = TxIns[i];
 
-		std::shared_ptr<UTXO> utxo = nullptr; //HACK: this could be a ref
-
-		const auto& toSpend = txIn->ToSpend;
-		auto map_it = std::ranges::find_if(UTXO::Map,
-		                                   [&toSpend](
-		                                   const std::pair<std::shared_ptr<TxOutPoint>, std::shared_ptr<UTXO>>&
-		                                   p)
-		                                   {
-			                                   const auto& [txOutPoint, utxo] = p;
-			                                   return *txOutPoint == *toSpend;
-		                                   });
-		if (map_it != UTXO::Map.end())
-		{
-			utxo = map_it->second;
-		}
-		else
+		auto utxo = UTXO::FindInMap(txIn->ToSpend);
+		if (utxo == nullptr)
 		{
 			if (!req.SiblingsInBlock.empty())
 			{
@@ -174,12 +160,12 @@ void Tx::Validate(const ValidateRequest& req) const
 			{
 				utxo = Mempool::Find_UTXO_InMempool(txIn->ToSpend);
 			}
-		}
 
-		if (utxo == nullptr)
-			throw TxValidationException(
-				fmt::format("Couldn't not find any UTXO for TxIn {}, orphaning transaction", i).c_str(),
-				std::make_shared<Tx>(*this));
+			if (utxo == nullptr)
+				throw TxValidationException(
+					fmt::format("Couldn't not find any UTXO for TxIn {}, orphaning transaction", i).c_str(),
+					std::make_shared<Tx>(*this));
+		}
 
 		if (utxo->IsCoinbase && (Chain::GetCurrentHeight() - utxo->Height) < NetParams::COINBASE_MATURITY)
 			throw TxValidationException("Coinbase UTXO is not ready for spending");

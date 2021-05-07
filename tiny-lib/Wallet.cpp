@@ -162,18 +162,22 @@ Wallet::TxStatusResponse Wallet::GetTxStatus_Miner(const std::string& txId)
 		}
 	}
 
-	for (uint32_t height = 0; height < Chain::ActiveChain.size(); height++)
 	{
-		const auto& block = Chain::ActiveChain[height];
-		for (const auto& tx : block->Txs)
-		{
-			if (tx->Id() == txId)
-			{
-				ret.Status = TxStatus::Mined;
-				ret.BlockId = block->Id();
-				ret.BlockHeight = height;
+		std::lock_guard lock(Chain::Mutex);
 
-				return ret;
+		for (uint32_t height = 0; height < Chain::ActiveChain.size(); height++)
+		{
+			const auto& block = Chain::ActiveChain[height];
+			for (const auto& tx : block->Txs)
+			{
+				if (tx->Id() == txId)
+				{
+					ret.Status = TxStatus::Mined;
+					ret.BlockId = block->Id();
+					ret.BlockHeight = height;
+
+					return ret;
+				}
 			}
 		}
 	}

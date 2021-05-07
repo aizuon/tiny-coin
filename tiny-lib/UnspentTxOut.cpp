@@ -62,7 +62,7 @@ bool UnspentTxOut::Deserialize(BinaryBuffer& buffer)
 
 std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>> UnspentTxOut::Map;
 
-void UnspentTxOut::AddToMap(std::shared_ptr<::TxOut> txOut, const std::string& txId, int64_t idx, bool isCoinbase,
+void UnspentTxOut::AddToMap(std::shared_ptr<::TxOut>& txOut, const std::string& txId, int64_t idx, bool isCoinbase,
                             int64_t height)
 {
 	auto txOutPoint = std::make_shared<::TxOutPoint>(txId, idx);
@@ -104,6 +104,24 @@ std::shared_ptr<UnspentTxOut> UnspentTxOut::FindInList(const std::shared_ptr<TxI
 			auto txOutPoint = std::make_shared<::TxOutPoint>(toSpend->TxId, toSpend->TxOutIdx);
 			return std::make_shared<UnspentTxOut>(matchingTxOut, txOutPoint, false, -1);
 		}
+	}
+
+	return nullptr;
+}
+
+std::shared_ptr<UnspentTxOut> UnspentTxOut::FindInMap(const std::shared_ptr<::TxOutPoint>& toSpend)
+{
+	auto map_it = std::ranges::find_if(Map,
+	                                   [&toSpend](
+	                                   const std::pair<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>>&
+	                                   p)
+	                                   {
+		                                   const auto& [txOutPoint, utxo] = p;
+		                                   return *txOutPoint == *toSpend;
+	                                   });
+	if (map_it != Map.end())
+	{
+		return map_it->second;
 	}
 
 	return nullptr;

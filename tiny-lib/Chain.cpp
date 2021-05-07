@@ -39,7 +39,7 @@ std::recursive_mutex Chain::Mutex;
 
 std::atomic_bool Chain::InitialBlockDownloadComplete = false;
 
-int64_t Chain::GetCurrentHeight()
+uint32_t Chain::GetCurrentHeight()
 {
 	std::lock_guard lock(Mutex);
 
@@ -53,15 +53,15 @@ int64_t Chain::GetMedianTimePast(uint32_t numLastBlocks)
 	if (numLastBlocks > ActiveChain.size())
 		return 0;
 
-	const int64_t first_idx = ActiveChain.size() - numLastBlocks;
-	int64_t median_idx = first_idx + (numLastBlocks / 2);
+	const uint32_t first_idx = ActiveChain.size() - numLastBlocks;
+	uint32_t median_idx = first_idx + (numLastBlocks / 2);
 	if (numLastBlocks % 2 == 0)
 		median_idx -= 1;
 
 	return ActiveChain[median_idx]->Timestamp;
 }
 
-int64_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
+uint32_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 {
 	std::lock_guard lock(Mutex);
 
@@ -110,7 +110,7 @@ int64_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 	if (block->Timestamp <= GetMedianTimePast(11))
 		throw BlockValidationException("Timestamp is too old");
 
-	int64_t prev_block_chain_idx;
+	uint32_t prev_block_chain_idx;
 	if (block->PrevBlockHash.empty())
 	{
 		prev_block_chain_idx = ActiveChainIdx;
@@ -162,7 +162,7 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 
 	const auto blockId = block->Id();
 
-	std::shared_ptr<Block> located_block; //HACK: this could be a ref
+	std::shared_ptr<Block> located_block;
 	if (!doingReorg)
 	{
 		auto [located_block2, located_block_height, located_block_chain_idx] = LocateBlockInAllChains(block->Id());
@@ -180,7 +180,7 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 		return -1;
 	}
 
-	int64_t chainIdx;
+	uint32_t chainIdx;
 	try
 	{
 		chainIdx = ValidateBlock(block);
@@ -307,12 +307,12 @@ bool Chain::ReorgIfNecessary()
 	bool reorged = false;
 
 	auto frozenSideBranches = SideBranches;
-	int64_t branch_idx = 1;
+	uint32_t branch_idx = 1;
 	for (const auto& chain : frozenSideBranches)
 	{
 		auto [fork_block, fork_heigh] = LocateBlockInActiveChain(chain[0]->PrevBlockHash);
 
-		int64_t branchHeight = chain.size() + fork_heigh;
+		uint32_t branchHeight = chain.size() + fork_heigh;
 		if (branchHeight > GetCurrentHeight())
 		{
 			LOG_INFO("Attempting reorg of idx {} to active chain, new height of {} vs. {}", branch_idx, branchHeight,
@@ -326,7 +326,7 @@ bool Chain::ReorgIfNecessary()
 	return reorged;
 }
 
-bool Chain::TryReorg(const std::vector<std::shared_ptr<Block>>& branch, int64_t branchIdx, int64_t forkIdx)
+bool Chain::TryReorg(const std::vector<std::shared_ptr<Block>>& branch, uint32_t branchIdx, uint32_t forkIdx)
 {
 	std::lock_guard lock(Mutex);
 
@@ -338,8 +338,7 @@ bool Chain::TryReorg(const std::vector<std::shared_ptr<Block>>& branch, int64_t 
 
 	for (const auto& block : branch)
 	{
-		const int64_t connectedBlockIdx = ConnectBlock(block, true);
-		if (connectedBlockIdx != ActiveChainIdx)
+		if (ConnectBlock(block, true) != ActiveChainIdx)
 		{
 			RollbackReorg(oldActiveChain, fork_block, branchIdx);
 
@@ -356,7 +355,7 @@ bool Chain::TryReorg(const std::vector<std::shared_ptr<Block>>& branch, int64_t 
 }
 
 void Chain::RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveChain,
-                          const std::shared_ptr<Block>& forkBlock, int64_t branchIdx)
+                          const std::shared_ptr<Block>& forkBlock, uint32_t branchIdx)
 {
 	std::lock_guard lock(Mutex);
 
@@ -377,7 +376,7 @@ std::pair<std::shared_ptr<Block>, int64_t> Chain::LocateBlockInChain(const std::
 {
 	std::lock_guard lock(Mutex);
 
-	int64_t height = 0;
+	uint32_t height = 0;
 	for (const auto& block : chain)
 	{
 		if (block->Id() == blockHash)
@@ -393,18 +392,14 @@ std::pair<std::shared_ptr<Block>, int64_t> Chain::LocateBlockInChain(const std::
 
 std::tuple<std::shared_ptr<Block>, int64_t> Chain::LocateBlockInActiveChain(const std::string& blockHash)
 {
-	auto [located_block, located_block_height] = LocateBlockInChain(blockHash, ActiveChain);
-	if (located_block != nullptr)
-		return {located_block, located_block_height};
-
-	return {located_block, located_block_height};
+	return LocateBlockInChain(blockHash, ActiveChain);
 }
 
 std::tuple<std::shared_ptr<Block>, int64_t, int64_t> Chain::LocateBlockInAllChains(const std::string& blockHash)
 {
 	std::lock_guard lock(Mutex);
 
-	int64_t chain_idx = 0;
+	uint32_t chain_idx = 0;
 	auto [located_block, located_block_height] = LocateBlockInActiveChain(blockHash);
 	if (located_block != nullptr)
 		return {located_block, located_block_height, chain_idx};

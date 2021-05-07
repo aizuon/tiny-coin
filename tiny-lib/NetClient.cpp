@@ -46,25 +46,31 @@ void NetClient::RunAsync()
 
 void NetClient::Stop()
 {
-	ConnectionsMutex.lock();
-	for (const auto& con : Connections)
 	{
-		if (con->Socket.is_open())
+		std::lock_guard lock(ConnectionsMutex);
+
+		for (const auto& con : Connections)
 		{
-			con->Socket.shutdown(boost::asio::socket_base::shutdown_both);
-			con->Socket.close();
+			auto& soc = con->Socket;
+
+			if (soc.is_open())
+			{
+				soc.shutdown(boost::asio::socket_base::shutdown_both);
+				soc.close();
+			}
 		}
 	}
-	ConnectionsMutex.unlock();
 
 	IO_Service.stop();
 	if (IO_Thread.joinable())
 		IO_Thread.join();
 
-	ConnectionsMutex.lock();
-	MinerConnections.clear();
-	Connections.clear();
-	ConnectionsMutex.unlock();
+	{
+		std::lock_guard lock(ConnectionsMutex);
+
+		MinerConnections.clear();
+		Connections.clear();
+	}
 }
 
 void NetClient::Connect(const std::string& address, uint16_t port)
@@ -80,9 +86,11 @@ void NetClient::Connect(const std::string& address, uint16_t port)
 		return;
 	}
 	con->Socket.set_option(boost::asio::ip::tcp::no_delay(true));
-	ConnectionsMutex.lock();
-	Connections.push_back(con);
-	ConnectionsMutex.unlock();
+	{
+		std::lock_guard lock(ConnectionsMutex);
+
+		Connections.push_back(con);
+	}
 	SendMsg(con, PeerHelloMsg());
 	DoAsyncRead(con);
 }
@@ -117,19 +125,23 @@ bool NetClient::SendMsgRandom(const IMsg& msg)
 
 void NetClient::BroadcastMsg(const IMsg& msg)
 {
-	ConnectionsMutex.lock();
-	if (MinerConnections.empty())
-		return;
-	ConnectionsMutex.unlock();
+	{
+		std::lock_guard lock(ConnectionsMutex);
+
+		if (MinerConnections.empty())
+			return;
+	}
 
 	const auto msgBuffer = PrepareSendBuffer(msg);
 
-	ConnectionsMutex.lock();
-	for (auto& con : MinerConnections)
 	{
-		Write(con, msgBuffer);
+		std::lock_guard lock(ConnectionsMutex);
+
+		for (auto& con : MinerConnections)
+		{
+			Write(con, msgBuffer);
+		}
 	}
-	ConnectionsMutex.unlock();
 }
 
 std::shared_ptr<Connection> NetClient::GetRandomConnection()
@@ -160,9 +172,11 @@ void NetClient::HandleAccept(std::shared_ptr<Connection>& con, const boost::syst
 		         soc.remote_endpoint().port());
 
 		soc.set_option(boost::asio::ip::tcp::no_delay(true));
-		ConnectionsMutex.lock();
-		Connections.push_back(con);
-		ConnectionsMutex.unlock();
+		{
+			std::lock_guard lock(ConnectionsMutex);
+
+			Connections.push_back(con);
+		}
 		SendMsg(con, PeerHelloMsg());
 		DoAsyncRead(con);
 	}
@@ -357,8 +371,9 @@ void NetClient::RemoveConnection(std::shared_ptr<Connection>& con)
 
 		if (soc.is_open())
 		{
-			LOG_INFO("Peer {}:{} disconnected", soc.remote_endpoint().address().to_string(), soc.remote_endpoint().port());
-			
+			LOG_INFO("Peer {}:{} disconnected", soc.remote_endpoint().address().to_string(),
+			         soc.remote_endpoint().port());
+
 			soc.shutdown(boost::asio::socket_base::shutdown_both);
 			soc.close();
 		}

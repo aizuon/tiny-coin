@@ -15,7 +15,7 @@ class TxValidationException : public std::exception
 {
 public:
 	TxValidationException(const char* msg);
-	TxValidationException(const char* msg, std::shared_ptr<Tx> toOrphan);
+	TxValidationException(const char* msg, const std::shared_ptr<Tx>& toOrphan);
 
 	std::shared_ptr<Tx> ToOrphan;
 };
@@ -24,7 +24,7 @@ class BlockValidationException : public std::exception
 {
 public:
 	BlockValidationException(const char* msg);
-	BlockValidationException(const char* msg, std::shared_ptr<Block> toOrphan);
+	BlockValidationException(const char* msg, const std::shared_ptr<Block>& toOrphan);
 
 	std::shared_ptr<Block> ToOrphan;
 };

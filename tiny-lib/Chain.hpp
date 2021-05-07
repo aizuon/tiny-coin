@@ -28,24 +28,23 @@ public:
 
 	static std::recursive_mutex Mutex;
 
-	static constexpr int64_t ActiveChainIdx = 0;
+	static constexpr uint32_t ActiveChainIdx = 0;
 
 	static std::atomic_bool InitialBlockDownloadComplete;
 
-	static int64_t GetCurrentHeight();
-
+	static uint32_t GetCurrentHeight();
 	static int64_t GetMedianTimePast(uint32_t numLastBlocks);
 
-	static int64_t ValidateBlock(const std::shared_ptr<Block>& block);
+	static uint32_t ValidateBlock(const std::shared_ptr<Block>& block);
 
 	static int64_t ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg = false);
 	static std::shared_ptr<Block> DisconnectBlock(const std::shared_ptr<Block>& block);
 	static std::vector<std::shared_ptr<Block>> DisconnectToFork(const std::shared_ptr<Block>& forkBlock);
 
 	static bool ReorgIfNecessary();
-	static bool TryReorg(const std::vector<std::shared_ptr<Block>>& branch, int64_t branchIdx, int64_t forkIdx);
+	static bool TryReorg(const std::vector<std::shared_ptr<Block>>& branch, uint32_t branchIdx, uint32_t forkIdx);
 	static void RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveChain,
-	                          const std::shared_ptr<Block>& forkBlock, int64_t branchIdx);
+	                          const std::shared_ptr<Block>& forkBlock, uint32_t branchIdx);
 
 	static std::pair<std::shared_ptr<Block>, int64_t> LocateBlockInChain(
 		const std::string& blockHash, const std::vector<std::shared_ptr<Block>>& chain);

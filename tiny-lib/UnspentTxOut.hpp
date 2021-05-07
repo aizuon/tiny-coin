@@ -34,12 +34,13 @@ public:
 	//TODO: map mutex?
 	static std::unordered_map<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>> Map;
 
-	static void AddToMap(std::shared_ptr<::TxOut> txOut, const std::string& txId, int64_t idx, bool isCoinbase,
+	static void AddToMap(std::shared_ptr<::TxOut>& txOut, const std::string& txId, int64_t idx, bool isCoinbase,
 	                     int64_t height);
 	static void RemoveFromMap(const std::string& txId, int64_t idx);
 
 	static std::shared_ptr<UnspentTxOut> FindInList(const std::shared_ptr<TxIn>& txIn,
 	                                                const std::vector<std::shared_ptr<Tx>>& txs);
+	static std::shared_ptr<UnspentTxOut> FindInMap(const std::shared_ptr<::TxOutPoint>& toSpend);
 
 	bool operator==(const UnspentTxOut& obj) const;
 
