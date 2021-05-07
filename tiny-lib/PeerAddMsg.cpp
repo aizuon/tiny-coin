@@ -1,19 +1,19 @@
 #include "pch.hpp"
-#include "AddPeerMsg.hpp"
+#include "PeerAddMsg.hpp"
 
 #include "NetClient.hpp"
 
-AddPeerMsg::AddPeerMsg(const std::string& hostname, uint16_t port)
+PeerAddMsg::PeerAddMsg(const std::string& hostname, uint16_t port)
 	: Hostname(hostname), Port(port)
 {
 }
 
-void AddPeerMsg::Handle(std::shared_ptr<Connection>& con)
+void PeerAddMsg::Handle(std::shared_ptr<Connection>& con)
 {
 	NetClient::Connect(Hostname, Port);
 }
 
-BinaryBuffer AddPeerMsg::Serialize() const
+BinaryBuffer PeerAddMsg::Serialize() const
 {
 	BinaryBuffer buffer;
 
@@ -23,7 +23,7 @@ BinaryBuffer AddPeerMsg::Serialize() const
 	return buffer;
 }
 
-bool AddPeerMsg::Deserialize(BinaryBuffer& buffer)
+bool PeerAddMsg::Deserialize(BinaryBuffer& buffer)
 {
 	auto copy = *this;
 
@@ -43,7 +43,7 @@ bool AddPeerMsg::Deserialize(BinaryBuffer& buffer)
 	return true;
 }
 
-Opcode AddPeerMsg::GetOpcode() const
+Opcode PeerAddMsg::GetOpcode() const
 {
-	return Opcode::AddPeerMsg;
+	return Opcode::PeerAddMsg;
 }

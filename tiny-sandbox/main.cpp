@@ -9,6 +9,7 @@
 #include "../tiny-lib/NetClient.hpp"
 #include "../tiny-lib/PoW.hpp"
 #include "../tiny-lib/Wallet.hpp"
+#include "../tiny-lib/NodeConfig.hpp"
 
 namespace po = boost::program_options;
 
@@ -43,7 +44,16 @@ int main(int ac, char** av)
 
 		Log::StopLog();
 
-		return 0;
+		return EXIT_FAILURE;
+	}
+
+	if (vm.contains("mine"))
+	{
+		NodeConfig::Type = NodeConfig::Type | Miner;
+	}
+	else
+	{
+		NodeConfig::Type = NodeConfig::Type | Wallet;
 	}
 
 	const auto [privKey, pubKey, address] = vm.contains("wallet")
@@ -66,21 +76,24 @@ int main(int ac, char** av)
 	for (const auto& pendingConnection : pendingConnections)
 		pendingConnection.wait();
 
-	if (vm.contains("mine"))
+	if (NodeConfig::Type & Miner)
 	{
 		PoW::MineForever();
 	}
-	else if (vm.contains("balance"))
+	else
 	{
-		Wallet::PrintBalance(address);
-	}
-	else if (vm.contains("tx_status"))
-	{
-		Wallet::PrintTxStatus(vm["tx_status"].as<std::string>());
-	}
-	else if (vm.contains("send_address") && vm.contains("send_value"))
-	{
-		Wallet::SendValue(vm["send_value"].as<uint64_t>(), vm["send_address"].as<std::string>(), privKey);
+		if (vm.contains("balance"))
+		{
+			Wallet::PrintBalance(address);
+		}
+		else if (vm.contains("tx_status"))
+		{
+			Wallet::PrintTxStatus(vm["tx_status"].as<std::string>());
+		}
+		else if (vm.contains("send_address") && vm.contains("send_value"))
+		{
+			Wallet::SendValue(vm["send_value"].as<uint64_t>(), vm["send_address"].as<std::string>(), privKey);
+		}
 	}
 
 	NetClient::Stop();

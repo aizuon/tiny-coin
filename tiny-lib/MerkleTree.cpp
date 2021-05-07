@@ -43,7 +43,7 @@ std::shared_ptr<MerkleNode> MerkleTree::GetRootOfTxs(const std::vector<std::shar
 }
 
 std::vector<std::vector<std::shared_ptr<MerkleNode>>> MerkleTree::Chunk(
-	const std::vector<std::shared_ptr<MerkleNode>>& nodes, size_t chunkSize)
+	const std::vector<std::shared_ptr<MerkleNode>>& nodes, uint32_t chunkSize)
 {
 	std::vector<std::vector<std::shared_ptr<MerkleNode>>> chunks;
 

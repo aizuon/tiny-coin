@@ -4,13 +4,14 @@
 
 enum class Opcode : uint8_t
 {
-	AddPeerMsg,
 	BlockInfoMsg,
 	GetActiveChainMsg,
 	GetBlockMsg,
 	GetMempoolMsg,
 	GetUTXOsMsg,
 	InvMsg,
+	PeerAddMsg,
+	PeerHelloMsg,
 	SendActiveChainMsg,
 	SendMempoolMsg,
 	SendUTXOsMsg,

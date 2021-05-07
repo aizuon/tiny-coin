@@ -72,7 +72,7 @@
     <ClInclude Include="GetActiveChainMsg.hpp">
       <Filter>P2P</Filter>
     </ClInclude>
-    <ClInclude Include="AddPeerMsg.hpp">
+    <ClInclude Include="PeerAddMsg.hpp">
       <Filter>P2P</Filter>
     </ClInclude>
     <ClInclude Include="Opcodes.hpp">
@@ -113,6 +113,10 @@
       <Filter>P2P</Filter>
     </ClInclude>
     <ClInclude Include="Enums.hpp" />
+    <ClInclude Include="NodeConfig.hpp" />
+    <ClInclude Include="PeerHelloMsg.hpp">
+      <Filter>P2P</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -180,7 +184,7 @@
     <ClCompile Include="GetActiveChainMsg.cpp">
       <Filter>P2P</Filter>
     </ClCompile>
-    <ClCompile Include="AddPeerMsg.cpp">
+    <ClCompile Include="PeerAddMsg.cpp">
       <Filter>P2P</Filter>
     </ClCompile>
     <ClCompile Include="TxInfoMsg.cpp">
@@ -212,6 +216,10 @@
       <Filter>P2P</Filter>
     </ClCompile>
     <ClCompile Include="Connection.cpp">
+      <Filter>P2P</Filter>
+    </ClCompile>
+    <ClCompile Include="NodeConfig.cpp" />
+    <ClCompile Include="PeerHelloMsg.cpp">
       <Filter>P2P</Filter>
     </ClCompile>
   </ItemGroup>

@@ -35,7 +35,8 @@ bool SendUTXOsMsg::Deserialize(BinaryBuffer& buffer)
 
 		return false;
 	}
-	UTXO_Map = std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UTXO>>();
+	if (!UTXO_Map.empty())
+		UTXO_Map.clear();
 	UTXO_Map.reserve(utxoMapSize);
 	for (uint32_t i = 0; i < utxoMapSize; i++)
 	{

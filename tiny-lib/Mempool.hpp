@@ -13,6 +13,7 @@
 class Mempool
 {
 public:
+	//TODO: map mutex?
 	static std::unordered_map<std::string, std::shared_ptr<Tx>> Map;
 
 	static std::vector<std::shared_ptr<Tx>> OrphanedTxs;

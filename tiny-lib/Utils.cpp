@@ -7,7 +7,7 @@
 #include <sstream>
 #include <boost/algorithm/hex.hpp>
 
-const bool Utils::IsBigEndian = IsBigEndianCast();
+const bool Utils::IsLittleEndian = IsLittleEndianCast();
 
 std::string Utils::ByteArrayToHexString(const std::vector<uint8_t>& vec)
 {
@@ -56,9 +56,9 @@ int64_t Utils::GetUnixTimestamp()
 		count();
 }
 
-bool Utils::IsBigEndianCast()
+bool Utils::IsLittleEndianCast()
 {
 	const uint32_t i = 1;
 
-	return (reinterpret_cast<const uint8_t*>(&i)[sizeof(i) - 1] == i);
+	return (reinterpret_cast<const uint8_t*>(&i)[0] == i);
 }

@@ -4,11 +4,11 @@
 
 #include "IMsg.hpp"
 
-class AddPeerMsg : public IMsg
+class PeerAddMsg : public IMsg
 {
 public:
-	AddPeerMsg() = default;
-	AddPeerMsg(const std::string& hostname, uint16_t port);
+	PeerAddMsg() = default;
+	PeerAddMsg(const std::string& hostname, uint16_t port);
 
 	std::string Hostname;
 	uint16_t Port = 0;
@@ -18,7 +18,4 @@ public:
 	bool Deserialize(BinaryBuffer& buffer) override;
 
 	Opcode GetOpcode() const override;
-
-private:
-	static constexpr uint64_t ChunkSize = 50;
 };

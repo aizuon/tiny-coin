@@ -1,10 +1,9 @@
 #include "pch.hpp"
 #include "NetClient.hpp"
 
-#include <mutex>
+#include <ranges>
 #include <boost/bind/bind.hpp>
 
-#include "AddPeerMsg.hpp"
 #include "BinaryBuffer.hpp"
 #include "BlockInfoMsg.hpp"
 #include "GetActiveChainMsg.hpp"
@@ -14,6 +13,8 @@
 #include "IMsg.hpp"
 #include "InvMsg.hpp"
 #include "Log.hpp"
+#include "PeerAddMsg.hpp"
+#include "PeerHelloMsg.hpp"
 #include "Random.hpp"
 #include "SendActiveChainMsg.hpp"
 #include "SendMempoolMsg.hpp"
@@ -29,7 +30,10 @@ const std::vector<std::pair<std::string, uint16_t>> NetClient::InitialPeers = st
 
 std::string NetClient::Magic = "\r\n\r\n";
 
+std::recursive_mutex NetClient::ConnectionsMutex;
+
 std::vector<std::shared_ptr<Connection>> NetClient::Connections;
+std::vector<std::shared_ptr<Connection>> NetClient::MinerConnections;
 
 boost::asio::io_service NetClient::IO_Service;
 boost::thread NetClient::IO_Thread;
@@ -42,18 +46,24 @@ void NetClient::RunAsync()
 
 void NetClient::Stop()
 {
+	ConnectionsMutex.lock();
 	for (const auto& con : Connections)
 	{
 		if (con->Socket.is_open())
 		{
 			con->Socket.shutdown(boost::asio::socket_base::shutdown_both);
+			con->Socket.close();
 		}
 	}
+	ConnectionsMutex.unlock();
 
 	IO_Service.stop();
 	IO_Thread.join();
 
+	ConnectionsMutex.lock();
+	MinerConnections.clear();
 	Connections.clear();
+	ConnectionsMutex.unlock();
 }
 
 void NetClient::Connect(const std::string& address, uint16_t port)
@@ -69,7 +79,10 @@ void NetClient::Connect(const std::string& address, uint16_t port)
 		return;
 	}
 	con->Socket.set_option(boost::asio::ip::tcp::no_delay(true));
+	ConnectionsMutex.lock();
 	Connections.push_back(con);
+	ConnectionsMutex.unlock();
+	SendMsg(con, PeerHelloMsg());
 	DoAsyncRead(con);
 }
 
@@ -96,7 +109,6 @@ bool NetClient::SendMsgRandom(const IMsg& msg)
 	if (con == nullptr)
 		return false;
 
-
 	SendMsg(con, msg);
 
 	return true;
@@ -104,22 +116,30 @@ bool NetClient::SendMsgRandom(const IMsg& msg)
 
 void NetClient::BroadcastMsg(const IMsg& msg)
 {
-	if (Connections.empty())
+	ConnectionsMutex.lock();
+	if (MinerConnections.empty())
 		return;
+	ConnectionsMutex.unlock();
 
 	const auto msgBuffer = PrepareSendBuffer(msg);
 
-	for (auto& con : Connections)
+	ConnectionsMutex.lock();
+	for (auto& con : MinerConnections)
+	{
 		Write(con, msgBuffer);
+	}
+	ConnectionsMutex.unlock();
 }
 
 std::shared_ptr<Connection> NetClient::GetRandomConnection()
 {
-	if (Connections.empty())
+	std::lock_guard lock(ConnectionsMutex);
+
+	if (MinerConnections.empty())
 		return nullptr;
 
-	const auto randomIdx = Random::GetInt(0, Connections.size() - 1);
-	return Connections[randomIdx];
+	const auto randomIdx = Random::GetInt(0, MinerConnections.size() - 1);
+	return MinerConnections[randomIdx];
 }
 
 void NetClient::StartAccept()
@@ -139,7 +159,10 @@ void NetClient::HandleAccept(std::shared_ptr<Connection>& con, const boost::syst
 		         soc.remote_endpoint().port());
 
 		soc.set_option(boost::asio::ip::tcp::no_delay(true));
+		ConnectionsMutex.lock();
 		Connections.push_back(con);
+		ConnectionsMutex.unlock();
+		SendMsg(con, PeerHelloMsg());
 		DoAsyncRead(con);
 	}
 	else
@@ -199,12 +222,6 @@ void NetClient::HandleMsg(std::shared_ptr<Connection>& con, BinaryBuffer& msg_bu
 	std::unique_ptr<IMsg> msg;
 	switch (opcode2)
 	{
-	case Opcode::AddPeerMsg:
-		{
-			msg = std::make_unique<AddPeerMsg>();
-
-			break;
-		}
 	case Opcode::BlockInfoMsg:
 		{
 			msg = std::make_unique<BlockInfoMsg>();
@@ -238,6 +255,18 @@ void NetClient::HandleMsg(std::shared_ptr<Connection>& con, BinaryBuffer& msg_bu
 	case Opcode::InvMsg:
 		{
 			msg = std::make_unique<InvMsg>();
+
+			break;
+		}
+	case Opcode::PeerAddMsg:
+		{
+			msg = std::make_unique<PeerAddMsg>();
+
+			break;
+		}
+	case Opcode::PeerHelloMsg:
+		{
+			msg = std::make_unique<PeerHelloMsg>();
 
 			break;
 		}
@@ -298,7 +327,7 @@ BinaryBuffer NetClient::PrepareSendBuffer(const IMsg& msg)
 
 void NetClient::Write(std::shared_ptr<Connection>& con, const BinaryBuffer& msg_buffer)
 {
-	std::lock_guard lock(con->WriteLock);
+	std::lock_guard lock(con->WriteMutex);
 
 	boost::system::error_code err;
 	boost::asio::write(con->Socket, boost::asio::buffer(msg_buffer.GetBuffer()), err);
@@ -314,21 +343,35 @@ void NetClient::Write(std::shared_ptr<Connection>& con, const BinaryBuffer& msg_
 
 void NetClient::RemoveConnection(std::shared_ptr<Connection>& con)
 {
+	std::lock_guard lock(ConnectionsMutex);
+
 	const auto vec_it = std::ranges::find_if(Connections,
 	                                         [&con](const std::shared_ptr<Connection>& o)
 	                                         {
-		                                         return con.get() == o.get();
+		                                         return con == o;
 	                                         });
-
 	if (vec_it != Connections.end())
 	{
 		auto& soc = con->Socket;
 
-		LOG_INFO("Peer {}:{} disconnected", soc.remote_endpoint().address().to_string(), soc.remote_endpoint().port());
-
 		if (soc.is_open())
 		{
+			LOG_INFO("Peer {}:{} disconnected", soc.remote_endpoint().address().to_string(), soc.remote_endpoint().port());
+			
+			soc.shutdown(boost::asio::socket_base::shutdown_both);
 			soc.close();
+		}
+		if (con->NodeType & Miner)
+		{
+			const auto vec_it2 = std::ranges::find_if(MinerConnections,
+			                                          [&con](const std::shared_ptr<Connection>& o)
+			                                          {
+				                                          return con == o;
+			                                          });
+			if (vec_it2 != MinerConnections.end())
+			{
+				MinerConnections.erase(vec_it2);
+			}
 		}
 		Connections.erase(vec_it);
 	}

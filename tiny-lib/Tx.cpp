@@ -76,7 +76,8 @@ bool Tx::Deserialize(BinaryBuffer& buffer)
 
 		return false;
 	}
-	TxIns = std::vector<std::shared_ptr<TxIn>>();
+	if (!TxIns.empty())
+		TxIns.clear();
 	TxIns.reserve(txInsSize);
 	for (uint32_t i = 0; i < txInsSize; i++)
 	{
@@ -97,7 +98,8 @@ bool Tx::Deserialize(BinaryBuffer& buffer)
 
 		return false;
 	}
-	TxOuts = std::vector<std::shared_ptr<TxOut>>();
+	if (!TxOuts.empty())
+		TxOuts.clear();
 	TxOuts.reserve(txOutsSize);
 	for (uint32_t i = 0; i < txOutsSize; i++)
 	{
@@ -142,7 +144,7 @@ void Tx::Validate(const ValidateRequest& req) const
 	ValidateBasics(req.AsCoinbase);
 
 	uint64_t avaliableToSpend = 0;
-	for (size_t i = 0; i < TxIns.size(); i++)
+	for (uint32_t i = 0; i < TxIns.size(); i++)
 	{
 		const auto& txIn = TxIns[i];
 
@@ -214,7 +216,7 @@ bool Tx::operator==(const Tx& obj) const
 
 	if (TxIns.size() != obj.TxIns.size())
 		return false;
-	for (size_t i = 0; i < TxIns.size(); i++)
+	for (uint32_t i = 0; i < TxIns.size(); i++)
 	{
 		if (*TxIns[i] != *obj.TxIns[i])
 		{
@@ -224,7 +226,7 @@ bool Tx::operator==(const Tx& obj) const
 
 	if (TxOuts.size() != obj.TxOuts.size())
 		return false;
-	for (size_t i = 0; i < TxOuts.size(); i++)
+	for (uint32_t i = 0; i < TxOuts.size(); i++)
 	{
 		if (*TxOuts[i] != *obj.TxOuts[i])
 		{

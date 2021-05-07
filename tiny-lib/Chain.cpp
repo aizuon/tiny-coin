@@ -46,15 +46,15 @@ int64_t Chain::GetCurrentHeight()
 	return ActiveChain.size();
 }
 
-int64_t Chain::GetMedianTimePast(size_t numLastBlocks)
+int64_t Chain::GetMedianTimePast(uint32_t numLastBlocks)
 {
 	std::lock_guard lock(Mutex);
 
 	if (numLastBlocks > ActiveChain.size())
 		return 0;
 
-	const size_t first_idx = ActiveChain.size() - numLastBlocks;
-	size_t median_idx = first_idx + (numLastBlocks / 2);
+	const int64_t first_idx = ActiveChain.size() - numLastBlocks;
+	int64_t median_idx = first_idx + (numLastBlocks / 2);
 	if (numLastBlocks % 2 == 0)
 		median_idx -= 1;
 
@@ -90,7 +90,7 @@ int64_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 	if (coinbase_it != txs.begin() || std::find_if(++coinbase_it, txs.end(), coinbase_pred) != txs.end())
 		throw BlockValidationException("First transaction must be coinbase and no more");
 
-	for (size_t i = 0; i < txs.size(); i++)
+	for (uint32_t i = 0; i < txs.size(); i++)
 	{
 		try
 		{
@@ -226,7 +226,7 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 					UTXO::RemoveFromMap(txIn->ToSpend->TxId, txIn->ToSpend->TxOutIdx);
 				}
 			}
-			for (int64_t i = 0; i < tx->TxOuts.size(); i++)
+			for (uint32_t i = 0; i < tx->TxOuts.size(); i++)
 			{
 				UTXO::AddToMap(tx->TxOuts[i], txId, i, tx->IsCoinbase(), chain.size());
 			}
@@ -240,7 +240,7 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 		LOG_INFO("Block accepted with height {} and txs {}", ActiveChain.size() - 1, block->Txs.size());
 	}
 
-	NetClient::BroadcastMsg(BlockInfoMsg(block));
+	NetClient::SendMsgRandom(BlockInfoMsg(block));
 
 	return chainIdx;
 }
@@ -270,7 +270,7 @@ std::shared_ptr<Block> Chain::DisconnectBlock(const std::shared_ptr<Block>& bloc
 				UTXO::AddToMap(txOut, txId, txOutIdx, isCoinbase, height);
 			}
 		}
-		for (int64_t i = 0; i < tx->TxOuts.size(); i++)
+		for (uint32_t i = 0; i < tx->TxOuts.size(); i++)
 		{
 			UTXO::RemoveFromMap(txId, i);
 		}
@@ -312,7 +312,7 @@ bool Chain::ReorgIfNecessary()
 	{
 		auto [fork_block, fork_heigh] = LocateBlockInActiveChain(chain[0]->PrevBlockHash);
 
-		size_t branchHeight = chain.size() + fork_heigh;
+		int64_t branchHeight = chain.size() + fork_heigh;
 		if (branchHeight > GetCurrentHeight())
 		{
 			LOG_INFO("Attempting reorg of idx {} to active chain, new height of {} vs. {}", branch_idx, branchHeight,
@@ -426,7 +426,7 @@ std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> 
 {
 	std::lock_guard lock(Mutex);
 
-	for (int64_t height = 0; height < chain.size(); height++)
+	for (uint32_t height = 0; height < chain.size(); height++)
 	{
 		for (const auto& tx : chain[height]->Txs)
 		{
@@ -455,12 +455,13 @@ void Chain::SaveToDisk()
 
 	LOG_INFO("Saving chain with {} blocks", ActiveChain.size());
 
+	//TODO: append from previously saved height
 	std::ofstream chain_out(ChainPath, std::ios::binary | std::ios::trunc);
 	BinaryBuffer chainData;
-	chainData.WriteSize(ActiveChain.size());
-	for (const auto& block : ActiveChain)
+	chainData.WriteSize(ActiveChain.size() - 1);
+	for (uint32_t height = 1; height < ActiveChain.size(); height++)
 	{
-		chainData.WriteRaw(block->Serialize().GetBuffer());
+		chainData.WriteRaw(ActiveChain[height]->Serialize().GetBuffer());
 	}
 	auto& chainDataBuffer = chainData.GetBuffer();
 	chain_out.write(reinterpret_cast<const char*>(chainDataBuffer.data()), chainDataBuffer.size());
@@ -468,7 +469,7 @@ void Chain::SaveToDisk()
 	chain_out.close();
 }
 
-void Chain::LoadFromDisk()
+bool Chain::LoadFromDisk()
 {
 	std::lock_guard lock(Mutex);
 
@@ -486,23 +487,39 @@ void Chain::LoadFromDisk()
 				auto block = std::make_shared<Block>();
 				if (!block->Deserialize(chainData))
 				{
+					chain_in.close();
 					LOG_ERROR("Load chain failed, starting from genesis");
 
-					return;
+					return false;
 				}
 				loadedChain.push_back(block);
 			}
-			ActiveChain = std::move(loadedChain);
+			for (const auto& block : loadedChain)
+			{
+				if (ConnectBlock(block) != ActiveChainIdx)
+				{
+					chain_in.close();
+					ActiveChain.clear();
+					ActiveChain.push_back(GenesisBlock);
+					SideBranches.clear();
+					UTXO::Map.clear();
+					Mempool::Map.clear();
+
+					LOG_ERROR("Load chain failed, starting from genesis");
+
+					return false;
+				}
+			}
 			chain_in.close();
 			LOG_INFO("Loaded chain with {} blocks", ActiveChain.size());
+
+			return true;
 		}
-		else
-		{
-			LOG_ERROR("Load chain failed, starting from genesis");
-		}
-	}
-	else
-	{
 		LOG_ERROR("Load chain failed, starting from genesis");
+
+		return false;
 	}
+	LOG_ERROR("Load chain failed, starting from genesis");
+
+	return false;
 }

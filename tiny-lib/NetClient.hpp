@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <utility>
 #include <vector>
@@ -30,6 +31,10 @@ public:
 	static bool SendMsgRandom(const IMsg& msg);
 
 	static void BroadcastMsg(const IMsg& msg);
+
+	static std::recursive_mutex ConnectionsMutex;
+
+	static std::vector<std::shared_ptr<Connection>> MinerConnections;
 
 private:
 	static std::string Magic;

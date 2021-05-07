@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AddPeerMsg.hpp" />
+    <ClInclude Include="PeerAddMsg.hpp" />
     <ClInclude Include="Base58.hpp" />
     <ClInclude Include="BinaryBuffer.hpp" />
     <ClInclude Include="Block.hpp" />
@@ -46,6 +46,8 @@
     <ClInclude Include="MsgSerializer.hpp" />
     <ClInclude Include="NetParams.hpp" />
     <ClInclude Include="IHandleable.hpp" />
+    <ClInclude Include="NodeConfig.hpp" />
+    <ClInclude Include="PeerHelloMsg.hpp" />
     <ClInclude Include="Opcodes.hpp" />
     <ClInclude Include="PoW.hpp" />
     <ClInclude Include="Random.hpp" />
@@ -65,7 +67,7 @@
     <ClInclude Include="Wallet.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AddPeerMsg.cpp" />
+    <ClCompile Include="PeerAddMsg.cpp" />
     <ClCompile Include="Base58.cpp" />
     <ClCompile Include="BinaryBuffer.cpp" />
     <ClCompile Include="Block.cpp" />
@@ -86,7 +88,9 @@
     <ClCompile Include="Mempool.cpp" />
     <ClCompile Include="MerkleTree.cpp" />
     <ClCompile Include="MsgSerializer.cpp" />
+    <ClCompile Include="NodeConfig.cpp" />
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="PeerHelloMsg.cpp" />
     <ClCompile Include="PoW.cpp" />
     <ClCompile Include="Random.cpp" />
     <ClCompile Include="RIPEMD160.cpp" />

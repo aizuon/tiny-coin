@@ -35,7 +35,8 @@ bool SendMempoolMsg::Deserialize(BinaryBuffer& buffer)
 
 		return false;
 	}
-	Mempool = std::vector<std::string>();
+	if (!Mempool.empty())
+		Mempool.clear();
 	Mempool.reserve(mempoolSize);
 	for (uint32_t i = 0; i < mempoolSize; i++)
 	{

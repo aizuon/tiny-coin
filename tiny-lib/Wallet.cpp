@@ -94,8 +94,8 @@ std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::Init
 }
 
 std::shared_ptr<TxIn> Wallet::BuildTxIn(const std::vector<uint8_t>& privKey,
-                                       const std::shared_ptr<TxOutPoint>& txOutPoint,
-                                       const std::shared_ptr<TxOut>& txOut)
+                                        const std::shared_ptr<TxOutPoint>& txOutPoint,
+                                        const std::shared_ptr<TxOut>& txOut)
 {
 	int32_t sequence = 0;
 
@@ -148,7 +148,7 @@ Wallet::TxStatusResponse Wallet::GetTxStatus_Miner(const std::string& txId)
 		}
 	}
 
-	for (int64_t height = 0; height < Chain::ActiveChain.size(); height++)
+	for (uint32_t height = 0; height < Chain::ActiveChain.size(); height++)
 	{
 		const auto& block = Chain::ActiveChain[height];
 		for (const auto& tx : block->Txs)
@@ -227,7 +227,7 @@ Wallet::TxStatusResponse Wallet::GetTxStatus(const std::string& txId)
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
-	for (int64_t height = 0; height < MsgCache::SendActiveChainMsg->ActiveChain.size(); height++)
+	for (uint32_t height = 0; height < MsgCache::SendActiveChainMsg->ActiveChain.size(); height++)
 	{
 		const auto& block = MsgCache::SendActiveChainMsg->ActiveChain[height];
 		for (const auto& tx : block->Txs)
@@ -301,18 +301,18 @@ void Wallet::PrintBalance(const std::string& address)
 }
 
 std::shared_ptr<Tx> Wallet::BuildTxFromUTXOs(std::vector<std::shared_ptr<UTXO>>& utxos, uint64_t value,
-	const std::string& address, const std::vector<uint8_t>& privKey)
+                                             const std::string& address, const std::vector<uint8_t>& privKey)
 {
 	std::ranges::sort(utxos,
-		[](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
-		{
-			return a->TxOut->Value < b->TxOut->Value;
-		});
+	                  [](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
+	                  {
+		                  return a->TxOut->Value < b->TxOut->Value;
+	                  });
 	std::ranges::sort(utxos,
-		[](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
-		{
-			return a->Height < b->Height;
-		});
+	                  [](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
+	                  {
+		                  return a->Height < b->Height;
+	                  });
 	std::unordered_set<std::shared_ptr<UTXO>> selected_utxos;
 	for (const auto& coin : utxos)
 	{
@@ -336,12 +336,12 @@ std::shared_ptr<Tx> Wallet::BuildTxFromUTXOs(std::vector<std::shared_ptr<UTXO>>&
 	{
 		txIns.emplace_back(BuildTxIn(privKey, selected_coin->TxOutPoint, txOut));
 	}
-	auto tx = std::make_shared<Tx>(txIns, std::vector{ txOut }, -1);
+	auto tx = std::make_shared<Tx>(txIns, std::vector{txOut}, -1);
 	return tx;
 }
 
 std::shared_ptr<Tx> Wallet::BuildTx_Miner(uint64_t value, const std::string& address,
-	const std::vector<uint8_t>& privKey)
+                                          const std::vector<uint8_t>& privKey)
 {
 	const auto pubKey = ECDSA::GetPubKeyFromPrivKey(privKey);
 	const auto myAddress = PubKeyToAddress(pubKey);

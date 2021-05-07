@@ -7,10 +7,12 @@
 #include <boost/thread/thread.hpp>
 
 #include "Chain.hpp"
+#include "GetBlockMsg.hpp"
 #include "HashChecker.hpp"
 #include "Log.hpp"
 #include "Mempool.hpp"
 #include "MerkleTree.hpp"
+#include "NetClient.hpp"
 #include "NetParams.hpp"
 #include "SHA256.hpp"
 #include "Utils.hpp"
@@ -139,9 +141,29 @@ std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
 
 void PoW::MineForever()
 {
-	const auto [privKey, pubKey, myAddress] = Wallet::InitWallet();
-	Chain::LoadFromDisk();
+	if (!Chain::LoadFromDisk())
+	{
+		if (NetClient::SendMsgRandom(GetBlockMsg(Chain::ActiveChain.back()->Id())))
+		{
+			LOG_INFO("Starting initial block sync");
 
+			const auto start = Utils::GetUnixTimestamp();
+			while (!Chain::InitialBlockDownloadComplete)
+			{
+				if (Utils::GetUnixTimestamp() - start > 60)
+				{
+					//TODO: if sync has started but hasnt finished in time, cancel sync and reset chain
+
+					LOG_ERROR("Timeout on initial block sync");
+
+					break;
+				}
+				std::this_thread::sleep_for(std::chrono::milliseconds(16));
+			}
+		}
+	}
+
+	const auto [privKey, pubKey, myAddress] = Wallet::InitWallet();
 	while (true)
 	{
 		const auto block = AssembleAndSolveBlock(myAddress);
@@ -217,7 +239,7 @@ uint64_t PoW::CalculateFees(const std::shared_ptr<Block>& block)
 
 uint64_t PoW::GetBlockSubsidy()
 {
-	const size_t halvings = Chain::ActiveChain.size() / NetParams::HALVE_SUBSIDY_AFTER_BLOCKS_NUM;
+	const uint32_t halvings = Chain::ActiveChain.size() / NetParams::HALVE_SUBSIDY_AFTER_BLOCKS_NUM;
 
 	if (halvings >= 64)
 		return 0;

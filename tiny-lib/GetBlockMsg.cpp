@@ -25,10 +25,10 @@ void GetBlockMsg::Handle(std::shared_ptr<Connection>& con)
 	std::vector<std::shared_ptr<Block>> blocks;
 	blocks.reserve(ChunkSize);
 
-	int64_t max_height = height + ChunkSize;
+	uint32_t max_height = height + ChunkSize;
 	if (max_height > Chain::ActiveChain.size())
 		max_height = Chain::ActiveChain.size();
-	for (int64_t i = height; i < max_height - 1; i++)
+	for (uint32_t i = height; i < max_height - 1; i++)
 		blocks.push_back(Chain::ActiveChain[i]);
 
 	Chain::Mutex.unlock();

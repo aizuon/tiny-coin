@@ -34,7 +34,7 @@ public:
 
 	static int64_t GetCurrentHeight();
 
-	static int64_t GetMedianTimePast(size_t numLastBlocks);
+	static int64_t GetMedianTimePast(uint32_t numLastBlocks);
 
 	static int64_t ValidateBlock(const std::shared_ptr<Block>& block);
 
@@ -58,7 +58,7 @@ public:
 	FindTxOutForTxInInActiveChain(const std::shared_ptr<TxIn>& txIn);
 
 	static void SaveToDisk();
-	static void LoadFromDisk();
+	static bool LoadFromDisk();
 
 private:
 	static constexpr char ChainPath[] = "chain.dat";

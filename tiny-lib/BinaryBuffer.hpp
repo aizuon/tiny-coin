@@ -66,7 +66,7 @@ public:
 
 		std::lock_guard lock(Mutex);
 
-		if (Utils::IsBigEndian)
+		if (!Utils::IsLittleEndian)
 		{
 			boost::endian::endian_reverse_inplace(obj);
 		}
@@ -126,7 +126,7 @@ public:
 			return false;
 
 		memcpy(&obj, Buffer.data() + ReadOffset, length);
-		if (Utils::IsBigEndian)
+		if (!Utils::IsLittleEndian)
 		{
 			boost::endian::endian_reverse_inplace(obj);
 		}

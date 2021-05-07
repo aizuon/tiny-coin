@@ -22,7 +22,7 @@
 
 TEST(BlockChainTest, MedianTimePast)
 {
-	Chain::ActiveChain = std::vector<std::shared_ptr<Block>>();
+	Chain::ActiveChain.clear();
 
 	EXPECT_TRUE(Chain::GetMedianTimePast(10) == 0);
 
@@ -143,10 +143,10 @@ const auto chain2 = std::vector{
 
 TEST(BlockChainTest, Reorg)
 {
-	Chain::ActiveChain = std::vector<std::shared_ptr<Block>>();
-	Chain::SideBranches = std::vector<std::vector<std::shared_ptr<Block>>>();
-	Mempool::Map = std::unordered_map<std::string, std::shared_ptr<Tx>>();
-	UTXO::Map = std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UTXO>>();
+	Chain::ActiveChain.clear();
+	Chain::SideBranches.clear();
+	Mempool::Map.clear();
+	UTXO::Map.clear();
 
 	for (const auto& block : chain1)
 		ASSERT_EQ(Chain::ConnectBlock(block), Chain::ActiveChainIdx);
@@ -159,7 +159,7 @@ TEST(BlockChainTest, Reorg)
 	{
 		for (const auto& tx : block->Txs)
 		{
-			for (int64_t i = 0; i < tx->TxOuts.size(); i++)
+			for (uint32_t i = 0; i < tx->TxOuts.size(); i++)
 			{
 				UTXO::AddToMap(tx->TxOuts[i], tx->Id(), i, tx->IsCoinbase(), Chain::ActiveChain.size());
 			}
@@ -175,7 +175,7 @@ TEST(BlockChainTest, Reorg)
 	ASSERT_TRUE(Chain::SideBranches.size() == 1);
 	ASSERT_EQ(*Chain::SideBranches[0][0], *chain2[1]);
 	ASSERT_EQ(Chain::ActiveChain.size(), chain1.size());
-	for (size_t i = 0; i < Chain::ActiveChain.size(); i++)
+	for (uint32_t i = 0; i < Chain::ActiveChain.size(); i++)
 	{
 		ASSERT_EQ(*Chain::ActiveChain[i], *chain1[i]);
 	}
@@ -201,12 +201,12 @@ TEST(BlockChainTest, Reorg)
 	ASSERT_FALSE(Chain::ReorgIfNecessary());
 	ASSERT_TRUE(Chain::SideBranches.size() == 1);
 	std::array sideBranchTest{chain2[1], chain2[2]};
-	for (size_t i = 0; i < Chain::SideBranches[0].size(); i++)
+	for (uint32_t i = 0; i < Chain::SideBranches[0].size(); i++)
 	{
 		ASSERT_EQ(*Chain::SideBranches[0][i], *sideBranchTest[i]);
 	}
 	ASSERT_EQ(Chain::ActiveChain.size(), chain1.size());
-	for (size_t i = 0; i < Chain::ActiveChain.size(); i++)
+	for (uint32_t i = 0; i < Chain::ActiveChain.size(); i++)
 	{
 		ASSERT_EQ(*Chain::ActiveChain[i], *chain1[i]);
 	}
@@ -235,12 +235,12 @@ TEST(BlockChainTest, Reorg)
 	ASSERT_FALSE(Chain::ReorgIfNecessary());
 
 	ASSERT_TRUE(Chain::SideBranches.size() == 1);
-	for (size_t i = 0; i < Chain::SideBranches[0].size(); i++)
+	for (uint32_t i = 0; i < Chain::SideBranches[0].size(); i++)
 	{
 		ASSERT_EQ(*Chain::SideBranches[0][i], *sideBranchTest[i]);
 	}
 	ASSERT_EQ(Chain::ActiveChain.size(), chain1.size());
-	for (size_t i = 0; i < Chain::ActiveChain.size(); i++)
+	for (uint32_t i = 0; i < Chain::ActiveChain.size(); i++)
 	{
 		ASSERT_EQ(*Chain::ActiveChain[i], *chain1[i]);
 	}
@@ -273,13 +273,13 @@ TEST(BlockChainTest, Reorg)
 	}
 	std::vector<std::string> chain1Ids;
 	chain1Ids.reserve(chain1.size());
-	for (size_t i = 1; i < chain1.size(); i++)
+	for (uint32_t i = 1; i < chain1.size(); i++)
 	{
 		chain1Ids.emplace_back(chain1[i]->Id());
 	}
 	ASSERT_EQ(sideBranchIds, chain1Ids);
 	std::array sideBranchTest2{chain1[1], chain1[2]};
-	for (size_t i = 0; i < Chain::SideBranches[0].size(); i++)
+	for (uint32_t i = 0; i < Chain::SideBranches[0].size(); i++)
 	{
 		ASSERT_EQ(*Chain::SideBranches[0][i], *sideBranchTest2[i]);
 	}
@@ -304,10 +304,10 @@ TEST(BlockChainTest, Reorg)
 #ifndef _DEBUG
 TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 {
-	Chain::ActiveChain = std::vector<std::shared_ptr<Block>>();
-	Chain::SideBranches = std::vector<std::vector<std::shared_ptr<Block>>>();
-	Mempool::Map = std::unordered_map<std::string, std::shared_ptr<Tx>>();
-	UTXO::Map = std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UTXO>>();
+	Chain::ActiveChain.clear();
+	Chain::SideBranches.clear();
+	Mempool::Map.clear();
+	UTXO::Map.clear();
 
 	ASSERT_EQ(Chain::ConnectBlock(chain1[0]), Chain::ActiveChainIdx);
 	ASSERT_EQ(Chain::ConnectBlock(chain1[1]), Chain::ActiveChainIdx);
@@ -381,7 +381,7 @@ TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 	ASSERT_EQ(*Chain::ActiveChain.back(), *block);
 	ASSERT_EQ(block->Txs.size() - 1, 2);
 	std::array txs{tx1, tx2};
-	for (size_t i = 0; i < txs.size(); i++)
+	for (uint32_t i = 0; i < txs.size(); i++)
 	{
 		ASSERT_EQ(*block->Txs[i + 1], *txs[i]);
 	}
@@ -405,10 +405,10 @@ TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 
 TEST(BlockChainTest_LongRunning, MinerTransaction)
 {
-	Chain::ActiveChain = std::vector<std::shared_ptr<Block>>();
-	Chain::SideBranches = std::vector<std::vector<std::shared_ptr<Block>>>();
-	Mempool::Map = std::unordered_map<std::string, std::shared_ptr<Tx>>();
-	UTXO::Map = std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UTXO>>();
+	Chain::ActiveChain.clear();
+	Chain::SideBranches.clear();
+	Mempool::Map.clear();
+	UTXO::Map.clear();
 
 	const auto [miner_privKey, miner_pubKey, miner_address] = Wallet::InitWallet("miner.dat");
 	const auto [receiver_privKey, receiver_pubKey, receiver_address] = Wallet::InitWallet("receiver.dat");
@@ -439,7 +439,7 @@ TEST(BlockChainTest_LongRunning, MinerTransaction)
 		FAIL();
 	Chain::ConnectBlock(post_tx_block);
 	Chain::SaveToDisk();
-	
+
 	auto mined_tx_status = Wallet::GetTxStatus_Miner(tx->Id());
 	ASSERT_EQ(mined_tx_status.Status, TxStatus::Mined);
 	ASSERT_EQ(mined_tx_status.BlockId, post_tx_block->Id());

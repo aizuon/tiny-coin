@@ -33,7 +33,8 @@ bool SendActiveChainMsg::Deserialize(BinaryBuffer& buffer)
 
 		return false;
 	}
-	ActiveChain = std::vector<std::shared_ptr<Block>>();
+	if (!ActiveChain.empty())
+		ActiveChain.clear();
 	ActiveChain.reserve(activeChainSize);
 	for (uint32_t i = 0; i < activeChainSize; i++)
 	{

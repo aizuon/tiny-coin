@@ -100,7 +100,8 @@ bool Block::Deserialize(BinaryBuffer& buffer)
 
 		return false;
 	}
-	Txs = std::vector<std::shared_ptr<Tx>>();
+	if (!Txs.empty())
+		Txs.clear();
 	Txs.reserve(txsSize);
 	for (uint32_t i = 0; i < txsSize; i++)
 	{
@@ -129,7 +130,7 @@ bool Block::operator==(const Block& obj) const
 
 	if (Txs.size() != obj.Txs.size())
 		return false;
-	for (size_t i = 0; i < Txs.size(); i++)
+	for (uint32_t i = 0; i < Txs.size(); i++)
 	{
 		if (*Txs[i] != *obj.Txs[i])
 		{

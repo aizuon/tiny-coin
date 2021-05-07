@@ -19,7 +19,7 @@ void InvMsg::Handle(std::shared_ptr<Connection>& con)
 	std::vector<std::shared_ptr<Block>> newBlocks;
 	for (const auto& block : Blocks)
 	{
-		auto [found_block, found_height, found_idx] = Chain::LocateBlockInAllChains(block->Id());
+		const auto [found_block, found_height, found_idx] = Chain::LocateBlockInAllChains(block->Id());
 		if (found_block == nullptr)
 		{
 			newBlocks.push_back(block);
@@ -68,7 +68,6 @@ bool InvMsg::Deserialize(BinaryBuffer& buffer)
 
 		return false;
 	}
-	Blocks = std::vector<std::shared_ptr<Block>>();
 	Blocks.reserve(blocksSize);
 	for (uint32_t i = 0; i < blocksSize; i++)
 	{

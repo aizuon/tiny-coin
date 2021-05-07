@@ -2,6 +2,8 @@
 #include <mutex>
 #include <boost/asio.hpp>
 
+#include "Enums.hpp"
+
 class Connection
 {
 public:
@@ -10,5 +12,7 @@ public:
 	boost::asio::ip::tcp::socket Socket;
 	boost::asio::streambuf ReadBuffer;
 
-	std::mutex WriteLock;
+	std::mutex WriteMutex;
+
+	NodeType NodeType = Unspecified;
 };
