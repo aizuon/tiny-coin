@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <mutex>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -13,10 +14,11 @@
 class Mempool
 {
 public:
-	//TODO: map mutex?
 	static std::unordered_map<std::string, std::shared_ptr<Tx>> Map;
 
 	static std::vector<std::shared_ptr<Tx>> OrphanedTxs;
+
+	static std::recursive_mutex Mutex;
 
 	static std::shared_ptr<UTXO> Find_UTXO_InMempool(const std::shared_ptr<TxOutPoint>& txOutPoint);
 

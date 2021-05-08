@@ -14,11 +14,15 @@ BinaryBuffer SendUTXOsMsg::Serialize() const
 {
 	BinaryBuffer buffer;
 
-	buffer.WriteSize(UTXO::Map.size());
-	for (const auto& [key, value] : UTXO::Map)
 	{
-		buffer.WriteRaw(key->Serialize().GetBuffer());
-		buffer.WriteRaw(value->Serialize().GetBuffer());
+		std::lock_guard lock(UTXO::Mutex);
+
+		buffer.WriteSize(UTXO::Map.size());
+		for (const auto& [key, value] : UTXO::Map)
+		{
+			buffer.WriteRaw(key->Serialize().GetBuffer());
+			buffer.WriteRaw(value->Serialize().GetBuffer());
+		}
 	}
 
 	return buffer;

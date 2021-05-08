@@ -54,7 +54,7 @@ int64_t Chain::GetMedianTimePast(uint32_t numLastBlocks)
 		return 0;
 
 	const uint32_t first_idx = ActiveChain.size() - numLastBlocks;
-	uint32_t median_idx = first_idx + (numLastBlocks / 2);
+	uint32_t median_idx = first_idx + numLastBlocks / 2;
 	if (numLastBlocks % 2 == 0)
 		median_idx -= 1;
 
@@ -68,10 +68,10 @@ uint32_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 	const auto& txs = block->Txs;
 
 	if (txs.empty())
-		throw BlockValidationException("Transactions are empty");
+		throw BlockValidationException("Transactions empty");
 
 	if (block->Timestamp - Utils::GetUnixTimestamp() > static_cast<int64_t>(NetParams::MAX_FUTURE_BLOCK_TIME_IN_SECS))
-		throw BlockValidationException("Block timestamp is too far in future");
+		throw BlockValidationException("Block timestamp too far in future");
 
 	BIGNUM* target_bn = HashChecker::TargetBitsToBN(block->Bits);
 	if (!HashChecker::IsValid(block->Id(), target_bn))
@@ -98,17 +98,17 @@ uint32_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 		}
 		catch (const TxValidationException&)
 		{
-			LOG_ERROR("Transaction {} in block {} failed to validate", txs[i]->Id(), block->Id());
+			LOG_ERROR("Transaction {} in block {} failed validation", txs[i]->Id(), block->Id());
 
-			throw BlockValidationException(fmt::format("Transaction {} is invalid", txs[i]->Id()).c_str());
+			throw BlockValidationException(fmt::format("Transaction {} invalid", txs[i]->Id()).c_str());
 		}
 	}
 
 	if (MerkleTree::GetRootOfTxs(txs)->Value != block->MerkleHash)
-		throw BlockValidationException("Merkle hash is invalid");
+		throw BlockValidationException("Merkle hash invalid");
 
 	if (block->Timestamp <= GetMedianTimePast(11))
-		throw BlockValidationException("Timestamp is too old");
+		throw BlockValidationException("Timestamp too old");
 
 	uint32_t prev_block_chain_idx;
 	if (block->PrevBlockHash.empty())
@@ -120,7 +120,7 @@ uint32_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 		auto [prev_block, prev_block_height, prev_block_chain_idx2] = LocateBlockInAllChains(block->PrevBlockHash);
 		if (prev_block == nullptr)
 			throw BlockValidationException(
-				fmt::format("Previous block {} is not found in any chain", block->PrevBlockHash).c_str(), block);
+				fmt::format("Previous block {} not found in any chain", block->PrevBlockHash).c_str(), block);
 
 		if (prev_block_chain_idx2 != ActiveChainIdx)
 			return prev_block_chain_idx2;
@@ -131,7 +131,7 @@ uint32_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 	}
 
 	if (PoW::GetNextWorkRequired(block->PrevBlockHash) != block->Bits)
-		throw BlockValidationException("Bits are incorrect");
+		throw BlockValidationException("Bits incorrect");
 
 	std::vector nonCoinbaseTxs(block->Txs.begin() + 1, block->Txs.end());
 	Tx::ValidateRequest req;
@@ -175,7 +175,7 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 	}
 	if (located_block != nullptr)
 	{
-		LOG_TRACE("Ignore already seen block {}", blockId);
+		LOG_INFO("Ignore already seen block {}", blockId);
 
 		return -1;
 	}
@@ -190,7 +190,7 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 		LOG_ERROR("Block {} failed validation", blockId);
 		if (ex.ToOrphan != nullptr)
 		{
-			LOG_INFO("Saw orphan block {}", blockId);
+			LOG_INFO("Found orphan block {}", blockId);
 
 			OrphanBlocks.push_back(ex.ToOrphan);
 		}
@@ -200,7 +200,7 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 
 	if (chainIdx != ActiveChainIdx && SideBranches.size() < chainIdx)
 	{
-		LOG_INFO("Creating a new side branch {} for block {}", chainIdx, blockId);
+		LOG_INFO("Creating a new side branch with idx {} for block {}", chainIdx, blockId);
 
 		SideBranches.emplace_back();
 	}
@@ -216,8 +216,12 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 		{
 			const auto txId = tx->Id();
 
-			if (Mempool::Map.contains(txId))
-				Mempool::Map.erase(txId);
+			{
+				std::lock_guard lock_mempool(Mempool::Mutex);
+
+				if (Mempool::Map.contains(txId))
+					Mempool::Map.erase(txId);
+			}
 
 			if (!tx->IsCoinbase())
 			{
@@ -233,11 +237,11 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 		}
 	}
 
-	if ((!doingReorg && ReorgIfNecessary()) || chainIdx == ActiveChainIdx)
+	if (!doingReorg && ReorgIfNecessary() || chainIdx == ActiveChainIdx)
 	{
 		PoW::MineInterrupt = true;
 
-		LOG_INFO("Block accepted with height {} and txs {}", ActiveChain.size() - 1, block->Txs.size());
+		LOG_INFO("Block accepted at height {} with {} txs", ActiveChain.size() - 1, block->Txs.size());
 	}
 
 	NetClient::SendMsgRandom(BlockInfoMsg(block));
@@ -259,7 +263,11 @@ std::shared_ptr<Block> Chain::DisconnectBlock(const std::shared_ptr<Block>& bloc
 	{
 		const auto txId = tx->Id();
 
-		Mempool::Map[txId] = tx;
+		{
+			std::lock_guard lock_mempool(Mempool::Mutex);
+
+			Mempool::Map[txId] = tx;
+		}
 
 		for (const auto& txIn : tx->TxIns)
 		{
@@ -349,7 +357,7 @@ bool Chain::TryReorg(const std::vector<std::shared_ptr<Block>>& branch, uint32_t
 	SideBranches.erase(SideBranches.begin() + branchIdx - 1);
 	SideBranches.push_back(oldActiveChain);
 
-	LOG_INFO("Chain reorg -> new height {}, tip {}", ActiveChain.size(), ActiveChain.back()->Id());
+	LOG_INFO("Chain reorganized, new height {} with tip {}", ActiveChain.size(), ActiveChain.back()->Id());
 
 	return true;
 }
@@ -359,7 +367,7 @@ void Chain::RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveCh
 {
 	std::lock_guard lock(Mutex);
 
-	LOG_INFO("Reorg of idx {} to active chain failed", branchIdx);
+	LOG_ERROR("Reorg of idx {} to active chain failed", branchIdx);
 
 	DisconnectToFork(forkBlock);
 

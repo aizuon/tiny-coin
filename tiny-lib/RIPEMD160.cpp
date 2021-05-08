@@ -11,7 +11,7 @@ std::vector<uint8_t> RIPEMD160::HashBinary(const std::vector<uint8_t>& buffer)
 
 	if (!RIPEMD160_Init(&ripemd160) || !RIPEMD160_Update(&ripemd160, buffer.data(), buffer.size()) || !RIPEMD160_Final(
 		hash.data(), &ripemd160))
-		return std::vector<uint8_t>();
+		return {};
 
 	return hash;
 }

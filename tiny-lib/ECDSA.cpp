@@ -12,7 +12,7 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t>> ECDSA::Generate()
 	{
 		EC_KEY_free(ec_key);
 
-		return {std::vector<uint8_t>(), std::vector<uint8_t>()};
+		return {{}, {}};
 	}
 
 	const BIGNUM* priv_key = EC_KEY_get0_private_key(ec_key);
@@ -21,7 +21,7 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t>> ECDSA::Generate()
 	{
 		EC_KEY_free(ec_key);
 
-		return {std::vector<uint8_t>(), std::vector<uint8_t>()};
+		return {{}, {}};
 	}
 
 	const EC_GROUP* ec_group = EC_KEY_get0_group(ec_key);
@@ -30,7 +30,7 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t>> ECDSA::Generate()
 	{
 		EC_KEY_free(ec_key);
 
-		return {std::vector<uint8_t>(), std::vector<uint8_t>()};
+		return {{}, {}};
 	}
 
 	EC_KEY_free(ec_key);
@@ -46,7 +46,7 @@ std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(const std::vector<uint8_t>& pri
 	{
 		EC_KEY_free(ec_key);
 
-		return std::vector<uint8_t>();
+		return {};
 	}
 
 	const EC_GROUP* ec_group = EC_KEY_get0_group(ec_key);
@@ -55,7 +55,7 @@ std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(const std::vector<uint8_t>& pri
 	{
 		EC_KEY_free(ec_key);
 
-		return std::vector<uint8_t>();
+		return {};
 	}
 
 	EC_KEY_free(ec_key);
@@ -71,7 +71,7 @@ std::vector<uint8_t> ECDSA::SignMsg(const std::vector<uint8_t>& msg, const std::
 	{
 		EC_KEY_free(ec_key);
 
-		return std::vector<uint8_t>();
+		return {};
 	}
 
 	std::vector<uint8_t> sig(ECDSA_size(ec_key));
@@ -80,7 +80,7 @@ std::vector<uint8_t> ECDSA::SignMsg(const std::vector<uint8_t>& msg, const std::
 	{
 		EC_KEY_free(ec_key);
 
-		return std::vector<uint8_t>();
+		return {};
 	}
 	sig.resize(siglen);
 
@@ -179,7 +179,7 @@ std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(EC_KEY* ec_key, const EC_GROUP*
 		{
 			BN_CTX_free(bn_ctx);
 
-			return std::vector<uint8_t>();
+			return {};
 		}
 		if (!EC_KEY_set_public_key(ec_key, pub_key2))
 		{
@@ -187,7 +187,7 @@ std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(EC_KEY* ec_key, const EC_GROUP*
 
 			EC_POINT_free(pub_key2);
 
-			return std::vector<uint8_t>();
+			return {};
 		}
 		if (!EC_KEY_check_key(ec_key))
 		{
@@ -195,7 +195,7 @@ std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(EC_KEY* ec_key, const EC_GROUP*
 
 			EC_POINT_free(pub_key2);
 
-			return std::vector<uint8_t>();
+			return {};
 		}
 		pub_key = pub_key2;
 	}
@@ -206,7 +206,7 @@ std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(EC_KEY* ec_key, const EC_GROUP*
 		BN_free(pub_key_bn);
 		BN_CTX_free(bn_ctx);
 
-		return std::vector<uint8_t>();
+		return {};
 	}
 	std::vector<uint8_t> pub_key_buffer(BN_num_bytes(pub_key_bn));
 	if (!BN_bn2bin(pub_key_bn, pub_key_buffer.data()))
@@ -214,7 +214,7 @@ std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(EC_KEY* ec_key, const EC_GROUP*
 		BN_free(pub_key_bn);
 		BN_CTX_free(bn_ctx);
 
-		return std::vector<uint8_t>();
+		return {};
 	}
 	BN_free(pub_key_bn);
 	BN_CTX_free(bn_ctx);

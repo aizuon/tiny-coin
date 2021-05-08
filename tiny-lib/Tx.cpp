@@ -45,7 +45,58 @@ void Tx::ValidateBasics(bool coinbase /*= false*/) const
 		totalSpent += tx_out->Value;
 
 	if (totalSpent > NetParams::MAX_MONEY)
-		throw TxValidationException("Spend value is too high");
+		throw TxValidationException("Spent value too high");
+}
+
+void Tx::Validate(const ValidateRequest& req) const
+{
+	ValidateBasics(req.AsCoinbase);
+
+	uint64_t avaliableToSpend = 0;
+	for (uint32_t i = 0; i < TxIns.size(); i++)
+	{
+		const auto& txIn = TxIns[i];
+
+		auto utxo = UTXO::FindInMap(txIn->ToSpend);
+		if (utxo == nullptr)
+		{
+			if (!req.SiblingsInBlock.empty())
+			{
+				utxo = UTXO::FindInList(txIn, req.SiblingsInBlock);
+			}
+
+			if (req.Allow_UTXO_FromMempool)
+			{
+				utxo = Mempool::Find_UTXO_InMempool(txIn->ToSpend);
+			}
+
+			if (utxo == nullptr)
+				throw TxValidationException(
+					fmt::format("Unable to find any UTXO for TxIn {}, orphaning transaction", i).c_str(),
+					std::make_shared<Tx>(*this));
+		}
+
+		if (utxo->IsCoinbase && Chain::GetCurrentHeight() - utxo->Height < NetParams::COINBASE_MATURITY)
+			throw TxValidationException("Coinbase UTXO not ready for spending");
+
+		try
+		{
+			ValidateSignatureForSpend(txIn, utxo);
+		}
+		catch (const TxUnlockException&)
+		{
+			throw TxValidationException(fmt::format("TxIn not a valid spend of UTXO").c_str());
+		}
+
+		avaliableToSpend += utxo->TxOut->Value;
+	}
+
+	uint64_t totalSpent = 0;
+	for (const auto& txOut : TxOuts)
+		totalSpent += txOut->Value;
+
+	if (avaliableToSpend < totalSpent)
+		throw TxValidationException("Spent value more than available");
 }
 
 BinaryBuffer Tx::Serialize() const
@@ -137,57 +188,6 @@ std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& payToAddr, uint64_t va
 	auto tx = std::make_shared<Tx>(tx_ins, tx_outs, -1);
 
 	return tx;
-}
-
-void Tx::Validate(const ValidateRequest& req) const
-{
-	ValidateBasics(req.AsCoinbase);
-
-	uint64_t avaliableToSpend = 0;
-	for (uint32_t i = 0; i < TxIns.size(); i++)
-	{
-		const auto& txIn = TxIns[i];
-
-		auto utxo = UTXO::FindInMap(txIn->ToSpend);
-		if (utxo == nullptr)
-		{
-			if (!req.SiblingsInBlock.empty())
-			{
-				utxo = UTXO::FindInList(txIn, req.SiblingsInBlock);
-			}
-
-			if (req.Allow_UTXO_FromMempool)
-			{
-				utxo = Mempool::Find_UTXO_InMempool(txIn->ToSpend);
-			}
-
-			if (utxo == nullptr)
-				throw TxValidationException(
-					fmt::format("Couldn't not find any UTXO for TxIn {}, orphaning transaction", i).c_str(),
-					std::make_shared<Tx>(*this));
-		}
-
-		if (utxo->IsCoinbase && (Chain::GetCurrentHeight() - utxo->Height) < NetParams::COINBASE_MATURITY)
-			throw TxValidationException("Coinbase UTXO is not ready for spending");
-
-		try
-		{
-			ValidateSignatureForSpend(txIn, utxo);
-		}
-		catch (const TxUnlockException&)
-		{
-			throw TxValidationException(fmt::format("TxIn is not a valid spend of UTXO").c_str());
-		}
-
-		avaliableToSpend += utxo->TxOut->Value;
-	}
-
-	uint64_t totalSpent = 0;
-	for (const auto& txOut : TxOuts)
-		totalSpent += txOut->Value;
-
-	if (avaliableToSpend < totalSpent)
-		throw TxValidationException("Spend value is more than available");
 }
 
 bool Tx::operator==(const Tx& obj) const

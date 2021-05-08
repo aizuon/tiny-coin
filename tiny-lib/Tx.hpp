@@ -30,11 +30,6 @@ public:
 
 	void ValidateBasics(bool coinbase = false) const;
 
-	BinaryBuffer Serialize() const override;
-	bool Deserialize(BinaryBuffer& buffer) override;
-
-	static std::shared_ptr<Tx> CreateCoinbase(const std::string& payToAddr, uint64_t value, int64_t height);
-
 	struct ValidateRequest
 	{
 		bool AsCoinbase = false;
@@ -43,6 +38,11 @@ public:
 	};
 
 	void Validate(const ValidateRequest& req) const;
+
+	BinaryBuffer Serialize() const override;
+	bool Deserialize(BinaryBuffer& buffer) override;
+
+	static std::shared_ptr<Tx> CreateCoinbase(const std::string& payToAddr, uint64_t value, int64_t height);
 
 	bool operator==(const Tx& obj) const;
 

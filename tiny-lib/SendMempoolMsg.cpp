@@ -15,10 +15,14 @@ BinaryBuffer SendMempoolMsg::Serialize() const
 {
 	BinaryBuffer buffer;
 
-	buffer.WriteSize(Mempool::Map.size());
-	for (const auto& key : Mempool::Map | std::views::keys)
 	{
-		buffer.Write(key);
+		std::lock_guard lock(Mempool::Mutex);
+
+		buffer.WriteSize(Mempool::Map.size());
+		for (const auto& key : Mempool::Map | std::views::keys)
+		{
+			buffer.Write(key);
+		}
 	}
 
 	return buffer;

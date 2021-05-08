@@ -151,9 +151,9 @@ TEST(BlockChainTest, Reorg)
 	for (const auto& block : chain1)
 		ASSERT_EQ(Chain::ConnectBlock(block), Chain::ActiveChainIdx);
 
-	Chain::SideBranches = std::vector<std::vector<std::shared_ptr<Block>>>();
-	Mempool::Map = std::unordered_map<std::string, std::shared_ptr<Tx>>();
-	UTXO::Map = std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UTXO>>();
+	Chain::SideBranches.clear();
+	Mempool::Map.clear();
+	UTXO::Map.clear();
 
 	for (const auto& block : Chain::ActiveChain)
 	{
@@ -321,9 +321,9 @@ TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 
 	const auto& utxo1 = UTXO::Map.begin()->second;
 	auto txOut1 = std::make_shared<TxOut>(901, utxo1->TxOut->ToAddress);
-	auto txIn1 = Wallet::BuildTxIn(priv_key, utxo1->TxOutPoint, txOut1);
-	auto tx1 = std::make_shared<Tx>(std::vector{txIn1},
-	                                std::vector{txOut1}, -1);
+	std::vector txOuts1{txOut1};
+	auto txIn1 = Wallet::BuildTxIn(priv_key, utxo1->TxOutPoint, txOuts1);
+	auto tx1 = std::make_shared<Tx>(std::vector{txIn1}, txOuts1, -1);
 
 	ASSERT_THROW(
 		{
@@ -333,7 +333,7 @@ TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 		}
 		catch (const TxValidationException& ex)
 		{
-		ASSERT_STREQ("Coinbase UTXO is not ready for spending", ex.what());
+		ASSERT_STREQ("Coinbase UTXO not ready for spending", ex.what());
 		throw;
 		}
 		},
@@ -345,10 +345,10 @@ TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 	ASSERT_TRUE(Mempool::Map.contains(tx1->Id()));
 
 	auto txOut2 = std::make_shared<TxOut>(9001, txOut1->ToAddress);
+	std::vector txOuts2{txOut2};
 	auto txOutPoint2 = std::make_shared<TxOutPoint>(tx1->Id(), 0);
-	auto txIn2 = Wallet::BuildTxIn(priv_key, txOutPoint2, txOut2);
-	auto tx2 = std::make_shared<Tx>(std::vector{txIn2},
-	                                std::vector{txOut2}, -1);
+	auto txIn2 = Wallet::BuildTxIn(priv_key, txOutPoint2, txOuts2);
+	auto tx2 = std::make_shared<Tx>(std::vector{txIn2}, txOuts2, -1);
 
 	Mempool::AddTxToMempool(tx2);
 	ASSERT_FALSE(Mempool::Map.contains(tx2->Id()));
@@ -361,14 +361,14 @@ TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 		}
 		catch (const TxValidationException& ex)
 		{
-		ASSERT_STREQ("Spend value is more than available", ex.what());
+		ASSERT_STREQ("Spend value more than available", ex.what());
 		throw;
 		}
 		},
 		TxValidationException);
 
 	txOut2->Value = 901;
-	txIn2 = Wallet::BuildTxIn(priv_key, txOutPoint2, txOut2);
+	txIn2 = Wallet::BuildTxIn(priv_key, txOutPoint2, txOuts2);
 	tx2->TxIns[0] = txIn2;
 
 	Mempool::AddTxToMempool(tx2);
@@ -429,7 +429,7 @@ TEST(BlockChainTest_LongRunning, MinerTransaction)
 	}
 
 	ASSERT_GT(Wallet::GetBalance_Miner(miner_address), 0);
-	auto tx = Wallet::SendValue_Miner(first_block->Txs.front()->TxOuts.front()->Value / 2, receiver_address,
+	auto tx = Wallet::SendValue_Miner(first_block->Txs.front()->TxOuts.front()->Value / 2, 100, receiver_address,
 	                                  miner_privKey);
 	ASSERT_TRUE(tx != nullptr);
 	ASSERT_EQ(Wallet::GetTxStatus_Miner(tx->Id()).Status, TxStatus::Mempool);

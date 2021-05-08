@@ -26,14 +26,12 @@ public:
 	static std::shared_ptr<Block> Mine(const std::shared_ptr<Block>& block);
 	static void MineForever();
 
+	static uint64_t CalculateFees(const std::shared_ptr<Tx>& tx);
+
 private:
 	static void MineChunk(const std::shared_ptr<Block>& block, BIGNUM* target_bn, uint64_t start, uint64_t chunk_size,
 	                      std::atomic_bool& found, std::atomic<uint64_t>& found_nonce,
 	                      std::atomic<uint64_t>& hash_count);
-
-	static std::shared_ptr<TxOut>
-	UTXO_FromBlock(const std::shared_ptr<Block>& block, const std::shared_ptr<TxIn>& txIn);
-	static std::shared_ptr<TxOut> Find_UTXO(const std::shared_ptr<Block>& block, const std::shared_ptr<TxIn>& txIn);
 
 	static uint64_t CalculateFees(const std::shared_ptr<Block>& block);
 	static uint64_t GetBlockSubsidy();

@@ -168,7 +168,7 @@ void NetClient::HandleAccept(std::shared_ptr<Connection>& con, const boost::syst
 	{
 		auto& soc = con->Socket;
 
-		LOG_INFO("Incoming connection from {}:{}", soc.remote_endpoint().address().to_string(),
+		LOG_TRACE("Incoming connection from {}:{}", soc.remote_endpoint().address().to_string(),
 		         soc.remote_endpoint().port());
 
 		soc.set_option(boost::asio::ip::tcp::no_delay(true));
@@ -203,7 +203,7 @@ void NetClient::HandleRead(std::shared_ptr<Connection>& con, const boost::system
 		if (bytes_transferred > Magic.size() && readBuffer.size() >= bytes_transferred)
 		{
 			BinaryBuffer buffer;
-			buffer.GrowTo(bytes_transferred - (Magic.size()));
+			buffer.GrowTo(bytes_transferred - Magic.size());
 			boost::asio::buffer_copy(boost::asio::buffer(buffer.GetWritableBuffer()), readBuffer.data());
 
 			HandleMsg(con, buffer);
@@ -371,7 +371,7 @@ void NetClient::RemoveConnection(std::shared_ptr<Connection>& con)
 
 		if (soc.is_open())
 		{
-			LOG_INFO("Peer {}:{} disconnected", soc.remote_endpoint().address().to_string(),
+			LOG_TRACE("Peer {}:{} disconnected", soc.remote_endpoint().address().to_string(),
 			         soc.remote_endpoint().port());
 
 			soc.shutdown(boost::asio::socket_base::shutdown_both);

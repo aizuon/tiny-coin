@@ -128,16 +128,25 @@ int main(int argc, char** argv)
 			{
 				command.erase(0, send.length());
 				std::vector<std::string> send_args;
-				split(send_args, command, boost::is_any_of(" "));
-				if (send_args.size() != 2)
+				boost::split(send_args, command, boost::is_any_of(" "));
+				if (send_args.size() != 2 && send_args.size() != 3)
 				{
-					LOG_ERROR("Send command requires 2 arguments, receiver address and send value");
+					LOG_ERROR(
+						"Send command requires 2 arguments, receiver address, send value and optionally fee per byte");
 
 					continue;
 				}
 				const auto& send_address = send_args[0];
 				const auto& send_value = send_args[1];
-				Wallet::SendValue(std::stoull(send_value), send_address, privKey);
+				if (send_args.size() == 3)
+				{
+					const auto& send_fee = send_args[2];
+					Wallet::SendValue(std::stoull(send_value), std::stoull(send_fee), send_address, privKey);
+				}
+				else
+				{
+					Wallet::SendValue(std::stoull(send_value), 100, send_address, privKey);
+				}
 			}
 			else if (command.starts_with(tx_status))
 			{

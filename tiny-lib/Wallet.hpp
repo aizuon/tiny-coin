@@ -29,10 +29,10 @@ public:
 
 	static std::shared_ptr<TxIn> BuildTxIn(const std::vector<uint8_t>& privKey,
 	                                       const std::shared_ptr<TxOutPoint>& txOutPoint,
-	                                       const std::shared_ptr<TxOut>& txOut);
-	static std::shared_ptr<Tx> SendValue_Miner(uint64_t value, const std::string& address,
+	                                       const std::vector<std::shared_ptr<TxOut>>& txOuts);
+	static std::shared_ptr<Tx> SendValue_Miner(uint64_t value, uint64_t fee, const std::string& address,
 	                                           const std::vector<uint8_t>& privKey);
-	static std::shared_ptr<Tx> SendValue(uint64_t value, const std::string& address,
+	static std::shared_ptr<Tx> SendValue(uint64_t value, uint64_t fee, const std::string& address,
 	                                     const std::vector<uint8_t>& privKey);
 
 	struct TxStatusResponse
@@ -56,12 +56,13 @@ private:
 	static std::string WalletPath;
 
 	static std::shared_ptr<Tx> BuildTxFromUTXOs(std::vector<std::shared_ptr<UnspentTxOut>>& utxos, uint64_t value,
-	                                            const std::string& address,
-	                                            const std::vector<uint8_t>& privKey);
+	                                            uint64_t fee, const std::string& address,
+	                                            const std::string& changeAddress, const std::vector<uint8_t>& privKey);
 
-	static std::shared_ptr<Tx> BuildTx_Miner(uint64_t value, const std::string& address,
+	static std::shared_ptr<Tx> BuildTx_Miner(uint64_t value, uint64_t fee, const std::string& address,
 	                                         const std::vector<uint8_t>& privKey);
-	static std::shared_ptr<Tx> BuildTx(uint64_t value, const std::string& address, const std::vector<uint8_t>& privKey);
+	static std::shared_ptr<Tx> BuildTx(uint64_t value, uint64_t fee, const std::string& address,
+	                                   const std::vector<uint8_t>& privKey);
 
 	static std::vector<std::shared_ptr<UnspentTxOut>> FindUTXOsForAddress_Miner(const std::string& address);
 	static std::vector<std::shared_ptr<UnspentTxOut>> FindUTXOsForAddress(const std::string& address);

@@ -45,7 +45,7 @@ uint8_t PoW::GetNextWorkRequired(const std::string& prevBlockHash)
 
 std::shared_ptr<Block> PoW::AssembleAndSolveBlock(const std::string& payCoinbaseToAddress)
 {
-	return AssembleAndSolveBlock(payCoinbaseToAddress, std::vector<std::shared_ptr<Tx>>());
+	return AssembleAndSolveBlock(payCoinbaseToAddress, {});
 }
 
 std::shared_ptr<Block> PoW::AssembleAndSolveBlock(const std::string& payCoinbaseToAddress,
@@ -61,7 +61,7 @@ std::shared_ptr<Block> PoW::AssembleAndSolveBlock(const std::string& payCoinbase
 	if (block->Txs.empty())
 		block = Mempool::SelectFromMempool(block);
 
-	const auto fees = CalculateFees(block);
+	const uint64_t fees = CalculateFees(block);
 	const auto coinbaseTx = Tx::CreateCoinbase(payCoinbaseToAddress, GetBlockSubsidy() + fees,
 	                                           Chain::ActiveChain.size());
 	block->Txs.insert(block->Txs.begin(), coinbaseTx);
@@ -70,20 +70,9 @@ std::shared_ptr<Block> PoW::AssembleAndSolveBlock(const std::string& payCoinbase
 	if (block->Serialize().GetSize() > NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES)
 		throw std::exception("Transactions specified create a block too large");
 
+	LOG_INFO("Start mining block {} with {} fees", block->Id(), fees);
+	
 	return Mine(block);
-}
-
-std::shared_ptr<TxOut> PoW::UTXO_FromBlock(const std::shared_ptr<Block>& block, const std::shared_ptr<TxIn>& txIn)
-{
-	for (const auto& tx : block->Txs)
-	{
-		if (tx->Id() == txIn->ToSpend->TxId)
-		{
-			return tx->TxOuts[txIn->ToSpend->TxOutIdx];
-		}
-	}
-
-	return nullptr;
 }
 
 std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
@@ -133,7 +122,7 @@ std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
 	auto duration = Utils::GetUnixTimestamp() - start;
 	if (duration == 0)
 		duration = 1;
-	auto khs = (hash_count / duration) / 1000;
+	auto khs = hash_count / duration / 1000;
 	LOG_INFO("Block found => {} s, {} KH/s, {}, {}", duration, khs, newBlock->Id(), newBlock->Nonce);
 
 	return newBlock;
@@ -176,6 +165,27 @@ void PoW::MineForever()
 	}
 }
 
+uint64_t PoW::CalculateFees(const std::shared_ptr<Tx>& tx)
+{
+	uint64_t spent = 0;
+	for (const auto& txIn : tx->TxIns)
+	{
+		const auto utxo = UTXO::FindTxOutInMap(txIn);
+		if (utxo != nullptr)
+		{
+			spent += utxo->Value;
+		}
+	}
+
+	uint64_t sent = 0;
+	for (const auto& txOut : tx->TxOuts)
+	{
+		sent += txOut->Value;
+	}
+
+	return spent - sent;
+}
+
 void PoW::MineChunk(const std::shared_ptr<Block>& block, BIGNUM* target_bn, uint64_t start, uint64_t chunk_size,
                     std::atomic_bool& found, std::atomic<uint64_t>& found_nonce, std::atomic<uint64_t>& hash_count)
 {
@@ -196,19 +206,6 @@ void PoW::MineChunk(const std::shared_ptr<Block>& block, BIGNUM* target_bn, uint
 	found_nonce = start + i;
 }
 
-std::shared_ptr<TxOut> PoW::Find_UTXO(const std::shared_ptr<Block>& block, const std::shared_ptr<TxIn>& txIn)
-{
-	for (const auto& utxo : UTXO::Map | std::ranges::views::values)
-	{
-		if (txIn->ToSpend->TxId == utxo->TxOutPoint->TxId && txIn->ToSpend->TxOutIdx == utxo->TxOutPoint->TxOutIdx)
-		{
-			return utxo->TxOut;
-		}
-	}
-
-	return UTXO_FromBlock(block, txIn);
-}
-
 uint64_t PoW::CalculateFees(const std::shared_ptr<Block>& block)
 {
 	uint64_t fee = 0;
@@ -218,7 +215,7 @@ uint64_t PoW::CalculateFees(const std::shared_ptr<Block>& block)
 		uint64_t spent = 0;
 		for (const auto& txIn : tx->TxIns)
 		{
-			auto utxo = Find_UTXO(block, txIn);
+			const auto utxo = UTXO::FindTxOutInMapOrBlock(block, txIn);
 			if (utxo != nullptr)
 			{
 				spent += utxo->Value;
