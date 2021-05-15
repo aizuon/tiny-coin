@@ -4,9 +4,9 @@
 #include <cassert>
 #include <exception>
 #include <fstream>
+#include <limits>
 #include <ranges>
 #include <fmt/format.h>
-#include <openssl/bn.h>
 
 #include "BlockInfoMsg.hpp"
 #include "Exceptions.hpp"
@@ -18,18 +18,19 @@
 #include "NetParams.hpp"
 #include "PoW.hpp"
 #include "TxOutPoint.hpp"
+#include "uint256_t.hpp"
 #include "UnspentTxOut.hpp"
 #include "Utils.hpp"
 
-const std::shared_ptr<TxIn> Chain::GenesisTxIn = std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{0x00},
-                                                                        std::vector<uint8_t>(), 0);
+const std::shared_ptr<TxIn> Chain::GenesisTxIn = std::make_shared<TxIn>(nullptr, std::vector<uint8_t>(),
+                                                                        std::vector<uint8_t>(), -1);
 const std::shared_ptr<TxOut> Chain::GenesisTxOut = std::make_shared<TxOut>(
 	5000000000, "143UVyz7ooiAv1pMqbwPPpnH4BV9ifJGFF");
 const std::shared_ptr<Tx> Chain::GenesisTx = std::make_shared<Tx>(std::vector{GenesisTxIn},
-                                                                  std::vector{GenesisTxOut}, -1);
+                                                                  std::vector{GenesisTxOut}, 0);
 const std::shared_ptr<Block> Chain::GenesisBlock = std::make_shared<Block>(
-	0, "", "8fdcb01b725d0dba8437ab9fd20714acc5b6ff0ea7a3a052d72318ab234b5d0d",
-	1501821412, 24, 4611686018428302567, std::vector{GenesisTx});
+	0, "", "75b7747cdbad68d5e40269399d9d8d6c048cc80a9e1b355379a5ed831ffbc1a8",
+	1501821412, 24, 13835058055287124368, std::vector{GenesisTx});
 
 std::vector<std::shared_ptr<Block>> Chain::ActiveChain{GenesisBlock};
 std::vector<std::vector<std::shared_ptr<Block>>> Chain::SideBranches{};
@@ -73,14 +74,9 @@ uint32_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 	if (block->Timestamp - Utils::GetUnixTimestamp() > static_cast<int64_t>(NetParams::MAX_FUTURE_BLOCK_TIME_IN_SECS))
 		throw BlockValidationException("Block timestamp too far in future");
 
-	BIGNUM* target_bn = HashChecker::TargetBitsToBN(block->Bits);
-	if (!HashChecker::IsValid(block->Id(), target_bn))
-	{
-		BN_free(target_bn);
-
+	const uint256_t target_hash = uint256_t(1) << (std::numeric_limits<uint8_t>::max() - block->Bits);
+	if (!HashChecker::IsValid(block->Id(), target_hash))
 		throw BlockValidationException("Block header does not satisfy bits");
-	}
-	BN_free(target_bn);
 
 	auto coinbase_pred = [](const std::shared_ptr<Tx>& tx)
 	{
@@ -318,15 +314,15 @@ bool Chain::ReorgIfNecessary()
 	uint32_t branch_idx = 1;
 	for (const auto& chain : frozenSideBranches)
 	{
-		auto [fork_block, fork_heigh] = LocateBlockInActiveChain(chain[0]->PrevBlockHash);
+		auto [fork_block, fork_height] = LocateBlockInActiveChain(chain[0]->PrevBlockHash);
 
-		uint32_t branchHeight = chain.size() + fork_heigh;
+		uint32_t branchHeight = chain.size() + fork_height;
 		if (branchHeight > GetCurrentHeight())
 		{
 			LOG_INFO("Attempting reorg of idx {} to active chain, new height of {} vs. {}", branch_idx, branchHeight,
-			         fork_heigh);
+			         fork_height);
 
-			reorged |= TryReorg(chain, branch_idx, fork_heigh);
+			reorged |= TryReorg(chain, branch_idx, fork_height);
 		}
 		branch_idx++;
 	}

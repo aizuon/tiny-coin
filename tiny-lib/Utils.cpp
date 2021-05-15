@@ -36,20 +36,6 @@ std::vector<uint8_t> Utils::StringToByteArray(const std::string& str)
 	return vec;
 }
 
-std::string Utils::ByteArrayToHexString_DEBUG(const std::vector<uint8_t>& vec)
-{
-	std::stringstream ss;
-	ss << std::hex;
-
-	for (auto b : vec)
-		ss << std::setw(2) << std::setfill('0') << static_cast<int>(b) << " ";
-
-	std::string output = ss.str();
-	std::ranges::transform(output, output.begin(), std::toupper);
-
-	return output;
-}
-
 int64_t Utils::GetUnixTimestamp()
 {
 	return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).

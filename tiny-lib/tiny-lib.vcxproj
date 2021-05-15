@@ -62,6 +62,7 @@
     <ClInclude Include="TxOut.hpp" />
     <ClInclude Include="TxOutPoint.hpp" />
     <ClInclude Include="pch.hpp" />
+    <ClInclude Include="uint256_t.hpp" />
     <ClInclude Include="UnspentTxOut.hpp" />
     <ClInclude Include="Utils.hpp" />
     <ClInclude Include="Wallet.hpp" />

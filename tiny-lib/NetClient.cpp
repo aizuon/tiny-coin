@@ -28,7 +28,7 @@ const std::vector<std::pair<std::string, uint16_t>> NetClient::InitialPeers = st
 	{"127.0.0.1", 9900}, {"127.0.0.1", 9901}, {"127.0.0.1", 9902}, {"127.0.0.1", 9903}, {"127.0.0.1", 9904}
 };
 
-std::string NetClient::Magic = "\r\n\r\n";
+std::string NetClient::Magic = "\xf9\xbe\xb4\xd9";
 
 std::recursive_mutex NetClient::ConnectionsMutex;
 

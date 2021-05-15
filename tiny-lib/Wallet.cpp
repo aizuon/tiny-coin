@@ -111,7 +111,7 @@ std::shared_ptr<TxIn> Wallet::BuildTxIn(const std::vector<uint8_t>& privKey,
                                         const std::shared_ptr<TxOutPoint>& txOutPoint,
                                         const std::vector<std::shared_ptr<TxOut>>& txOuts)
 {
-	int32_t sequence = 0;
+	int32_t sequence = -1;
 
 	auto pubKey = ECDSA::GetPubKeyFromPrivKey(privKey);
 	const auto spend_msg = MsgSerializer::BuildSpendMsg(txOutPoint, pubKey, sequence, txOuts);
@@ -372,7 +372,7 @@ std::shared_ptr<Tx> Wallet::BuildTxFromUTXOs(std::vector<std::shared_ptr<UTXO>>&
 	{
 		txIns.emplace_back(BuildTxIn(privKey, selected_coin->TxOutPoint, txOuts));
 	}
-	auto tx = std::make_shared<Tx>(txIns, txOuts, -1);
+	auto tx = std::make_shared<Tx>(txIns, txOuts, 0);
 	const uint32_t tx_size = tx->Serialize().GetBuffer().size();
 	const uint32_t real_fee = total_fee_est / tx_size;
 	LOG_INFO("Built transaction {} with {} coins/byte fee", tx->Id(), real_fee);

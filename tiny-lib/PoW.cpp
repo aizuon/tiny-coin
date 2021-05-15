@@ -2,6 +2,7 @@
 #include "PoW.hpp"
 
 #include <exception>
+#include <limits>
 #include <ranges>
 #include <boost/bind/bind.hpp>
 #include <boost/thread/thread.hpp>
@@ -71,7 +72,7 @@ std::shared_ptr<Block> PoW::AssembleAndSolveBlock(const std::string& payCoinbase
 		throw std::exception("Transactions specified create a block too large");
 
 	LOG_INFO("Start mining block {} with {} fees", block->Id(), fees);
-	
+
 	return Mine(block);
 }
 
@@ -82,7 +83,7 @@ std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
 
 	auto newBlock = std::make_shared<Block>(*block);
 	newBlock->Nonce = 0;
-	BIGNUM* target_bn = HashChecker::TargetBitsToBN(newBlock->Bits);
+	const uint256_t target_hash = uint256_t(1) << (std::numeric_limits<uint8_t>::max() - newBlock->Bits);
 	uint8_t num_threads = std::thread::hardware_concurrency() / 2;
 	if (num_threads == 0)
 		num_threads = 1;
@@ -95,12 +96,11 @@ std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
 	boost::thread_group threadpool;
 	for (uint8_t i = 0; i < num_threads; i++)
 	{
-		threadpool.create_thread(boost::bind(&PoW::MineChunk, newBlock, target_bn,
+		threadpool.create_thread(boost::bind(&PoW::MineChunk, newBlock, target_hash,
 		                                     std::numeric_limits<uint64_t>::min() + chunk_size * i, chunk_size,
 		                                     boost::ref(found), boost::ref(found_nonce), boost::ref(hash_count)));
 	}
 	threadpool.join_all();
-	BN_free(target_bn);
 
 	if (MineInterrupt)
 	{
@@ -186,13 +186,14 @@ uint64_t PoW::CalculateFees(const std::shared_ptr<Tx>& tx)
 	return spent - sent;
 }
 
-void PoW::MineChunk(const std::shared_ptr<Block>& block, BIGNUM* target_bn, uint64_t start, uint64_t chunk_size,
-                    std::atomic_bool& found, std::atomic<uint64_t>& found_nonce, std::atomic<uint64_t>& hash_count)
+void PoW::MineChunk(const std::shared_ptr<Block>& block, const uint256_t& target_hash, uint64_t start,
+                    uint64_t chunk_size, std::atomic_bool& found, std::atomic<uint64_t>& found_nonce,
+                    std::atomic<uint64_t>& hash_count)
 {
 	uint64_t i = 0;
 	while (!HashChecker::IsValid(
-		Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(block->Header(start + i)))),
-		target_bn))
+		Utils::ByteArrayToHexString(SHA256::DoubleHashBinary((block->Header(start + i).GetBuffer()))),
+		target_hash))
 	{
 		++hash_count;
 

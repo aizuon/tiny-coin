@@ -31,5 +31,7 @@
 #include <fmt/format.h>
 
 #include "Log.hpp"
+#include "Random.hpp"
+#include "uint256_t.hpp"
 
 #endif //PCH_H

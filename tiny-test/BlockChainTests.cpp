@@ -44,101 +44,90 @@ TEST(BlockChainTest, MedianTimePast)
 const auto chain1_block1_txs = std::vector{
 	std::make_shared<Tx>(
 		std::vector{
-			std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{0x00}, std::vector<uint8_t>(), 0)
+			std::make_shared<TxIn>(nullptr, std::vector<uint8_t>(), std::vector<uint8_t>(), -1)
 		}, std::vector{
 			std::make_shared<TxOut>(5000000000, "1PMycacnJaSqwwJqjawXBErnLsZ7RkXUAs")
-		}, -1)
+		}, 0)
 };
 const auto chain1_block1 = std::make_shared<Block>(
-	0, "", "8db741ecef86a7e933e16c5170b8a8f0a1661136cd9c1c8081898bcb0460f403",
-	1501821412, 24, 9223372036855476151, chain1_block1_txs);
+	0, "", "a4a241a0b693ad8ee736907fbe3fc572044b380cdc186f80647f1e8354bb2ba7",
+	1501821412, 24, 5804256, chain1_block1_txs);
 const auto chain1_block2_txs = std::vector{
 	std::make_shared<Tx>(
 		std::vector{
-			std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{0x01}, std::vector<uint8_t>(), 0)
+			std::make_shared<TxIn>(nullptr, std::vector<uint8_t>(), std::vector<uint8_t>(), -1)
 		}, std::vector{
 			std::make_shared<TxOut>(5000000000, "1Piq91dFUqSb7tdddCWvuGX5UgdzXeoAwA")
-		}, -1)
+		}, 0)
 };
 const auto chain1_block2 = std::make_shared<Block>(
-	0, "0000006f23416d927347d60688c2b3bc224b2f7c99198d2044ec5565cb60da1a",
-	"4eced71470b00a09aa7d61e6acb12a0aad2864593504072c8acf39f87da48cec",
-	1501826444, 24, 9223372036855920391, chain1_block2_txs);
+	0, "0000001616129fcc8a1240972d1e39a8569c7db3e965e38db70ccd4418815efd",
+	"8b0485e1a7823fc2ad3195837146e2b01e860a18f0cf81e524078b0116400430",
+	1501826444, 24, 13835058055285570289, chain1_block2_txs);
 const auto chain1_block3_txs = std::vector{
 	std::make_shared<Tx>(
 		std::vector{
-			std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{0x02}, std::vector<uint8_t>(), 0)
+			std::make_shared<TxIn>(nullptr, std::vector<uint8_t>(), std::vector<uint8_t>(), -1)
 		}, std::vector{
 			std::make_shared<TxOut>(5000000000, "1Piq91dFUqSb7tdddCWvuGX5UgdzXeoAwA")
-		}, -1)
+		}, 0)
 };
 const auto chain1_block3 = std::make_shared<Block>(
-	0, "00000025b79319967f00067683786c549583cd6ca296def11f6f2628bf5d5bba",
-	"e8c33875847f0eb422e3de129e258a7f0c90b65fa28e5d0dbf6b13b41f4e5415",
-	1501826556, 24, 2272727, chain1_block3_txs);
+	0, "000000731ba1a0b651182140e8332287186c6a93ddbfc42455c3f88e020a5ce8",
+	"8b0485e1a7823fc2ad3195837146e2b01e860a18f0cf81e524078b0116400430",
+	1501826556, 24, 9223372036856676382, chain1_block3_txs);
 const auto chain1 = std::vector{chain1_block1, chain1_block2, chain1_block3};
 
-const auto chain2_block1_txs = std::vector{
-	std::make_shared<Tx>(
-		std::vector{
-			std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{0x00}, std::vector<uint8_t>(), 0)
-		}, std::vector{
-			std::make_shared<TxOut>(5000000000, "1PMycacnJaSqwwJqjawXBErnLsZ7RkXUAs")
-		}, -1)
-};
-const auto chain2_block1 = std::make_shared<Block>(
-	0, "", "8db741ecef86a7e933e16c5170b8a8f0a1661136cd9c1c8081898bcb0460f403",
-	1501821412, 24, 9223372036855476151, chain2_block1_txs);
 const auto chain2_block2_txs = std::vector{
 	std::make_shared<Tx>(
 		std::vector{
-			std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{0x01}, std::vector<uint8_t>(), 0)
+			std::make_shared<TxIn>(nullptr, std::vector<uint8_t>(), std::vector<uint8_t>(), -1)
 		}, std::vector{
 			std::make_shared<TxOut>(5000000000, "1Piq91dFUqSb7tdddCWvuGX5UgdzXeoAwA")
-		}, -1)
+		}, 0)
 };
 const auto chain2_block2 = std::make_shared<Block>(
-	0, "0000006f23416d927347d60688c2b3bc224b2f7c99198d2044ec5565cb60da1a",
-	"4eced71470b00a09aa7d61e6acb12a0aad2864593504072c8acf39f87da48cec",
-	1501826757, 24, 4611686018427890999, chain2_block2_txs);
+	0, "0000001616129fcc8a1240972d1e39a8569c7db3e965e38db70ccd4418815efd",
+	"8b0485e1a7823fc2ad3195837146e2b01e860a18f0cf81e524078b0116400430",
+	1501826757, 24, 9223372036864717828, chain2_block2_txs);
 const auto chain2_block3_txs = std::vector{
 	std::make_shared<Tx>(
 		std::vector{
-			std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{0x02}, std::vector<uint8_t>(), 0)
+			std::make_shared<TxIn>(nullptr, std::vector<uint8_t>(), std::vector<uint8_t>(), -1)
 		}, std::vector{
 			std::make_shared<TxOut>(5000000000, "1Piq91dFUqSb7tdddCWvuGX5UgdzXeoAwA")
-		}, -1)
+		}, 0)
 };
 const auto chain2_block3 = std::make_shared<Block>(
-	0, "0000005461abfb0ead6fa1127be16dec3731d79e0b8a933d8113c0e01f229e03",
-	"e8c33875847f0eb422e3de129e258a7f0c90b65fa28e5d0dbf6b13b41f4e5415",
-	1501826872, 24, 9223372036868370135, chain2_block3_txs);
+	0, "0000002def15eabb75ecde313f0f1e239592c758362b1f892f80e9c369a23bcc",
+	"8b0485e1a7823fc2ad3195837146e2b01e860a18f0cf81e524078b0116400430",
+	1501826872, 24, 13835058055284619847, chain2_block3_txs);
 const auto chain2_block4_txs = std::vector{
 	std::make_shared<Tx>(
 		std::vector{
-			std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{0x03}, std::vector<uint8_t>(), 0)
+			std::make_shared<TxIn>(nullptr, std::vector<uint8_t>(), std::vector<uint8_t>(), -1)
 		}, std::vector{
 			std::make_shared<TxOut>(5000000000, "1Piq91dFUqSb7tdddCWvuGX5UgdzXeoAwA")
-		}, -1)
+		}, 0)
 };
 const auto chain2_block4 = std::make_shared<Block>(
-	0, "000000bd8c9d36ce83159d54f5594e9a7c61ae9d08995748fc28aff38d1405b7",
-	"e4ddedd960dcd9611f312a9aad74c3364ed02f2244cfb2e90ffc1effab47fc0b",
-	1501826949, 24, 4611686018430345200, chain2_block4_txs);
+	0, "0000006249ba6098b7ea1c6b1ab931d36a306a8bda8f3e632b703d84dda8b4b6",
+	"8b0485e1a7823fc2ad3195837146e2b01e860a18f0cf81e524078b0116400430",
+	1501826949, 24, 4611686018428394083, chain2_block4_txs);
 const auto chain2_block5_txs = std::vector{
 	std::make_shared<Tx>(
 		std::vector{
-			std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{0x04}, std::vector<uint8_t>(), 0)
+			std::make_shared<TxIn>(nullptr, std::vector<uint8_t>(), std::vector<uint8_t>(), -1)
 		}, std::vector{
 			std::make_shared<TxOut>(5000000000, "1Piq91dFUqSb7tdddCWvuGX5UgdzXeoAwA")
-		}, -1)
+		}, 0)
 };
 const auto chain2_block5 = std::make_shared<Block>(
-	0, "0000006ac76f295e533bcee4aacb77d2da04998b7ff003d674c5ae79804e1f55",
-	"89e6f44107581323b918c25dc9917c1baf87e8a2de884d7de093b1b083514583",
-	1501827000, 24, 427958, chain2_block5_txs);
+	0, "0000002dca22d47151d6cb1a2e60c1af535174c0b2b0d4152c63b76d034edc6d",
+	"8b0485e1a7823fc2ad3195837146e2b01e860a18f0cf81e524078b0116400430",
+	1501827000, 24, 13835058055287732375, chain2_block5_txs);
 const auto chain2 = std::vector{
-	chain2_block1, chain2_block2, chain2_block3, chain2_block4, chain2_block5
+	chain1_block1, chain2_block2, chain2_block3, chain2_block4, chain2_block5
 };
 
 TEST(BlockChainTest, Reorg)
@@ -180,7 +169,7 @@ TEST(BlockChainTest, Reorg)
 		ASSERT_EQ(*Chain::ActiveChain[i], *chain1[i]);
 	}
 	ASSERT_TRUE(Mempool::Map.empty());
-	const std::array<std::string, 3> txIds{"434e8e", "7bbb46", "c3c8ab"};
+	const std::array<std::string, 3> txIds{"b6678c", "b90f9b", "b6678c"};
 	ASSERT_EQ(UTXO::Map.size(), txIds.size());
 	for (const auto& k : UTXO::Map | std::views::keys)
 	{
@@ -284,7 +273,7 @@ TEST(BlockChainTest, Reorg)
 		ASSERT_EQ(*Chain::SideBranches[0][i], *sideBranchTest2[i]);
 	}
 	ASSERT_TRUE(Mempool::Map.empty());
-	const std::array<std::string, 5> txIds2{"434e8e", "7bbb46", "c3c8ab", "f52068", "b3df02"};
+	const std::array<std::string, 5> txIds2{"b90f9b", "b6678c", "b6678c", "b6678c", "b6678c"};
 	ASSERT_EQ(UTXO::Map.size(), txIds2.size());
 	for (const auto& k : UTXO::Map | std::views::keys)
 	{
@@ -323,7 +312,7 @@ TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 	auto txOut1 = std::make_shared<TxOut>(901, utxo1->TxOut->ToAddress);
 	std::vector txOuts1{txOut1};
 	auto txIn1 = Wallet::BuildTxIn(priv_key, utxo1->TxOutPoint, txOuts1);
-	auto tx1 = std::make_shared<Tx>(std::vector{txIn1}, txOuts1, -1);
+	auto tx1 = std::make_shared<Tx>(std::vector{txIn1}, txOuts1, 0);
 
 	ASSERT_THROW(
 		{
@@ -348,7 +337,7 @@ TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 	std::vector txOuts2{txOut2};
 	auto txOutPoint2 = std::make_shared<TxOutPoint>(tx1->Id(), 0);
 	auto txIn2 = Wallet::BuildTxIn(priv_key, txOutPoint2, txOuts2);
-	auto tx2 = std::make_shared<Tx>(std::vector{txIn2}, txOuts2, -1);
+	auto tx2 = std::make_shared<Tx>(std::vector{txIn2}, txOuts2, 0);
 
 	Mempool::AddTxToMempool(tx2);
 	ASSERT_FALSE(Mempool::Map.contains(tx2->Id()));
@@ -361,7 +350,7 @@ TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 		}
 		catch (const TxValidationException& ex)
 		{
-		ASSERT_STREQ("Spend value more than available", ex.what());
+		ASSERT_STREQ("Spent value more than available", ex.what());
 		throw;
 		}
 		},

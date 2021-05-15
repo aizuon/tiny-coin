@@ -14,19 +14,7 @@ Block::Block(uint64_t version, const std::string& prevBlockHash, const std::stri
 {
 }
 
-std::string Block::Header(uint64_t nonce /*= 0*/) const
-{
-	uint64_t used_nonce = nonce == 0 ? Nonce : nonce;
-
-	return fmt::format("{}{}{}{}{}{}", Version, PrevBlockHash, MerkleHash, Timestamp, Bits, used_nonce);
-}
-
-std::string Block::Id() const
-{
-	return Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(Header())));
-}
-
-BinaryBuffer Block::Serialize() const
+BinaryBuffer Block::Header(uint64_t nonce /*= 0*/) const
 {
 	BinaryBuffer buffer;
 
@@ -39,7 +27,19 @@ BinaryBuffer Block::Serialize() const
 
 	buffer.Write(Bits);
 
-	buffer.Write(Nonce);
+	buffer.Write(nonce == 0 ? Nonce : nonce);
+
+	return buffer;
+}
+
+std::string Block::Id() const
+{
+	return Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Header().GetBuffer()));
+}
+
+BinaryBuffer Block::Serialize() const
+{
+	BinaryBuffer buffer = Header();
 
 	buffer.WriteSize(Txs.size());
 	for (const auto& tx : Txs)

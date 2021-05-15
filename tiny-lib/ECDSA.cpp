@@ -7,7 +7,7 @@
 
 std::pair<std::vector<uint8_t>, std::vector<uint8_t>> ECDSA::Generate()
 {
-	EC_KEY* ec_key = EC_KEY_new_by_curve_name(NID_secp256k1);
+	auto* ec_key = EC_KEY_new_by_curve_name(NID_secp256k1);
 	if (!EC_KEY_generate_key(ec_key))
 	{
 		EC_KEY_free(ec_key);
@@ -15,7 +15,7 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t>> ECDSA::Generate()
 		return {{}, {}};
 	}
 
-	const BIGNUM* priv_key = EC_KEY_get0_private_key(ec_key);
+	const auto* priv_key = EC_KEY_get0_private_key(ec_key);
 	std::vector<uint8_t> priv_key_buffer(BN_num_bytes(priv_key));
 	if (!BN_bn2bin(priv_key, priv_key_buffer.data()))
 	{
@@ -24,7 +24,7 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t>> ECDSA::Generate()
 		return {{}, {}};
 	}
 
-	const EC_GROUP* ec_group = EC_KEY_get0_group(ec_key);
+	const auto* ec_group = EC_KEY_get0_group(ec_key);
 	auto pub_key_buffer = GetPubKeyFromPrivKey(ec_key, ec_group);
 	if (pub_key_buffer.empty())
 	{
@@ -40,7 +40,7 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t>> ECDSA::Generate()
 
 std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(const std::vector<uint8_t>& privKey)
 {
-	EC_KEY* ec_key = EC_KEY_new_by_curve_name(NID_secp256k1);
+	auto* ec_key = EC_KEY_new_by_curve_name(NID_secp256k1);
 
 	if (!ImportPrivKey(ec_key, privKey))
 	{
@@ -49,7 +49,7 @@ std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(const std::vector<uint8_t>& pri
 		return {};
 	}
 
-	const EC_GROUP* ec_group = EC_KEY_get0_group(ec_key);
+	const auto* ec_group = EC_KEY_get0_group(ec_key);
 	auto pub_key_buffer = GetPubKeyFromPrivKey(ec_key, ec_group);
 	if (pub_key_buffer.empty())
 	{
@@ -65,7 +65,7 @@ std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(const std::vector<uint8_t>& pri
 
 std::vector<uint8_t> ECDSA::SignMsg(const std::vector<uint8_t>& msg, const std::vector<uint8_t>& privKey)
 {
-	EC_KEY* ec_key = EC_KEY_new_by_curve_name(NID_secp256k1);
+	auto* ec_key = EC_KEY_new_by_curve_name(NID_secp256k1);
 
 	if (!ImportPrivKey(ec_key, privKey))
 	{
@@ -92,7 +92,7 @@ std::vector<uint8_t> ECDSA::SignMsg(const std::vector<uint8_t>& msg, const std::
 bool ECDSA::VerifySig(const std::vector<uint8_t>& sig, const std::vector<uint8_t>& msg,
                       const std::vector<uint8_t>& pubKey)
 {
-	EC_KEY* ec_key = EC_KEY_new_by_curve_name(NID_secp256k1);
+	auto* ec_key = EC_KEY_new_by_curve_name(NID_secp256k1);
 
 	BIGNUM* pub_key_bn = BN_new();
 	if (BN_bin2bn(pubKey.data(), pubKey.size(), pub_key_bn) == nullptr)
@@ -104,9 +104,9 @@ bool ECDSA::VerifySig(const std::vector<uint8_t>& sig, const std::vector<uint8_t
 		return false;
 	}
 
-	const EC_GROUP* ec_group = EC_KEY_get0_group(ec_key);
-	EC_POINT* pub_key_point = EC_POINT_new(ec_group);
-	BN_CTX* bn_ctx = BN_CTX_new();
+	const auto* ec_group = EC_KEY_get0_group(ec_key);
+	auto* pub_key_point = EC_POINT_new(ec_group);
+	auto* bn_ctx = BN_CTX_new();
 	if (EC_POINT_bn2point(ec_group, pub_key_bn, pub_key_point, bn_ctx) == nullptr)
 	{
 		BN_CTX_free(bn_ctx);
@@ -149,7 +149,7 @@ bool ECDSA::VerifySig(const std::vector<uint8_t>& sig, const std::vector<uint8_t
 
 bool ECDSA::ImportPrivKey(EC_KEY* ec_key, const std::vector<uint8_t>& privKey)
 {
-	BIGNUM* priv_key_bn = BN_new();
+	auto* priv_key_bn = BN_new();
 	if (BN_bin2bn(privKey.data(), privKey.size(), priv_key_bn) == nullptr)
 	{
 		BN_free(priv_key_bn);
@@ -168,13 +168,13 @@ bool ECDSA::ImportPrivKey(EC_KEY* ec_key, const std::vector<uint8_t>& privKey)
 
 std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(EC_KEY* ec_key, const EC_GROUP* ec_group)
 {
-	BN_CTX* bn_ctx = BN_CTX_new();
+	auto* bn_ctx = BN_CTX_new();
 
-	const EC_POINT* pub_key = EC_KEY_get0_public_key(ec_key);
+	const auto* pub_key = EC_KEY_get0_public_key(ec_key);
 	if (pub_key == nullptr)
 	{
-		EC_POINT* pub_key2 = EC_POINT_new(ec_group);
-		const BIGNUM* priv_key = EC_KEY_get0_private_key(ec_key);
+		auto* pub_key2 = EC_POINT_new(ec_group);
+		const auto* priv_key = EC_KEY_get0_private_key(ec_key);
 		if (!EC_POINT_mul(ec_group, pub_key2, priv_key, nullptr, nullptr, bn_ctx))
 		{
 			BN_CTX_free(bn_ctx);
@@ -200,7 +200,7 @@ std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(EC_KEY* ec_key, const EC_GROUP*
 		pub_key = pub_key2;
 	}
 
-	BIGNUM* pub_key_bn = BN_new();
+	auto* pub_key_bn = BN_new();
 	if (EC_POINT_point2bn(ec_group, pub_key, POINT_CONVERSION_COMPRESSED, pub_key_bn, bn_ctx) == nullptr)
 	{
 		BN_free(pub_key_bn);

@@ -117,6 +117,7 @@
     <ClInclude Include="PeerHelloMsg.hpp">
       <Filter>P2P</Filter>
     </ClInclude>
+    <ClInclude Include="uint256_t.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />

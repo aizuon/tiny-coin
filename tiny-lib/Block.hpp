@@ -30,7 +30,7 @@ public:
 
 	std::vector<std::shared_ptr<Tx>> Txs;
 
-	std::string Header(uint64_t nonce = 0) const;
+	BinaryBuffer Header(uint64_t nonce = 0) const;
 
 	std::string Id() const;
 

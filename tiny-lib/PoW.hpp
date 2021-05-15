@@ -4,13 +4,10 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <openssl/bn.h>
 
 #include "Block.hpp"
 #include "Tx.hpp"
-
-#pragma comment(lib, "crypt32")
-#pragma comment(lib, "ws2_32.lib")
+#include "uint256_t.hpp"
 
 class PoW
 {
@@ -29,8 +26,8 @@ public:
 	static uint64_t CalculateFees(const std::shared_ptr<Tx>& tx);
 
 private:
-	static void MineChunk(const std::shared_ptr<Block>& block, BIGNUM* target_bn, uint64_t start, uint64_t chunk_size,
-	                      std::atomic_bool& found, std::atomic<uint64_t>& found_nonce,
+	static void MineChunk(const std::shared_ptr<Block>& block, const uint256_t& target_hash, uint64_t start,
+	                      uint64_t chunk_size, std::atomic_bool& found, std::atomic<uint64_t>& found_nonce,
 	                      std::atomic<uint64_t>& hash_count);
 
 	static uint64_t CalculateFees(const std::shared_ptr<Block>& block);

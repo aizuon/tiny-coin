@@ -22,7 +22,7 @@ public:
 	std::vector<std::shared_ptr<TxIn>> TxIns;
 	std::vector<std::shared_ptr<TxOut>> TxOuts;
 
-	int64_t LockTime = -1;
+	int64_t LockTime = 0;
 
 	bool IsCoinbase() const;
 

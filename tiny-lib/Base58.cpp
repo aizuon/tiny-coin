@@ -8,12 +8,12 @@
 
 std::string Base58::Encode(const std::vector<uint8_t>& buffer)
 {
-	BN_CTX* bnctx = BN_CTX_new();
-	BIGNUM* bn = BN_new();
-	BIGNUM* bn00 = BN_new();
-	BIGNUM* bn58 = BN_new();
-	BIGNUM* dv = BN_new();
-	BIGNUM* rem = BN_new();
+	auto* bnctx = BN_CTX_new();
+	auto* bn = BN_new();
+	auto* bn00 = BN_new();
+	auto* bn58 = BN_new();
+	auto* dv = BN_new();
+	auto* rem = BN_new();
 
 	const auto hexString = Utils::ByteArrayToHexString(buffer);
 
@@ -42,7 +42,7 @@ std::string Base58::Encode(const std::vector<uint8_t>& buffer)
 
 			return std::string();
 		}
-		const char base58char = Table[BN_get_word(rem)];
+		const auto base58char = Table[BN_get_word(rem)];
 		result += base58char;
 	}
 
