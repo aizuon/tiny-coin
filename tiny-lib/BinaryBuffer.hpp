@@ -64,7 +64,7 @@ public:
 	{
 		static_assert(std::is_arithmetic_v<T>);
 
-		std::lock_guard lock(Mutex);
+		std::scoped_lock lock(Mutex);
 
 		if (!Utils::IsLittleEndian)
 		{
@@ -80,7 +80,7 @@ public:
 	template <typename T>
 	void Write(const std::vector<T>& obj)
 	{
-		std::lock_guard lock(Mutex);
+		std::scoped_lock lock(Mutex);
 
 		const uint32_t size = obj.size();
 		WriteSize(size);
@@ -96,7 +96,7 @@ public:
 	template <typename T>
 	void WriteRaw(const std::vector<T>& obj)
 	{
-		std::lock_guard lock(Mutex);
+		std::scoped_lock lock(Mutex);
 
 		const uint32_t length = obj.size() * sizeof(T);
 		GrowIfNeeded(length);
@@ -117,7 +117,7 @@ public:
 	{
 		static_assert(std::is_arithmetic_v<T>);
 
-		std::lock_guard lock(Mutex);
+		std::scoped_lock lock(Mutex);
 
 		const uint32_t length = sizeof(T);
 
@@ -138,7 +138,7 @@ public:
 	template <typename T>
 	bool Read(std::vector<T>& obj)
 	{
-		std::lock_guard lock(Mutex);
+		std::scoped_lock lock(Mutex);
 
 		uint32_t size = 0;
 		if (!ReadSize(size))

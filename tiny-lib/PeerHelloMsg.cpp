@@ -11,7 +11,7 @@ void PeerHelloMsg::Handle(std::shared_ptr<Connection>& con)
 	con->NodeType = NodeType;
 	if (con->NodeType & NodeType::Miner)
 	{
-		std::lock_guard lock(NetClient::ConnectionsMutex);
+		std::scoped_lock lock(NetClient::ConnectionsMutex);
 
 		const auto vec_it = std::ranges::find_if(NetClient::MinerConnections,
 		                                         [&con](const std::shared_ptr<Connection>& o)

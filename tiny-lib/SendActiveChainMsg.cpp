@@ -14,7 +14,7 @@ BinaryBuffer SendActiveChainMsg::Serialize() const
 	BinaryBuffer buffer;
 
 	{
-		std::lock_guard lock(Chain::Mutex);
+		std::scoped_lock lock(Chain::Mutex);
 
 		buffer.WriteSize(Chain::ActiveChain.size());
 		for (const auto& block : Chain::ActiveChain)

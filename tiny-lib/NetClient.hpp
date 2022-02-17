@@ -50,7 +50,7 @@ private:
 	static void StartAccept();
 	static void HandleAccept(std::shared_ptr<Connection>& con, const boost::system::error_code& err);
 
-	static void DoAsyncRead(std::shared_ptr<Connection>& con);
+	static void DoAsyncRead(const std::shared_ptr<Connection>& con);
 	static void HandleRead(std::shared_ptr<Connection>& con, const boost::system::error_code& err,
 	                       size_t bytes_transferred);
 

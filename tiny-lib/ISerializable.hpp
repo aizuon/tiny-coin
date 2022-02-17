@@ -6,7 +6,5 @@ class ISerializable
 public:
 	virtual BinaryBuffer Serialize() const = 0;
 
-	virtual ~ISerializable()
-	{
-	}
+	virtual ~ISerializable() = default;
 };

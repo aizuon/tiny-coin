@@ -16,7 +16,7 @@ BinaryBuffer SendMempoolMsg::Serialize() const
 	BinaryBuffer buffer;
 
 	{
-		std::lock_guard lock(Mempool::Mutex);
+		std::scoped_lock lock(Mempool::Mutex);
 
 		buffer.WriteSize(Mempool::Map.size());
 		for (const auto& key : Mempool::Map | std::views::keys)

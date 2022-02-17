@@ -20,7 +20,7 @@ std::recursive_mutex Mempool::Mutex;
 
 std::shared_ptr<UTXO> Mempool::Find_UTXO_InMempool(const std::shared_ptr<TxOutPoint>& txOutPoint)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	if (!Map.contains(txOutPoint->TxId))
 		return nullptr;
@@ -40,7 +40,7 @@ std::shared_ptr<UTXO> Mempool::Find_UTXO_InMempool(const std::shared_ptr<TxOutPo
 
 std::shared_ptr<Block> Mempool::SelectFromMempool(const std::shared_ptr<Block>& block)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	auto newBlock = std::make_shared<Block>(*block);
 
@@ -63,7 +63,7 @@ std::shared_ptr<Block> Mempool::SelectFromMempool(const std::shared_ptr<Block>& 
 
 void Mempool::AddTxToMempool(const std::shared_ptr<Tx>& tx)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	const auto txId = tx->Id();
 	if (Map.contains(txId))
@@ -107,7 +107,7 @@ bool Mempool::CheckBlockSize(const std::shared_ptr<Block>& block)
 std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, const std::string& txId,
                                               std::set<std::string>& addedToBlock)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	if (addedToBlock.contains(txId))
 		return block;

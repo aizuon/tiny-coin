@@ -26,7 +26,7 @@ std::string Base58::Encode(const std::vector<uint8_t>& buffer)
 		BN_free(bn);
 		BN_CTX_free(bnctx);
 
-		return std::string();
+		return {};
 	}
 	std::string result;
 	while (BN_cmp(bn, bn00) > 0)
@@ -40,7 +40,7 @@ std::string Base58::Encode(const std::vector<uint8_t>& buffer)
 			BN_free(bn);
 			BN_CTX_free(bnctx);
 
-			return std::string();
+			return {};
 		}
 		const auto base58char = Table[BN_get_word(rem)];
 		result += base58char;

@@ -4,6 +4,8 @@
 class GetMempoolMsg : public IMsg
 {
 public:
+	~GetMempoolMsg() = default;
+
 	void Handle(std::shared_ptr<Connection>& con) override;
 	BinaryBuffer Serialize() const override;
 	bool Deserialize(BinaryBuffer& buffer) override;

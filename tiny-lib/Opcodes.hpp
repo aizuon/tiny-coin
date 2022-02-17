@@ -18,4 +18,4 @@ enum class Opcode : uint8_t
 	TxInfoMsg
 };
 
-using OpcodeType = std::underlying_type<Opcode>::type;
+using OpcodeType = std::underlying_type_t<Opcode>;

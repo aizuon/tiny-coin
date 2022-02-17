@@ -46,7 +46,7 @@ void BinaryBuffer::WriteSize(uint32_t obj)
 
 void BinaryBuffer::Write(const std::string& obj)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	const uint32_t size = obj.size();
 	WriteSize(size);
@@ -61,7 +61,7 @@ void BinaryBuffer::Write(const std::string& obj)
 
 void BinaryBuffer::WriteRaw(const std::string& obj)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	const uint32_t length = obj.size();
 	GrowIfNeeded(length);
@@ -78,7 +78,7 @@ bool BinaryBuffer::ReadSize(uint32_t& obj)
 
 bool BinaryBuffer::Read(std::string& obj)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	uint32_t size = 0;
 	if (!ReadSize(size))

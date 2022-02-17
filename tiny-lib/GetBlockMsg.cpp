@@ -26,7 +26,7 @@ void GetBlockMsg::Handle(std::shared_ptr<Connection>& con)
 	uint32_t max_height = height + ChunkSize;
 
 	{
-		std::lock_guard lock(Chain::Mutex);
+		std::scoped_lock lock(Chain::Mutex);
 
 		if (max_height > Chain::ActiveChain.size())
 			max_height = Chain::ActiveChain.size();

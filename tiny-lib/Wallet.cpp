@@ -66,7 +66,9 @@ std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::GetW
 	{
 		LOG_INFO("Generating new wallet {}", walletPath);
 
-		auto [privKey, pubKey] = ECDSA::Generate();
+		auto [privKey2, pubKey2] = ECDSA::Generate();
+		privKey = privKey2;
+		pubKey = pubKey2;
 		address = PubKeyToAddress(pubKey);
 
 		std::ofstream wallet_out(walletPath, std::ios::binary);
@@ -153,7 +155,7 @@ Wallet::TxStatusResponse Wallet::GetTxStatus_Miner(const std::string& txId)
 	TxStatusResponse ret;
 
 	{
-		std::lock_guard lock(Mempool::Mutex);
+		std::scoped_lock lock(Mempool::Mutex);
 
 		for (const auto& tx : Mempool::Map | std::views::keys)
 		{
@@ -167,7 +169,7 @@ Wallet::TxStatusResponse Wallet::GetTxStatus_Miner(const std::string& txId)
 	}
 
 	{
-		std::lock_guard lock(Chain::Mutex);
+		std::scoped_lock lock(Chain::Mutex);
 
 		for (uint32_t height = 0; height < Chain::ActiveChain.size(); height++)
 		{
@@ -298,7 +300,7 @@ void Wallet::PrintTxStatus(const std::string& txId)
 
 uint64_t Wallet::GetBalance_Miner(const std::string& address)
 {
-	auto utxos = FindUTXOsForAddress_Miner(address);
+	const auto utxos = FindUTXOsForAddress_Miner(address);
 	uint64_t value = 0;
 	for (const auto& utxo : utxos)
 		value += utxo->TxOut->Value;
@@ -308,7 +310,7 @@ uint64_t Wallet::GetBalance_Miner(const std::string& address)
 
 uint64_t Wallet::GetBalance(const std::string& address)
 {
-	auto utxos = FindUTXOsForAddress(address);
+	const auto utxos = FindUTXOsForAddress(address);
 	uint64_t value = 0;
 	for (const auto& utxo : utxos)
 		value += utxo->TxOut->Value;
@@ -414,7 +416,7 @@ std::vector<std::shared_ptr<UTXO>> Wallet::FindUTXOsForAddress_Miner(const std::
 {
 	std::vector<std::shared_ptr<UTXO>> utxos;
 	{
-		std::lock_guard lock(UTXO::Mutex);
+		std::scoped_lock lock(UTXO::Mutex);
 
 		for (const auto& v : UTXO::Map | std::views::values)
 		{

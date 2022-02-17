@@ -67,11 +67,11 @@ std::recursive_mutex UnspentTxOut::Mutex;
 void UnspentTxOut::AddToMap(std::shared_ptr<::TxOut>& txOut, const std::string& txId, int64_t idx, bool isCoinbase,
                             int64_t height)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	auto txOutPoint = std::make_shared<::TxOutPoint>(txId, idx);
 
-	auto utxo = std::make_shared<UnspentTxOut>(txOut, txOutPoint, isCoinbase, height);
+	const auto utxo = std::make_shared<UnspentTxOut>(txOut, txOutPoint, isCoinbase, height);
 
 	LOG_TRACE("Adding TxOutPoint {} to UTXO map", utxo->TxOutPoint->TxId);
 
@@ -80,7 +80,7 @@ void UnspentTxOut::AddToMap(std::shared_ptr<::TxOut>& txOut, const std::string& 
 
 void UnspentTxOut::RemoveFromMap(const std::string& txId, int64_t idx)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	const auto map_it = std::ranges::find_if(Map,
 	                                         [&txId, idx](
@@ -117,7 +117,7 @@ std::shared_ptr<UnspentTxOut> UnspentTxOut::FindInList(const std::shared_ptr<TxI
 
 std::shared_ptr<UnspentTxOut> UnspentTxOut::FindInMap(const std::shared_ptr<::TxOutPoint>& toSpend)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	const auto map_it = std::ranges::find_if(Map,
 	                                         [&toSpend](
@@ -152,7 +152,7 @@ std::shared_ptr<TxOut> UnspentTxOut::FindTxOutInBlock(const std::shared_ptr<Bloc
 
 std::shared_ptr<TxOut> UnspentTxOut::FindTxOutInMap(const std::shared_ptr<TxIn>& txIn)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	for (const auto& utxo : Map | std::ranges::views::values)
 	{

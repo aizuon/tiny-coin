@@ -33,7 +33,7 @@ uint8_t PoW::GetNextWorkRequired(const std::string& prevBlockHash)
 		return prev_block->Bits;
 
 	Chain::Mutex.lock();
-	auto& period_start_block = Chain::ActiveChain[std::max(
+	const auto& period_start_block = Chain::ActiveChain[std::max(
 		prev_block_height - (NetParams::DIFFICULTY_PERIOD_IN_BLOCKS - 1), 0LL)];
 	Chain::Mutex.unlock();
 	const int64_t actual_time_taken = prev_block->Timestamp - period_start_block->Timestamp;

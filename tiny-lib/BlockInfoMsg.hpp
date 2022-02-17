@@ -11,6 +11,8 @@ public:
 	BlockInfoMsg() = default;
 	BlockInfoMsg(const std::shared_ptr<Block>& block);
 
+	~BlockInfoMsg() = default;
+
 	std::shared_ptr<Block> Block;
 
 	void Handle(std::shared_ptr<Connection>& con) override;

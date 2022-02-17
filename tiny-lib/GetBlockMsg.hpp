@@ -10,6 +10,8 @@ public:
 	GetBlockMsg() = default;
 	GetBlockMsg(const std::string& fromBlockId);
 
+	~GetBlockMsg() = default;
+
 	std::string FromBlockId;
 
 	void Handle(std::shared_ptr<Connection>& con) override;

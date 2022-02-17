@@ -17,7 +17,7 @@ enum class NodeType : uint8_t
 	Full = Miner | Wallet
 };
 
-using NodeTypeType = std::underlying_type<NodeType>::type;
+using NodeTypeType = std::underlying_type_t<NodeType>;
 
 inline NodeType operator|(NodeType a, NodeType b)
 {

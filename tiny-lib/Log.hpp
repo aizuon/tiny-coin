@@ -1,5 +1,8 @@
 #pragma once
 #include <memory>
+#ifndef SPDLOG_FMT_EXTERNAL
+#define SPDLOG_FMT_EXTERNAL
+#endif
 #ifndef SPDLOG_WCHAR_TO_UTF8_SUPPORT
 #define SPDLOG_WCHAR_TO_UTF8_SUPPORT
 #endif

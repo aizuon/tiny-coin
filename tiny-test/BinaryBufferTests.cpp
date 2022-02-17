@@ -70,7 +70,7 @@ TEST(BinaryBufferTest, StringReadWrite)
 {
 	BinaryBuffer buffer;
 
-	std::string str = "foo";
+	const std::string str = "foo";
 	buffer.Write(str);
 	std::string str_read;
 	ASSERT_TRUE(buffer.Read(str_read));

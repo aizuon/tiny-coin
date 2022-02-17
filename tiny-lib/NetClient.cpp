@@ -47,7 +47,7 @@ void NetClient::RunAsync()
 void NetClient::Stop()
 {
 	{
-		std::lock_guard lock(ConnectionsMutex);
+		std::scoped_lock lock(ConnectionsMutex);
 
 		for (const auto& con : Connections)
 		{
@@ -66,7 +66,7 @@ void NetClient::Stop()
 		IO_Thread.join();
 
 	{
-		std::lock_guard lock(ConnectionsMutex);
+		std::scoped_lock lock(ConnectionsMutex);
 
 		MinerConnections.clear();
 		Connections.clear();
@@ -87,7 +87,7 @@ void NetClient::Connect(const std::string& address, uint16_t port)
 	}
 	con->Socket.set_option(boost::asio::ip::tcp::no_delay(true));
 	{
-		std::lock_guard lock(ConnectionsMutex);
+		std::scoped_lock lock(ConnectionsMutex);
 
 		Connections.push_back(con);
 	}
@@ -126,7 +126,7 @@ bool NetClient::SendMsgRandom(const IMsg& msg)
 void NetClient::BroadcastMsg(const IMsg& msg)
 {
 	{
-		std::lock_guard lock(ConnectionsMutex);
+		std::scoped_lock lock(ConnectionsMutex);
 
 		if (MinerConnections.empty())
 			return;
@@ -135,7 +135,7 @@ void NetClient::BroadcastMsg(const IMsg& msg)
 	const auto msgBuffer = PrepareSendBuffer(msg);
 
 	{
-		std::lock_guard lock(ConnectionsMutex);
+		std::scoped_lock lock(ConnectionsMutex);
 
 		for (auto& con : MinerConnections)
 		{
@@ -146,7 +146,7 @@ void NetClient::BroadcastMsg(const IMsg& msg)
 
 std::shared_ptr<Connection> NetClient::GetRandomConnection()
 {
-	std::lock_guard lock(ConnectionsMutex);
+	std::scoped_lock lock(ConnectionsMutex);
 
 	if (MinerConnections.empty())
 		return nullptr;
@@ -157,7 +157,7 @@ std::shared_ptr<Connection> NetClient::GetRandomConnection()
 
 void NetClient::StartAccept()
 {
-	auto con = std::make_shared<Connection>(IO_Service);
+	const auto con = std::make_shared<Connection>(IO_Service);
 	auto handler = boost::bind(&NetClient::HandleAccept, con, boost::asio::placeholders::error);
 	Acceptor.async_accept(con->Socket, handler);
 }
@@ -173,7 +173,7 @@ void NetClient::HandleAccept(std::shared_ptr<Connection>& con, const boost::syst
 
 		soc.set_option(boost::asio::ip::tcp::no_delay(true));
 		{
-			std::lock_guard lock(ConnectionsMutex);
+			std::scoped_lock lock(ConnectionsMutex);
 
 			Connections.push_back(con);
 		}
@@ -187,7 +187,7 @@ void NetClient::HandleAccept(std::shared_ptr<Connection>& con, const boost::syst
 	StartAccept();
 }
 
-void NetClient::DoAsyncRead(std::shared_ptr<Connection>& con)
+void NetClient::DoAsyncRead(const std::shared_ptr<Connection>& con)
 {
 	auto handler = boost::bind(&NetClient::HandleRead, con, boost::asio::placeholders::error,
 	                           boost::asio::placeholders::bytes_transferred);
@@ -311,7 +311,7 @@ void NetClient::HandleMsg(std::shared_ptr<Connection>& con, BinaryBuffer& msg_bu
 		}
 	default:
 		{
-			LOG_ERROR("Unknown opcode {}", opcode2);
+			LOG_ERROR("Unknown opcode {}", static_cast<OpcodeType>(opcode2));
 
 			return;
 		}
@@ -319,7 +319,7 @@ void NetClient::HandleMsg(std::shared_ptr<Connection>& con, BinaryBuffer& msg_bu
 
 	if (!msg->Deserialize(msg_buffer))
 	{
-		LOG_ERROR("Unable to deserialize opcode {}", opcode2);
+		LOG_ERROR("Unable to deserialize opcode {}", static_cast<OpcodeType>(opcode2));
 
 		return;
 	}
@@ -329,7 +329,7 @@ void NetClient::HandleMsg(std::shared_ptr<Connection>& con, BinaryBuffer& msg_bu
 BinaryBuffer NetClient::PrepareSendBuffer(const IMsg& msg)
 {
 	const auto serializedMsg = msg.Serialize().GetBuffer();
-	auto opcode = static_cast<OpcodeType>(msg.GetOpcode());
+	const auto opcode = static_cast<OpcodeType>(msg.GetOpcode());
 
 	BinaryBuffer msgBuffer;
 	msgBuffer.Reserve(sizeof(opcode) + serializedMsg.size() + Magic.size());
@@ -342,7 +342,7 @@ BinaryBuffer NetClient::PrepareSendBuffer(const IMsg& msg)
 
 void NetClient::Write(std::shared_ptr<Connection>& con, const BinaryBuffer& msg_buffer)
 {
-	std::lock_guard lock(con->WriteMutex);
+	std::scoped_lock lock(con->WriteMutex);
 
 	boost::system::error_code err;
 	boost::asio::write(con->Socket, boost::asio::buffer(msg_buffer.GetBuffer()), err);
@@ -358,7 +358,7 @@ void NetClient::Write(std::shared_ptr<Connection>& con, const BinaryBuffer& msg_
 
 void NetClient::RemoveConnection(std::shared_ptr<Connection>& con)
 {
-	std::lock_guard lock(ConnectionsMutex);
+	std::scoped_lock lock(ConnectionsMutex);
 
 	const auto vec_it = std::ranges::find_if(Connections,
 	                                         [&con](const std::shared_ptr<Connection>& o)

@@ -26,7 +26,7 @@ TEST(BlockChainTest, MedianTimePast)
 
 	EXPECT_TRUE(Chain::GetMedianTimePast(10) == 0);
 
-	std::array<int64_t, 5> timestamps{1, 30, 60, 90, 400};
+	const std::array<int64_t, 5> timestamps{1, 30, 60, 90, 400};
 
 	for (auto timestamp : timestamps)
 	{

@@ -11,6 +11,8 @@ public:
 	TxInfoMsg() = default;
 	TxInfoMsg(const std::shared_ptr<Tx>& tx);
 
+	~TxInfoMsg() = default;
+
 	std::shared_ptr<Tx> Tx;
 
 	void Handle(std::shared_ptr<Connection>& con) override;

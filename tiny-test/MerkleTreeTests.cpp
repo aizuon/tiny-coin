@@ -14,7 +14,7 @@ TEST(MerkleTreeTest, OneChain)
 	const std::string bar = "bar";
 	const std::vector tree{foo, bar};
 
-	auto root = MerkleTree::GetRoot(tree);
+	const auto root = MerkleTree::GetRoot(tree);
 	const auto fooh = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(foo)));
 	const auto barh = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(bar)));
 

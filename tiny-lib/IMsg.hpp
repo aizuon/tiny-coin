@@ -3,10 +3,8 @@
 #include "IHandleable.hpp"
 #include "ISerializable.hpp"
 
-class IMsg : public virtual IHandleable, public virtual ISerializable, public virtual IDeserializable
+class IMsg : public IHandleable, public ISerializable, public IDeserializable
 {
 public:
-	virtual ~IMsg()
-	{
-	}
+	virtual ~IMsg() = default;
 };

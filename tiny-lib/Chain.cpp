@@ -42,14 +42,14 @@ std::atomic_bool Chain::InitialBlockDownloadComplete = false;
 
 uint32_t Chain::GetCurrentHeight()
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	return ActiveChain.size();
 }
 
 int64_t Chain::GetMedianTimePast(uint32_t numLastBlocks)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	if (numLastBlocks > ActiveChain.size())
 		return 0;
@@ -64,7 +64,7 @@ int64_t Chain::GetMedianTimePast(uint32_t numLastBlocks)
 
 uint32_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	const auto& txs = block->Txs;
 
@@ -129,7 +129,7 @@ uint32_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 	if (PoW::GetNextWorkRequired(block->PrevBlockHash) != block->Bits)
 		throw BlockValidationException("Bits incorrect");
 
-	std::vector nonCoinbaseTxs(block->Txs.begin() + 1, block->Txs.end());
+	const std::vector nonCoinbaseTxs(block->Txs.begin() + 1, block->Txs.end());
 	Tx::ValidateRequest req;
 	req.SiblingsInBlock = nonCoinbaseTxs;
 	req.Allow_UTXO_FromMempool = false;
@@ -154,7 +154,7 @@ uint32_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 
 int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg /*= false*/)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	const auto blockId = block->Id();
 
@@ -213,7 +213,7 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 			const auto txId = tx->Id();
 
 			{
-				std::lock_guard lock_mempool(Mempool::Mutex);
+				std::scoped_lock lock_mempool(Mempool::Mutex);
 
 				if (Mempool::Map.contains(txId))
 					Mempool::Map.erase(txId);
@@ -247,7 +247,7 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg
 
 std::shared_ptr<Block> Chain::DisconnectBlock(const std::shared_ptr<Block>& block)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	const auto blockId = block->Id();
 
@@ -260,7 +260,7 @@ std::shared_ptr<Block> Chain::DisconnectBlock(const std::shared_ptr<Block>& bloc
 		const auto txId = tx->Id();
 
 		{
-			std::lock_guard lock_mempool(Mempool::Mutex);
+			std::scoped_lock lock_mempool(Mempool::Mutex);
 
 			Mempool::Map[txId] = tx;
 		}
@@ -289,7 +289,7 @@ std::shared_ptr<Block> Chain::DisconnectBlock(const std::shared_ptr<Block>& bloc
 
 std::vector<std::shared_ptr<Block>> Chain::DisconnectToFork(const std::shared_ptr<Block>& forkBlock)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	std::vector<std::shared_ptr<Block>> disconnected_chain;
 
@@ -306,11 +306,11 @@ std::vector<std::shared_ptr<Block>> Chain::DisconnectToFork(const std::shared_pt
 
 bool Chain::ReorgIfNecessary()
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	bool reorged = false;
 
-	auto frozenSideBranches = SideBranches;
+	const auto frozenSideBranches = SideBranches;
 	uint32_t branch_idx = 1;
 	for (const auto& chain : frozenSideBranches)
 	{
@@ -332,7 +332,7 @@ bool Chain::ReorgIfNecessary()
 
 bool Chain::TryReorg(const std::vector<std::shared_ptr<Block>>& branch, uint32_t branchIdx, uint32_t forkIdx)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	const auto fork_block = ActiveChain[forkIdx];
 
@@ -361,7 +361,7 @@ bool Chain::TryReorg(const std::vector<std::shared_ptr<Block>>& branch, uint32_t
 void Chain::RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveChain,
                           const std::shared_ptr<Block>& forkBlock, uint32_t branchIdx)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	LOG_ERROR("Reorg of idx {} to active chain failed", branchIdx);
 
@@ -378,7 +378,7 @@ void Chain::RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveCh
 std::pair<std::shared_ptr<Block>, int64_t> Chain::LocateBlockInChain(const std::string& blockHash,
                                                                      const std::vector<std::shared_ptr<Block>>& chain)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	uint32_t height = 0;
 	for (const auto& block : chain)
@@ -401,7 +401,7 @@ std::tuple<std::shared_ptr<Block>, int64_t> Chain::LocateBlockInActiveChain(cons
 
 std::tuple<std::shared_ptr<Block>, int64_t, int64_t> Chain::LocateBlockInAllChains(const std::string& blockHash)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	uint32_t chain_idx = 0;
 	auto [located_block, located_block_height] = LocateBlockInActiveChain(blockHash);
@@ -423,7 +423,7 @@ std::tuple<std::shared_ptr<Block>, int64_t, int64_t> Chain::LocateBlockInAllChai
 std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> Chain::FindTxOutForTxIn(
 	const std::shared_ptr<TxIn>& txIn, const std::vector<std::shared_ptr<Block>>& chain)
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	for (uint32_t height = 0; height < chain.size(); height++)
 	{
@@ -450,7 +450,7 @@ std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> 
 
 void Chain::SaveToDisk()
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	LOG_INFO("Saving chain with {} blocks", ActiveChain.size());
 
@@ -470,7 +470,7 @@ void Chain::SaveToDisk()
 
 bool Chain::LoadFromDisk()
 {
-	std::lock_guard lock(Mutex);
+	std::scoped_lock lock(Mutex);
 
 	std::ifstream chain_in(ChainPath, std::ios::binary);
 	if (chain_in.good())

@@ -15,7 +15,7 @@ BinaryBuffer SendUTXOsMsg::Serialize() const
 	BinaryBuffer buffer;
 
 	{
-		std::lock_guard lock(UTXO::Mutex);
+		std::scoped_lock lock(UTXO::Mutex);
 
 		buffer.WriteSize(UTXO::Map.size());
 		for (const auto& [key, value] : UTXO::Map)
@@ -51,7 +51,7 @@ bool SendUTXOsMsg::Deserialize(BinaryBuffer& buffer)
 
 			return false;
 		}
-		auto utxo = std::make_shared<UTXO>();
+		const auto utxo = std::make_shared<UTXO>();
 		if (!utxo->Deserialize(buffer))
 		{
 			*this = std::move(copy);

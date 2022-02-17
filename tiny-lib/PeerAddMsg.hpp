@@ -10,6 +10,8 @@ public:
 	PeerAddMsg() = default;
 	PeerAddMsg(const std::string& hostname, uint16_t port);
 
+	~PeerAddMsg() = default;
+
 	std::string Hostname;
 	uint16_t Port = 0;
 

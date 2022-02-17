@@ -55,12 +55,12 @@ TEST(SerializationTest, TxInSerialization)
 
 	auto serializedBuffer = txIn->Serialize();
 
-	auto txIn2 = std::make_shared<TxIn>();
+	const auto txIn2 = std::make_shared<TxIn>();
 	ASSERT_TRUE(txIn2->Deserialize(serializedBuffer));
 
 	EXPECT_EQ(txIn2->Sequence, txIn->Sequence);
 
-	auto& toSpend2 = txIn2->ToSpend;
+	const auto& toSpend2 = txIn2->ToSpend;
 	EXPECT_EQ(toSpend2->TxId, toSpend->TxId);
 	EXPECT_EQ(toSpend2->TxOutIdx, toSpend->TxOutIdx);
 
@@ -74,7 +74,7 @@ TEST(SerializationTest, TxOutSerialization)
 
 	auto serializedBuffer = txOut->Serialize();
 
-	auto txOut2 = std::make_shared<TxOut>();
+	const auto txOut2 = std::make_shared<TxOut>();
 	ASSERT_TRUE(txOut2->Deserialize(serializedBuffer));
 
 	EXPECT_EQ(txOut2->ToAddress, txOut->ToAddress);
@@ -87,7 +87,7 @@ TEST(SerializationTest, TxOutPointSerialization)
 
 	auto serializedBuffer = txOutPoint->Serialize();
 
-	auto txOutPoint2 = std::make_shared<TxOutPoint>();
+	const auto txOutPoint2 = std::make_shared<TxOutPoint>();
 	ASSERT_TRUE(txOutPoint2->Deserialize(serializedBuffer));
 
 	EXPECT_EQ(txOutPoint2->TxId, txOutPoint->TxId);
@@ -100,18 +100,18 @@ TEST(SerializationTest, UnspentTxOutSerialization)
 
 	auto txOutPoint = std::make_shared<TxOutPoint>("foo", 0);
 
-	auto utxo = std::make_shared<UTXO>(txOut, txOutPoint, false, 0);
+	const auto utxo = std::make_shared<UTXO>(txOut, txOutPoint, false, 0);
 
 	auto serializedBuffer = utxo->Serialize();
 
-	auto utxo2 = std::make_shared<UTXO>();
+	const auto utxo2 = std::make_shared<UTXO>();
 	ASSERT_TRUE(utxo2->Deserialize(serializedBuffer));
 
-	auto& txOut2 = utxo->TxOut;
+	const auto& txOut2 = utxo->TxOut;
 	EXPECT_EQ(txOut2->ToAddress, txOut->ToAddress);
 	EXPECT_EQ(txOut2->Value, txOut->Value);
 
-	auto& txOutPoint2 = utxo->TxOutPoint;
+	const auto& txOutPoint2 = utxo->TxOutPoint;
 	EXPECT_EQ(txOutPoint2->TxId, txOutPoint->TxId);
 	EXPECT_EQ(txOutPoint2->TxOutIdx, txOutPoint->TxOutIdx);
 

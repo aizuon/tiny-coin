@@ -10,6 +10,8 @@ public:
 	InvMsg() = default;
 	InvMsg(const std::vector<std::shared_ptr<Block>>& blocks);
 
+	~InvMsg() = default;
+
 	std::vector<std::shared_ptr<Block>> Blocks;
 
 	void Handle(std::shared_ptr<Connection>& con) override;

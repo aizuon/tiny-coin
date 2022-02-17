@@ -24,10 +24,10 @@ TEST(MsgTest, SpendMsg)
 	const auto txOut = std::make_shared<TxOut>(0, "foo");
 	txOuts.push_back(txOut);
 
-	auto tx = std::make_shared<Tx>(txIns, txOuts, 0);
+	const auto tx = std::make_shared<Tx>(txIns, txOuts, 0);
 
 	const auto spendMsg = MsgSerializer::BuildSpendMsg(txIn->ToSpend, txIn->UnlockPubKey, txIn->Sequence, tx->TxOuts);
-	auto spendMsg_str = Utils::ByteArrayToHexString(spendMsg);
+	const auto spendMsg_str = Utils::ByteArrayToHexString(spendMsg);
 
 	EXPECT_EQ(spendMsg_str, "d2cde10c62cdc1707ad78d7356e01a73d1376a7a1f775ca6d207d8a511fdff19");
 

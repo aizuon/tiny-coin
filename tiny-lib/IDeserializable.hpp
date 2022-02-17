@@ -6,7 +6,5 @@ class IDeserializable
 public:
 	virtual bool Deserialize(BinaryBuffer& buffer) = 0;
 
-	virtual ~IDeserializable()
-	{
-	}
+	virtual ~IDeserializable() = default;
 };
