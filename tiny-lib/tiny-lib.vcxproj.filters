@@ -118,6 +118,9 @@
       <Filter>P2P</Filter>
     </ClInclude>
     <ClInclude Include="uint256_t.hpp" />
+    <ClInclude Include="Crypto.hpp">
+      <Filter>Crypto</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -222,6 +225,9 @@
     <ClCompile Include="NodeConfig.cpp" />
     <ClCompile Include="PeerHelloMsg.cpp">
       <Filter>P2P</Filter>
+    </ClCompile>
+    <ClCompile Include="Crypto.cpp">
+      <Filter>Crypto</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

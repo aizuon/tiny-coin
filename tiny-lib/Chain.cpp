@@ -26,13 +26,13 @@ const std::shared_ptr<TxIn> Chain::GenesisTxIn = std::make_shared<TxIn>(nullptr,
                                                                         std::vector<uint8_t>(), -1);
 const std::shared_ptr<TxOut> Chain::GenesisTxOut = std::make_shared<TxOut>(
 	5000000000, "143UVyz7ooiAv1pMqbwPPpnH4BV9ifJGFF");
-const std::shared_ptr<Tx> Chain::GenesisTx = std::make_shared<Tx>(std::vector{GenesisTxIn},
-                                                                  std::vector{GenesisTxOut}, 0);
+const std::shared_ptr<Tx> Chain::GenesisTx = std::make_shared<Tx>(std::vector{ GenesisTxIn },
+                                                                  std::vector{ GenesisTxOut }, 0);
 const std::shared_ptr<Block> Chain::GenesisBlock = std::make_shared<Block>(
 	0, "", "75b7747cdbad68d5e40269399d9d8d6c048cc80a9e1b355379a5ed831ffbc1a8",
-	1501821412, 24, 13835058055287124368, std::vector{GenesisTx});
+	1501821412, 24, 13835058055287124368, std::vector{ GenesisTx });
 
-std::vector<std::shared_ptr<Block>> Chain::ActiveChain{GenesisBlock};
+std::vector<std::shared_ptr<Block>> Chain::ActiveChain{ GenesisBlock };
 std::vector<std::vector<std::shared_ptr<Block>>> Chain::SideBranches{};
 std::vector<std::shared_ptr<Block>> Chain::OrphanBlocks{};
 
@@ -385,13 +385,13 @@ std::pair<std::shared_ptr<Block>, int64_t> Chain::LocateBlockInChain(const std::
 	{
 		if (block->Id() == blockHash)
 		{
-			return {block, height};
+			return { block, height };
 		}
 
 		height++;
 	}
 
-	return {nullptr, -1};
+	return { nullptr, -1 };
 }
 
 std::tuple<std::shared_ptr<Block>, int64_t> Chain::LocateBlockInActiveChain(const std::string& blockHash)
@@ -406,18 +406,18 @@ std::tuple<std::shared_ptr<Block>, int64_t, int64_t> Chain::LocateBlockInAllChai
 	uint32_t chain_idx = 0;
 	auto [located_block, located_block_height] = LocateBlockInActiveChain(blockHash);
 	if (located_block != nullptr)
-		return {located_block, located_block_height, chain_idx};
+		return { located_block, located_block_height, chain_idx };
 	chain_idx++;
 
 	for (const auto& side_chain : SideBranches)
 	{
 		auto [located_block, located_block_height] = LocateBlockInChain(blockHash, side_chain);
 		if (located_block != nullptr)
-			return {located_block, located_block_height, chain_idx};
+			return { located_block, located_block_height, chain_idx };
 		chain_idx++;
 	}
 
-	return {nullptr, -1, -1};
+	return { nullptr, -1, -1 };
 }
 
 std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> Chain::FindTxOutForTxIn(
@@ -434,12 +434,12 @@ std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> 
 			{
 				const auto& txOut = tx->TxOuts[toSpend->TxOutIdx];
 
-				return {txOut, tx, toSpend->TxOutIdx, tx->IsCoinbase(), height};
+				return { txOut, tx, toSpend->TxOutIdx, tx->IsCoinbase(), height };
 			}
 		}
 	}
 
-	return {nullptr, nullptr, -1, false, -1};
+	return { nullptr, nullptr, -1, false, -1 };
 }
 
 std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> Chain::FindTxOutForTxInInActiveChain(

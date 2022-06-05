@@ -10,7 +10,7 @@ public:
 	InvMsg() = default;
 	InvMsg(const std::vector<std::shared_ptr<Block>>& blocks);
 
-	~InvMsg() = default;
+	~InvMsg() override = default;
 
 	std::vector<std::shared_ptr<Block>> Blocks;
 

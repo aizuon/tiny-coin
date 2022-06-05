@@ -7,7 +7,7 @@ class PeerHelloMsg : public IMsg
 public:
 	NodeType NodeType;
 
-	~PeerHelloMsg() = default;
+	~PeerHelloMsg() override = default;
 
 	void Handle(std::shared_ptr<Connection>& con) override;
 	BinaryBuffer Serialize() const override;

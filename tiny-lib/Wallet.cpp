@@ -77,7 +77,7 @@ std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::GetW
 		wallet_out.close();
 	}
 
-	return {privKey, pubKey, address};
+	return { privKey, pubKey, address };
 }
 
 void Wallet::PrintWalletAddress(const std::string& walletPath)
@@ -101,7 +101,7 @@ std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::Init
 		LOG_INFO("Your address is {}", address);
 	}
 
-	return {privKey, pubKey, address};
+	return { privKey, pubKey, address };
 }
 
 std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::InitWallet()
@@ -367,7 +367,7 @@ std::shared_ptr<Tx> Wallet::BuildTxFromUTXOs(std::vector<std::shared_ptr<UTXO>>&
 	const auto txOut = std::make_shared<TxOut>(value, address);
 	uint64_t change = in_sum - value - total_fee_est;
 	const auto txOut_change = std::make_shared<TxOut>(change, changeAddress);
-	std::vector txOuts{txOut, txOut_change};
+	std::vector txOuts{ txOut, txOut_change };
 	std::vector<std::shared_ptr<TxIn>> txIns;
 	txIns.reserve(selected_utxos.size());
 	for (const auto& selected_coin : selected_utxos)

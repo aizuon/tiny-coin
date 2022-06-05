@@ -2,8 +2,10 @@
 #include <cstdint>
 #include <utility>
 #include <vector>
+#include <utility>
 
-#include <openssl/ec.h>
+#include <openssl/evp.h>
+#include <openssl/param_build.h>
 
 #pragma comment(lib, "crypt32")
 #pragma comment(lib, "ws2_32.lib")
@@ -19,6 +21,9 @@ public:
 	                      const std::vector<uint8_t>& pubKey);
 
 private:
-	static bool ImportPrivKey(EC_KEY* ec_key, const std::vector<uint8_t>& privKey);
-	static std::vector<uint8_t> GetPubKeyFromPrivKey(EC_KEY* ec_key, const EC_GROUP* ec_group);
+	static OSSL_PARAM_BLD* CreateParamBuild();
+	static bool AddPrivKeyParam(OSSL_PARAM_BLD* param_bld, const std::vector<uint8_t>& privKey);
+	static bool AddPubKeyParam(OSSL_PARAM_BLD* param_bld, const std::vector<uint8_t>& pubKey);
+	static EVP_PKEY* CreateKey(const std::vector<uint8_t>& key, bool priv = false);
+	static std::vector<uint8_t> GetPubKey(EVP_PKEY* ec_key);
 };

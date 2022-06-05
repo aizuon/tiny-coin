@@ -41,8 +41,8 @@ TEST(CryptoTest, ECDSA_KeyPairGeneration)
 {
 	auto [priv_key, pub_key] = ECDSA::Generate();
 
-	const std::string priv_key_string = Utils::ByteArrayToHexString(priv_key);
-	const std::string pub_key_string = Utils::ByteArrayToHexString(pub_key);
+	const auto priv_key_string = Utils::ByteArrayToHexString(priv_key);
+	const auto pub_key_string = Utils::ByteArrayToHexString(pub_key);
 
 	EXPECT_FALSE(priv_key_string.empty());
 	EXPECT_FALSE(pub_key_string.empty());
@@ -61,10 +61,12 @@ TEST(CryptoTest, ECDSA_GenerateKeyPairAndGetPubKeyFromPrivKey)
 {
 	auto [priv_key, pub_key] = ECDSA::Generate();
 
-	const std::string pub_key_string = Utils::ByteArrayToHexString(pub_key);
+	const auto pub_key_string = Utils::ByteArrayToHexString(pub_key);
 
 	const auto pub_key_string_from_priv_key = Utils::ByteArrayToHexString(ECDSA::GetPubKeyFromPrivKey(priv_key));
 
+	EXPECT_FALSE(pub_key_string.empty());
+	EXPECT_FALSE(pub_key_string_from_priv_key.empty());
 	EXPECT_EQ(pub_key_string_from_priv_key, pub_key_string);
 }
 
@@ -78,6 +80,5 @@ TEST(CryptoTest, ECDSA_SigningAndVerification)
 	const auto sig = ECDSA::SignMsg(msg_arr, priv_key);
 
 	EXPECT_FALSE(sig.empty());
-
 	EXPECT_TRUE(ECDSA::VerifySig(sig, msg_arr, pub_key));
 }

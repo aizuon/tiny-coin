@@ -11,7 +11,7 @@ public:
 	BlockInfoMsg() = default;
 	BlockInfoMsg(const std::shared_ptr<Block>& block);
 
-	~BlockInfoMsg() = default;
+	~BlockInfoMsg() override = default;
 
 	std::shared_ptr<Block> Block;
 

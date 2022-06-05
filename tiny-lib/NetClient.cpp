@@ -25,7 +25,7 @@ using namespace boost::placeholders;
 
 const std::vector<std::pair<std::string, uint16_t>> NetClient::InitialPeers = std::vector<std::pair<
 	std::string, uint16_t>>{
-	{"127.0.0.1", 9900}, {"127.0.0.1", 9901}, {"127.0.0.1", 9902}, {"127.0.0.1", 9903}, {"127.0.0.1", 9904}
+	{ "127.0.0.1", 9900 }, { "127.0.0.1", 9901 }, { "127.0.0.1", 9902 }, { "127.0.0.1", 9903 }, { "127.0.0.1", 9904 }
 };
 
 std::string NetClient::Magic = "\xf9\xbe\xb4\xd9";
@@ -169,7 +169,7 @@ void NetClient::HandleAccept(std::shared_ptr<Connection>& con, const boost::syst
 		auto& soc = con->Socket;
 
 		LOG_TRACE("Incoming connection from {}:{}", soc.remote_endpoint().address().to_string(),
-		         soc.remote_endpoint().port());
+		          soc.remote_endpoint().port());
 
 		soc.set_option(boost::asio::ip::tcp::no_delay(true));
 		{
@@ -372,7 +372,7 @@ void NetClient::RemoveConnection(std::shared_ptr<Connection>& con)
 		if (soc.is_open())
 		{
 			LOG_TRACE("Peer {}:{} disconnected", soc.remote_endpoint().address().to_string(),
-			         soc.remote_endpoint().port());
+			          soc.remote_endpoint().port());
 
 			soc.shutdown(boost::asio::socket_base::shutdown_both);
 			soc.close();

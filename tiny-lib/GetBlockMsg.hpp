@@ -10,7 +10,7 @@ public:
 	GetBlockMsg() = default;
 	GetBlockMsg(const std::string& fromBlockId);
 
-	~GetBlockMsg() = default;
+	~GetBlockMsg() override = default;
 
 	std::string FromBlockId;
 

@@ -1,6 +1,7 @@
 #include "pch.hpp"
 #include "PoW.hpp"
 
+#include <cmath>
 #include <exception>
 #include <limits>
 #include <ranges>
@@ -242,5 +243,5 @@ uint64_t PoW::GetBlockSubsidy()
 	if (halvings >= 64)
 		return 0;
 
-	return 50 * NetParams::COIN / pow(2, halvings);
+	return 50 * NetParams::COIN / std::pow(2, halvings);
 }

@@ -12,7 +12,7 @@ TEST(MerkleTreeTest, OneChain)
 {
 	const std::string foo = "foo";
 	const std::string bar = "bar";
-	const std::vector tree{foo, bar};
+	const std::vector tree{ foo, bar };
 
 	const auto root = MerkleTree::GetRoot(tree);
 	const auto fooh = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(foo)));
@@ -31,7 +31,7 @@ TEST(MerkleTreeTest, TwoChain)
 	std::string bar = "bar";
 	std::string baz = "baz";
 
-	std::vector tree{foo, bar, baz};
+	std::vector tree{ foo, bar, baz };
 
 	auto root = MerkleTree::GetRoot(tree);
 	auto fooh = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(foo)));

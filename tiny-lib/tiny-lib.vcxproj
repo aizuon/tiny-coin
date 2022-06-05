@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Crypto.hpp" />
     <ClInclude Include="PeerAddMsg.hpp" />
     <ClInclude Include="Base58.hpp" />
     <ClInclude Include="BinaryBuffer.hpp" />
@@ -68,6 +69,7 @@
     <ClInclude Include="Wallet.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Crypto.cpp" />
     <ClCompile Include="PeerAddMsg.cpp" />
     <ClCompile Include="Base58.cpp" />
     <ClCompile Include="BinaryBuffer.cpp" />

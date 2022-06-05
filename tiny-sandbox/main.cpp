@@ -8,6 +8,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "../tiny-lib/Log.hpp"
+#include "../tiny-lib/Crypto.hpp"
 #include "../tiny-lib/NetClient.hpp"
 #include "../tiny-lib/NodeConfig.hpp"
 #include "../tiny-lib/PoW.hpp"
@@ -17,12 +18,14 @@ namespace po = boost::program_options;
 
 void atexit_handler()
 {
+	Crypto::CleanUp();
 	Log::StopLog();
 }
 
 int main(int argc, char** argv)
 {
 	Log::StartLog();
+	Crypto::Init();
 	if (std::atexit(atexit_handler) != 0)
 		return EXIT_FAILURE;
 
@@ -33,8 +36,8 @@ int main(int argc, char** argv)
 		("wallet", po::value<std::string>(), "path to wallet");
 
 	po::variables_map vm;
-	po::store(po::parse_command_line(argc, argv, desc), vm);
-	po::notify(vm);
+	store(parse_command_line(argc, argv, desc), vm);
+	notify(vm);
 
 	if (!vm.contains("port"))
 	{
@@ -128,7 +131,7 @@ int main(int argc, char** argv)
 			{
 				command.erase(0, send.length());
 				std::vector<std::string> send_args;
-				boost::split(send_args, command, boost::is_any_of(" "));
+				split(send_args, command, boost::is_any_of(" "));
 				if (send_args.size() != 2 && send_args.size() != 3)
 				{
 					LOG_ERROR(

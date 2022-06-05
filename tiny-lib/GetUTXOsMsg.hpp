@@ -4,7 +4,7 @@
 class GetUTXOsMsg : public IMsg
 {
 public:
-	~GetUTXOsMsg() = default;
+	~GetUTXOsMsg() override = default;
 
 	void Handle(std::shared_ptr<Connection>& con) override;
 	BinaryBuffer Serialize() const override;

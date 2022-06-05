@@ -11,7 +11,7 @@ public:
 	TxInfoMsg() = default;
 	TxInfoMsg(const std::shared_ptr<Tx>& tx);
 
-	~TxInfoMsg() = default;
+	~TxInfoMsg() override = default;
 
 	std::shared_ptr<Tx> Tx;
 

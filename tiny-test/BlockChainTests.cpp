@@ -26,7 +26,7 @@ TEST(BlockChainTest, MedianTimePast)
 
 	EXPECT_TRUE(Chain::GetMedianTimePast(10) == 0);
 
-	const std::array<int64_t, 5> timestamps{1, 30, 60, 90, 400};
+	const std::array<int64_t, 5> timestamps{ 1, 30, 60, 90, 400 };
 
 	for (auto timestamp : timestamps)
 	{
@@ -76,7 +76,7 @@ const auto chain1_block3 = std::make_shared<Block>(
 	0, "000000731ba1a0b651182140e8332287186c6a93ddbfc42455c3f88e020a5ce8",
 	"8b0485e1a7823fc2ad3195837146e2b01e860a18f0cf81e524078b0116400430",
 	1501826556, 24, 9223372036856676382, chain1_block3_txs);
-const auto chain1 = std::vector{chain1_block1, chain1_block2, chain1_block3};
+const auto chain1 = std::vector{ chain1_block1, chain1_block2, chain1_block3 };
 
 const auto chain2_block2_txs = std::vector{
 	std::make_shared<Tx>(
@@ -169,7 +169,7 @@ TEST(BlockChainTest, Reorg)
 		ASSERT_EQ(*Chain::ActiveChain[i], *chain1[i]);
 	}
 	ASSERT_TRUE(Mempool::Map.empty());
-	const std::array<std::string, 3> txIds{"b6678c", "b90f9b", "b6678c"};
+	const std::array<std::string, 3> txIds{ "b6678c", "b90f9b", "b6678c" };
 	ASSERT_EQ(UTXO::Map.size(), txIds.size());
 	for (const auto& k : UTXO::Map | std::views::keys)
 	{
@@ -189,7 +189,7 @@ TEST(BlockChainTest, Reorg)
 
 	ASSERT_FALSE(Chain::ReorgIfNecessary());
 	ASSERT_TRUE(Chain::SideBranches.size() == 1);
-	std::array sideBranchTest{chain2[1], chain2[2]};
+	std::array sideBranchTest{ chain2[1], chain2[2] };
 	for (uint32_t i = 0; i < Chain::SideBranches[0].size(); i++)
 	{
 		ASSERT_EQ(*Chain::SideBranches[0][i], *sideBranchTest[i]);
@@ -267,13 +267,13 @@ TEST(BlockChainTest, Reorg)
 		chain1Ids.emplace_back(chain1[i]->Id());
 	}
 	ASSERT_EQ(sideBranchIds, chain1Ids);
-	std::array sideBranchTest2{chain1[1], chain1[2]};
+	std::array sideBranchTest2{ chain1[1], chain1[2] };
 	for (uint32_t i = 0; i < Chain::SideBranches[0].size(); i++)
 	{
 		ASSERT_EQ(*Chain::SideBranches[0][i], *sideBranchTest2[i]);
 	}
 	ASSERT_TRUE(Mempool::Map.empty());
-	const std::array<std::string, 5> txIds2{"b90f9b", "b6678c", "b6678c", "b6678c", "b6678c"};
+	const std::array<std::string, 5> txIds2{ "b90f9b", "b6678c", "b6678c", "b6678c", "b6678c" };
 	ASSERT_EQ(UTXO::Map.size(), txIds2.size());
 	for (const auto& k : UTXO::Map | std::views::keys)
 	{

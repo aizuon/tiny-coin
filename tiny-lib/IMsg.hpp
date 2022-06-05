@@ -6,5 +6,5 @@
 class IMsg : public IHandleable, public ISerializable, public IDeserializable
 {
 public:
-	virtual ~IMsg() = default;
+	~IMsg() override = default;
 };

@@ -6,6 +6,7 @@
 #include <atomic>
 #include <cassert>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <exception>
 #include <fstream>

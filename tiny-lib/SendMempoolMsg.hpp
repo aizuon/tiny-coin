@@ -9,7 +9,7 @@ class SendMempoolMsg : public IMsg
 public:
 	std::vector<std::string> Mempool;
 
-	~SendMempoolMsg() = default;
+	~SendMempoolMsg() override = default;
 
 	void Handle(std::shared_ptr<Connection>& con) override;
 	BinaryBuffer Serialize() const override;

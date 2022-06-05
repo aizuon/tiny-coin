@@ -183,8 +183,8 @@ std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& payToAddr, uint64_t va
 
 	const auto tx_out = std::make_shared<TxOut>(value, payToAddr);
 
-	std::vector tx_ins{tx_in};
-	std::vector tx_outs{tx_out};
+	std::vector tx_ins{ tx_in };
+	std::vector tx_outs{ tx_out };
 	auto tx = std::make_shared<Tx>(tx_ins, tx_outs, 0);
 
 	return tx;

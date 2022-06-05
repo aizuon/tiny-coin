@@ -12,7 +12,7 @@ class SendUTXOsMsg : public IMsg
 public:
 	std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UTXO>> UTXO_Map;
 
-	~SendUTXOsMsg() = default;
+	~SendUTXOsMsg() override = default;
 
 	void Handle(std::shared_ptr<Connection>& con) override;
 	BinaryBuffer Serialize() const override;
