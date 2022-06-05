@@ -36,8 +36,8 @@ int main(int argc, char** argv)
 		("wallet", po::value<std::string>(), "path to wallet");
 
 	po::variables_map vm;
-	store(parse_command_line(argc, argv, desc), vm);
-	notify(vm);
+	po::store(parse_command_line(argc, argv, desc), vm);
+	po::notify(vm);
 
 	if (!vm.contains("port"))
 	{
@@ -131,7 +131,7 @@ int main(int argc, char** argv)
 			{
 				command.erase(0, send.length());
 				std::vector<std::string> send_args;
-				split(send_args, command, boost::is_any_of(" "));
+				boost::split(send_args, command, boost::is_any_of(" "));
 				if (send_args.size() != 2 && send_args.size() != 3)
 				{
 					LOG_ERROR(
