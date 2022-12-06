@@ -169,14 +169,14 @@ TEST(BlockChainTest, Reorg)
 		ASSERT_EQ(*Chain::ActiveChain[i], *chain1[i]);
 	}
 	ASSERT_TRUE(Mempool::Map.empty());
-	const std::array<std::string, 3> txIds{ "b6678c", "b90f9b", "b6678c" };
-	ASSERT_EQ(UTXO::Map.size(), txIds.size());
+	const std::array<std::string, 3> tx_ids{ "b6678c", "b90f9b", "b6678c" };
+	ASSERT_EQ(UTXO::Map.size(), tx_ids.size());
 	for (const auto& k : UTXO::Map | std::views::keys)
 	{
 		bool found = false;
-		for (const auto& txId : txIds)
+		for (const auto& tx_id : tx_ids)
 		{
-			found |= k->TxId.ends_with(txId);
+			found |= k->TxId.ends_with(tx_id);
 			if (found)
 			{
 				break;
@@ -189,10 +189,10 @@ TEST(BlockChainTest, Reorg)
 
 	ASSERT_FALSE(Chain::ReorgIfNecessary());
 	ASSERT_TRUE(Chain::SideBranches.size() == 1);
-	std::array sideBranchTest{ chain2[1], chain2[2] };
+	std::array side_branch_test{ chain2[1], chain2[2] };
 	for (uint32_t i = 0; i < Chain::SideBranches[0].size(); i++)
 	{
-		ASSERT_EQ(*Chain::SideBranches[0][i], *sideBranchTest[i]);
+		ASSERT_EQ(*Chain::SideBranches[0][i], *side_branch_test[i]);
 	}
 	ASSERT_EQ(Chain::ActiveChain.size(), chain1.size());
 	for (uint32_t i = 0; i < Chain::ActiveChain.size(); i++)
@@ -200,13 +200,13 @@ TEST(BlockChainTest, Reorg)
 		ASSERT_EQ(*Chain::ActiveChain[i], *chain1[i]);
 	}
 	ASSERT_TRUE(Mempool::Map.empty());
-	ASSERT_EQ(UTXO::Map.size(), txIds.size());
+	ASSERT_EQ(UTXO::Map.size(), tx_ids.size());
 	for (const auto& k : UTXO::Map | std::views::keys)
 	{
 		bool found = false;
-		for (const auto& txId : txIds)
+		for (const auto& tx_id : tx_ids)
 		{
-			found |= k->TxId.ends_with(txId);
+			found |= k->TxId.ends_with(tx_id);
 			if (found)
 			{
 				break;
@@ -226,7 +226,7 @@ TEST(BlockChainTest, Reorg)
 	ASSERT_TRUE(Chain::SideBranches.size() == 1);
 	for (uint32_t i = 0; i < Chain::SideBranches[0].size(); i++)
 	{
-		ASSERT_EQ(*Chain::SideBranches[0][i], *sideBranchTest[i]);
+		ASSERT_EQ(*Chain::SideBranches[0][i], *side_branch_test[i]);
 	}
 	ASSERT_EQ(Chain::ActiveChain.size(), chain1.size());
 	for (uint32_t i = 0; i < Chain::ActiveChain.size(); i++)
@@ -234,11 +234,11 @@ TEST(BlockChainTest, Reorg)
 		ASSERT_EQ(*Chain::ActiveChain[i], *chain1[i]);
 	}
 	ASSERT_TRUE(Mempool::Map.empty());
-	ASSERT_EQ(UTXO::Map.size(), txIds.size());
+	ASSERT_EQ(UTXO::Map.size(), tx_ids.size());
 	for (const auto& k : UTXO::Map | std::views::keys)
 	{
 		bool found = false;
-		for (const auto& txId : txIds)
+		for (const auto& txId : tx_ids)
 		{
 			found |= k->TxId.ends_with(txId);
 			if (found)
@@ -254,11 +254,11 @@ TEST(BlockChainTest, Reorg)
 
 	ASSERT_TRUE(Chain::SideBranches.size() == 1);
 	ASSERT_TRUE(Chain::SideBranches[0].size() == 2);
-	std::vector<std::string> sideBranchIds;
-	sideBranchIds.reserve(Chain::SideBranches[0].size());
+	std::vector<std::string> side_branch_ids;
+	side_branch_ids.reserve(Chain::SideBranches[0].size());
 	for (const auto& block : Chain::SideBranches[0])
 	{
-		sideBranchIds.emplace_back(block->Id());
+		side_branch_ids.emplace_back(block->Id());
 	}
 	std::vector<std::string> chain1Ids;
 	chain1Ids.reserve(chain1.size());
@@ -266,21 +266,21 @@ TEST(BlockChainTest, Reorg)
 	{
 		chain1Ids.emplace_back(chain1[i]->Id());
 	}
-	ASSERT_EQ(sideBranchIds, chain1Ids);
-	std::array sideBranchTest2{ chain1[1], chain1[2] };
+	ASSERT_EQ(side_branch_ids, chain1Ids);
+	std::array side_branch_test2{ chain1[1], chain1[2] };
 	for (uint32_t i = 0; i < Chain::SideBranches[0].size(); i++)
 	{
-		ASSERT_EQ(*Chain::SideBranches[0][i], *sideBranchTest2[i]);
+		ASSERT_EQ(*Chain::SideBranches[0][i], *side_branch_test2[i]);
 	}
 	ASSERT_TRUE(Mempool::Map.empty());
-	const std::array<std::string, 5> txIds2{ "b90f9b", "b6678c", "b6678c", "b6678c", "b6678c" };
-	ASSERT_EQ(UTXO::Map.size(), txIds2.size());
+	const std::array<std::string, 5> tx_ids2{ "b90f9b", "b6678c", "b6678c", "b6678c", "b6678c" };
+	ASSERT_EQ(UTXO::Map.size(), tx_ids2.size());
 	for (const auto& k : UTXO::Map | std::views::keys)
 	{
 		bool found = false;
-		for (const auto& txId : txIds2)
+		for (const auto& tx_id : tx_ids2)
 		{
-			found |= k->TxId.ends_with(txId);
+			found |= k->TxId.ends_with(tx_id);
 			if (found)
 			{
 				break;
@@ -309,10 +309,10 @@ TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 	auto address = Wallet::PubKeyToAddress(pub_key);
 
 	const auto& utxo1 = UTXO::Map.begin()->second;
-	auto txOut1 = std::make_shared<TxOut>(901, utxo1->TxOut->ToAddress);
-	std::vector txOuts1{txOut1};
-	auto txIn1 = Wallet::BuildTxIn(priv_key, utxo1->TxOutPoint, txOuts1);
-	auto tx1 = std::make_shared<Tx>(std::vector{txIn1}, txOuts1, 0);
+	auto tx_out1 = std::make_shared<TxOut>(901, utxo1->TxOut->ToAddress);
+	std::vector tx_outs1{tx_out1};
+	auto tx_in1 = Wallet::BuildTxIn(priv_key, utxo1->TxOutPoint, tx_outs1);
+	auto tx1 = std::make_shared<Tx>(std::vector{tx_in1}, tx_outs1, 0);
 
 	ASSERT_THROW(
 		{
@@ -333,11 +333,11 @@ TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 	Mempool::AddTxToMempool(tx1);
 	ASSERT_TRUE(Mempool::Map.contains(tx1->Id()));
 
-	auto txOut2 = std::make_shared<TxOut>(9001, txOut1->ToAddress);
-	std::vector txOuts2{txOut2};
-	auto txOutPoint2 = std::make_shared<TxOutPoint>(tx1->Id(), 0);
-	auto txIn2 = Wallet::BuildTxIn(priv_key, txOutPoint2, txOuts2);
-	auto tx2 = std::make_shared<Tx>(std::vector{txIn2}, txOuts2, 0);
+	auto tx_out2 = std::make_shared<TxOut>(9001, tx_out1->ToAddress);
+	std::vector tx_outs2{tx_out2};
+	auto tx_out_point2 = std::make_shared<TxOutPoint>(tx1->Id(), 0);
+	auto tx_in2 = Wallet::BuildTxIn(priv_key, tx_out_point2, tx_outs2);
+	auto tx2 = std::make_shared<Tx>(std::vector{tx_in2}, tx_outs2, 0);
 
 	Mempool::AddTxToMempool(tx2);
 	ASSERT_FALSE(Mempool::Map.contains(tx2->Id()));
@@ -356,9 +356,9 @@ TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 		},
 		TxValidationException);
 
-	txOut2->Value = 901;
-	txIn2 = Wallet::BuildTxIn(priv_key, txOutPoint2, txOuts2);
-	tx2->TxIns[0] = txIn2;
+	tx_out2->Value = 901;
+	tx_in2 = Wallet::BuildTxIn(priv_key, tx_out_point2, tx_outs2);
+	tx2->TxIns[0] = tx_in2;
 
 	Mempool::AddTxToMempool(tx2);
 	ASSERT_TRUE(Mempool::Map.contains(tx2->Id()));
@@ -399,8 +399,8 @@ TEST(BlockChainTest_LongRunning, MinerTransaction)
 	Mempool::Map.clear();
 	UTXO::Map.clear();
 
-	const auto [miner_privKey, miner_pubKey, miner_address] = Wallet::InitWallet("miner.dat");
-	const auto [receiver_privKey, receiver_pubKey, receiver_address] = Wallet::InitWallet("receiver.dat");
+	const auto [miner_priv_key, miner_pub_key, miner_address] = Wallet::InitWallet("miner.dat");
+	const auto [receiver_priv_key, receiver_pub_key, receiver_address] = Wallet::InitWallet("receiver.dat");
 
 	const auto first_block = PoW::AssembleAndSolveBlock(miner_address);
 	if (first_block == nullptr)
@@ -419,7 +419,7 @@ TEST(BlockChainTest_LongRunning, MinerTransaction)
 
 	ASSERT_GT(Wallet::GetBalance_Miner(miner_address), 0);
 	auto tx = Wallet::SendValue_Miner(first_block->Txs.front()->TxOuts.front()->Value / 2, 100, receiver_address,
-	                                  miner_privKey);
+	                                  miner_priv_key);
 	ASSERT_TRUE(tx != nullptr);
 	ASSERT_EQ(Wallet::GetTxStatus_Miner(tx->Id()).Status, TxStatus::Mempool);
 

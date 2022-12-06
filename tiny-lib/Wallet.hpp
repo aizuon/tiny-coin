@@ -19,21 +19,21 @@ class UnspentTxOut;
 class Wallet
 {
 public:
-	static std::string PubKeyToAddress(const std::vector<uint8_t>& pubKey);
+	static std::string PubKeyToAddress(const std::vector<uint8_t>& pub_key);
 
-	static std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> GetWallet(const std::string& walletPath);
-	static void PrintWalletAddress(const std::string& walletPath);
+	static std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> GetWallet(const std::string& wallet_path);
+	static void PrintWalletAddress(const std::string& wallet_path);
 	static std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string>
-	InitWallet(const std::string& walletPath);
+	InitWallet(const std::string& wallet_path);
 	static std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> InitWallet();
 
-	static std::shared_ptr<TxIn> BuildTxIn(const std::vector<uint8_t>& privKey,
-	                                       const std::shared_ptr<TxOutPoint>& txOutPoint,
-	                                       const std::vector<std::shared_ptr<TxOut>>& txOuts);
+	static std::shared_ptr<TxIn> BuildTxIn(const std::vector<uint8_t>& priv_key,
+	                                       const std::shared_ptr<TxOutPoint>& tx_out_point,
+	                                       const std::vector<std::shared_ptr<TxOut>>& tx_outs);
 	static std::shared_ptr<Tx> SendValue_Miner(uint64_t value, uint64_t fee, const std::string& address,
-	                                           const std::vector<uint8_t>& privKey);
+	                                           const std::vector<uint8_t>& priv_key);
 	static std::shared_ptr<Tx> SendValue(uint64_t value, uint64_t fee, const std::string& address,
-	                                     const std::vector<uint8_t>& privKey);
+	                                     const std::vector<uint8_t>& priv_key);
 
 	struct TxStatusResponse
 	{
@@ -42,9 +42,9 @@ public:
 		int64_t BlockHeight = -1;
 	};
 
-	static TxStatusResponse GetTxStatus_Miner(const std::string& txId);
-	static TxStatusResponse GetTxStatus(const std::string& txId);
-	static void PrintTxStatus(const std::string& txId);
+	static TxStatusResponse GetTxStatus_Miner(const std::string& tx_id);
+	static TxStatusResponse GetTxStatus(const std::string& tx_id);
+	static void PrintTxStatus(const std::string& tx_id);
 
 	static uint64_t GetBalance_Miner(const std::string& address);
 	static uint64_t GetBalance(const std::string& address);
@@ -57,12 +57,12 @@ private:
 
 	static std::shared_ptr<Tx> BuildTxFromUTXOs(std::vector<std::shared_ptr<UnspentTxOut>>& utxos, uint64_t value,
 	                                            uint64_t fee, const std::string& address,
-	                                            const std::string& changeAddress, const std::vector<uint8_t>& privKey);
+	                                            const std::string& change_address, const std::vector<uint8_t>& priv_key);
 
 	static std::shared_ptr<Tx> BuildTx_Miner(uint64_t value, uint64_t fee, const std::string& address,
-	                                         const std::vector<uint8_t>& privKey);
+	                                         const std::vector<uint8_t>& priv_key);
 	static std::shared_ptr<Tx> BuildTx(uint64_t value, uint64_t fee, const std::string& address,
-	                                   const std::vector<uint8_t>& privKey);
+	                                   const std::vector<uint8_t>& priv_key);
 
 	static std::vector<std::shared_ptr<UnspentTxOut>> FindUTXOsForAddress_Miner(const std::string& address);
 	static std::vector<std::shared_ptr<UnspentTxOut>> FindUTXOsForAddress(const std::string& address);

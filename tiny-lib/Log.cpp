@@ -9,33 +9,33 @@ std::shared_ptr<spdlog::logger> Log::Logger;
 
 void Log::StartLog(bool async /*= true*/)
 {
-	std::vector<spdlog::sink_ptr> logSinks;
+	std::vector<spdlog::sink_ptr> log_sinks;
 
-	char logFile[MAX_PATH];
-	const std::string logFolder = "log\\";
-	if (GetFileAttributes(logFolder.c_str()) == INVALID_FILE_ATTRIBUTES)
-		CreateDirectory(logFolder.c_str(), nullptr);
+	char log_file[MAX_PATH];
+	const std::string log_folder = "log\\";
+	if (GetFileAttributes(log_folder.c_str()) == INVALID_FILE_ATTRIBUTES)
+		CreateDirectory(log_folder.c_str(), nullptr);
 	SYSTEMTIME t;
 	GetSystemTime(&t);
-	sprintf_s(logFile, MAX_PATH, "TinyCoin_%4d%02d%02d_%02d%02d%02d.log", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute,
+	sprintf_s(log_file, MAX_PATH, "TinyCoin_%4d%02d%02d_%02d%02d%02d.log", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute,
 	          t.wSecond);
-	std::string path = logFolder + std::string(logFile);
-	logSinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(path));
-	logSinks[0]->set_pattern("[ %T ] [ %l ] [ %n ] %v");
+	std::string path = log_folder + std::string(log_file);
+	log_sinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(path));
+	log_sinks[0]->set_pattern("[ %T ] [ %l ] [ %n ] %v");
 
-	logSinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-	logSinks[1]->set_pattern("%^[ %T ] [ %n ] %v%$");
+	log_sinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+	log_sinks[1]->set_pattern("%^[ %T ] [ %n ] %v%$");
 
 	if (async)
 	{
 		spdlog::init_thread_pool(128, 1);
 
-		Logger = std::make_shared<spdlog::async_logger>("tc", logSinks.begin(), logSinks.end(), spdlog::thread_pool(),
+		Logger = std::make_shared<spdlog::async_logger>("tc", log_sinks.begin(), log_sinks.end(), spdlog::thread_pool(),
 			spdlog::async_overflow_policy::block);
 	}
 	else
 	{
-		Logger = std::make_shared<spdlog::logger>("tc", logSinks.begin(), logSinks.end());
+		Logger = std::make_shared<spdlog::logger>("tc", log_sinks.begin(), log_sinks.end());
 	}
 	
 	Logger->set_level(spdlog::level::trace);

@@ -33,28 +33,28 @@ public:
 	static std::atomic_bool InitialBlockDownloadComplete;
 
 	static uint32_t GetCurrentHeight();
-	static int64_t GetMedianTimePast(uint32_t numLastBlocks);
+	static int64_t GetMedianTimePast(uint32_t num_last_blocks);
 
 	static uint32_t ValidateBlock(const std::shared_ptr<Block>& block);
 
-	static int64_t ConnectBlock(const std::shared_ptr<Block>& block, bool doingReorg = false);
+	static int64_t ConnectBlock(const std::shared_ptr<Block>& block, bool doing_reorg = false);
 	static std::shared_ptr<Block> DisconnectBlock(const std::shared_ptr<Block>& block);
-	static std::vector<std::shared_ptr<Block>> DisconnectToFork(const std::shared_ptr<Block>& forkBlock);
+	static std::vector<std::shared_ptr<Block>> DisconnectToFork(const std::shared_ptr<Block>& fork_block);
 
 	static bool ReorgIfNecessary();
-	static bool TryReorg(const std::vector<std::shared_ptr<Block>>& branch, uint32_t branchIdx, uint32_t forkIdx);
-	static void RollbackReorg(const std::vector<std::shared_ptr<Block>>& oldActiveChain,
-	                          const std::shared_ptr<Block>& forkBlock, uint32_t branchIdx);
+	static bool TryReorg(const std::vector<std::shared_ptr<Block>>& branch, uint32_t branch_idx, uint32_t fork_idx);
+	static void RollbackReorg(const std::vector<std::shared_ptr<Block>>& old_active_chain,
+	                          const std::shared_ptr<Block>& fork_block, uint32_t branch_idx);
 
 	static std::pair<std::shared_ptr<Block>, int64_t> LocateBlockInChain(
-		const std::string& blockHash, const std::vector<std::shared_ptr<Block>>& chain);
-	static std::tuple<std::shared_ptr<Block>, int64_t> LocateBlockInActiveChain(const std::string& blockHash);
-	static std::tuple<std::shared_ptr<Block>, int64_t, int64_t> LocateBlockInAllChains(const std::string& blockHash);
+		const std::string& block_hash, const std::vector<std::shared_ptr<Block>>& chain);
+	static std::tuple<std::shared_ptr<Block>, int64_t> LocateBlockInActiveChain(const std::string& block_hash);
+	static std::tuple<std::shared_ptr<Block>, int64_t, int64_t> LocateBlockInAllChains(const std::string& block_hash);
 
 	static std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> FindTxOutForTxIn(
-		const std::shared_ptr<TxIn>& txIn, const std::vector<std::shared_ptr<Block>>& chain);
+		const std::shared_ptr<TxIn>& tx_in, const std::vector<std::shared_ptr<Block>>& chain);
 	static std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t>
-	FindTxOutForTxInInActiveChain(const std::shared_ptr<TxIn>& txIn);
+	FindTxOutForTxInInActiveChain(const std::shared_ptr<TxIn>& tx_in);
 
 	static void SaveToDisk();
 	static bool LoadFromDisk();

@@ -14,10 +14,10 @@ class PoW
 public:
 	static std::atomic_bool MineInterrupt;
 
-	static uint8_t GetNextWorkRequired(const std::string& prevBlockHash);
+	static uint8_t GetNextWorkRequired(const std::string& prev_block_hash);
 
-	static std::shared_ptr<Block> AssembleAndSolveBlock(const std::string& payCoinbaseToAddress);
-	static std::shared_ptr<Block> AssembleAndSolveBlock(const std::string& payCoinbaseToAddress,
+	static std::shared_ptr<Block> AssembleAndSolveBlock(const std::string& pay_coinbase_to_address);
+	static std::shared_ptr<Block> AssembleAndSolveBlock(const std::string& pay_coinbase_to_address,
 	                                                    const std::vector<std::shared_ptr<Tx>>& txs);
 
 	static std::shared_ptr<Block> Mine(const std::shared_ptr<Block>& block);

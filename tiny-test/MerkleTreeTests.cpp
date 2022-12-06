@@ -15,14 +15,14 @@ TEST(MerkleTreeTest, OneChain)
 	const std::vector tree{ foo, bar };
 
 	const auto root = MerkleTree::GetRoot(tree);
-	const auto fooh = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(foo)));
-	const auto barh = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(bar)));
+	const auto foo_h = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(foo)));
+	const auto bar_h = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(bar)));
 
 	EXPECT_TRUE(root != nullptr);
-	const auto combinedh = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(fooh + barh)));
-	EXPECT_TRUE(root->Value == combinedh);
-	EXPECT_TRUE(root->Children[0]->Value == fooh);
-	EXPECT_TRUE(root->Children[1]->Value == barh);
+	const auto combined_h = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(foo_h + bar_h)));
+	EXPECT_TRUE(root->Value == combined_h);
+	EXPECT_TRUE(root->Children[0]->Value == foo_h);
+	EXPECT_TRUE(root->Children[1]->Value == bar_h);
 }
 
 TEST(MerkleTreeTest, TwoChain)
@@ -34,14 +34,14 @@ TEST(MerkleTreeTest, TwoChain)
 	std::vector tree{ foo, bar, baz };
 
 	auto root = MerkleTree::GetRoot(tree);
-	auto fooh = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(foo)));
-	auto barh = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(bar)));
-	auto bazh = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(baz)));
+	auto foo_h = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(foo)));
+	auto bar_h = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(bar)));
+	auto baz_h = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(baz)));
 
 	EXPECT_TRUE(root != nullptr);
 	EXPECT_TRUE(root->Children.size() == 2);
-	auto combinedh1 = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(fooh + barh)));
-	auto combinedh2 = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(bazh + bazh)));
-	EXPECT_TRUE(root->Children[0]->Value == combinedh1);
-	EXPECT_TRUE(root->Children[1]->Value == combinedh2);
+	auto combined_h1 = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(foo_h + bar_h)));
+	auto combined_h2 = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(baz_h + baz_h)));
+	EXPECT_TRUE(root->Children[0]->Value == combined_h1);
+	EXPECT_TRUE(root->Children[1]->Value == combined_h2);
 }

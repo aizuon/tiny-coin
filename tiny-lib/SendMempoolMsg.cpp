@@ -32,8 +32,8 @@ bool SendMempoolMsg::Deserialize(BinaryBuffer& buffer)
 {
 	auto copy = *this;
 
-	uint32_t mempoolSize = 0;
-	if (!buffer.ReadSize(mempoolSize))
+	uint32_t mempool_size = 0;
+	if (!buffer.ReadSize(mempool_size))
 	{
 		*this = std::move(copy);
 
@@ -41,8 +41,8 @@ bool SendMempoolMsg::Deserialize(BinaryBuffer& buffer)
 	}
 	if (!Mempool.empty())
 		Mempool.clear();
-	Mempool.reserve(mempoolSize);
-	for (uint32_t i = 0; i < mempoolSize; i++)
+	Mempool.reserve(mempool_size);
+	for (uint32_t i = 0; i < mempool_size; i++)
 	{
 		std::string tx;
 		if (!buffer.Read(tx))

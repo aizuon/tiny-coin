@@ -31,9 +31,9 @@
 
 std::string Wallet::WalletPath = DefaultWalletPath;
 
-std::string Wallet::PubKeyToAddress(const std::vector<uint8_t>& pubKey)
+std::string Wallet::PubKeyToAddress(const std::vector<uint8_t>& pub_key)
 {
-	const auto sha256 = SHA256::HashBinary(pubKey);
+	const auto sha256 = SHA256::HashBinary(pub_key);
 
 	auto ripe = RIPEMD160::HashBinary(sha256);
 
@@ -48,50 +48,50 @@ std::string Wallet::PubKeyToAddress(const std::vector<uint8_t>& pubKey)
 	return PubKeyHashVersion + Base58::Encode(ripe);
 }
 
-std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::GetWallet(const std::string& walletPath)
+std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::GetWallet(const std::string& wallet_path)
 {
-	std::vector<uint8_t> privKey;
-	std::vector<uint8_t> pubKey;
+	std::vector<uint8_t> priv_key;
+	std::vector<uint8_t> pub_key;
 	std::string address;
 
-	std::ifstream wallet_in(walletPath, std::ios::binary);
+	std::ifstream wallet_in(wallet_path, std::ios::binary);
 	if (wallet_in.good())
 	{
-		privKey = std::vector<uint8_t>(std::istreambuf_iterator(wallet_in), {});
-		pubKey = ECDSA::GetPubKeyFromPrivKey(privKey);
-		address = PubKeyToAddress(pubKey);
+		priv_key = std::vector<uint8_t>(std::istreambuf_iterator(wallet_in), {});
+		pub_key = ECDSA::GetPubKeyFromPrivKey(priv_key);
+		address = PubKeyToAddress(pub_key);
 		wallet_in.close();
 	}
 	else
 	{
-		LOG_INFO("Generating new wallet {}", walletPath);
+		LOG_INFO("Generating new wallet {}", wallet_path);
 
 		auto [privKey2, pubKey2] = ECDSA::Generate();
-		privKey = privKey2;
-		pubKey = pubKey2;
-		address = PubKeyToAddress(pubKey);
+		priv_key = privKey2;
+		pub_key = pubKey2;
+		address = PubKeyToAddress(pub_key);
 
-		std::ofstream wallet_out(walletPath, std::ios::binary);
-		wallet_out.write(reinterpret_cast<const char*>(privKey.data()), privKey.size());
+		std::ofstream wallet_out(wallet_path, std::ios::binary);
+		wallet_out.write(reinterpret_cast<const char*>(priv_key.data()), priv_key.size());
 		wallet_out.flush();
 		wallet_out.close();
 	}
 
-	return { privKey, pubKey, address };
+	return { priv_key, pub_key, address };
 }
 
-void Wallet::PrintWalletAddress(const std::string& walletPath)
+void Wallet::PrintWalletAddress(const std::string& wallet_path)
 {
-	const auto [privKey, pubKey, address] = GetWallet(walletPath);
+	const auto [priv_key, pub_key, address] = GetWallet(wallet_path);
 
-	LOG_INFO("Wallet {} belongs to address {}", walletPath, address);
+	LOG_INFO("Wallet {} belongs to address {}", wallet_path, address);
 }
 
-std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::InitWallet(const std::string& walletPath)
+std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::InitWallet(const std::string& wallet_path)
 {
-	WalletPath = walletPath;
+	WalletPath = wallet_path;
 
-	const auto [privKey, pubKey, address] = GetWallet(WalletPath);
+	const auto [priv_key, pub_key, address] = GetWallet(WalletPath);
 
 	static bool printedAddress = false;
 	if (!printedAddress)
@@ -101,7 +101,7 @@ std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::Init
 		LOG_INFO("Your address is {}", address);
 	}
 
-	return { privKey, pubKey, address };
+	return { priv_key, pub_key, address };
 }
 
 std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::InitWallet()
@@ -109,23 +109,23 @@ std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::Init
 	return InitWallet(WalletPath);
 }
 
-std::shared_ptr<TxIn> Wallet::BuildTxIn(const std::vector<uint8_t>& privKey,
-                                        const std::shared_ptr<TxOutPoint>& txOutPoint,
-                                        const std::vector<std::shared_ptr<TxOut>>& txOuts)
+std::shared_ptr<TxIn> Wallet::BuildTxIn(const std::vector<uint8_t>& priv_key,
+                                        const std::shared_ptr<TxOutPoint>& tx_out_point,
+                                        const std::vector<std::shared_ptr<TxOut>>& tx_outs)
 {
 	int32_t sequence = -1;
 
-	auto pubKey = ECDSA::GetPubKeyFromPrivKey(privKey);
-	const auto spend_msg = MsgSerializer::BuildSpendMsg(txOutPoint, pubKey, sequence, txOuts);
-	auto unlock_sig = ECDSA::SignMsg(spend_msg, privKey);
+	auto pub_key = ECDSA::GetPubKeyFromPrivKey(priv_key);
+	const auto spend_msg = MsgSerializer::BuildSpendMsg(tx_out_point, pub_key, sequence, tx_outs);
+	auto unlock_sig = ECDSA::SignMsg(spend_msg, priv_key);
 
-	return std::make_shared<TxIn>(txOutPoint, unlock_sig, pubKey, sequence);
+	return std::make_shared<TxIn>(tx_out_point, unlock_sig, pub_key, sequence);
 }
 
 std::shared_ptr<Tx> Wallet::SendValue_Miner(uint64_t value, uint64_t fee, const std::string& address,
-                                            const std::vector<uint8_t>& privKey)
+                                            const std::vector<uint8_t>& priv_key)
 {
-	auto tx = BuildTx_Miner(value, fee, address, privKey);
+	auto tx = BuildTx_Miner(value, fee, address, priv_key);
 	if (tx == nullptr)
 		return nullptr;
 	LOG_INFO("Built transaction {}, adding to mempool", tx->Id());
@@ -136,9 +136,9 @@ std::shared_ptr<Tx> Wallet::SendValue_Miner(uint64_t value, uint64_t fee, const 
 }
 
 std::shared_ptr<Tx> Wallet::SendValue(uint64_t value, uint64_t fee, const std::string& address,
-                                      const std::vector<uint8_t>& privKey)
+                                      const std::vector<uint8_t>& priv_key)
 {
-	auto tx = BuildTx(value, fee, address, privKey);
+	auto tx = BuildTx(value, fee, address, priv_key);
 	if (tx == nullptr)
 		return nullptr;
 	LOG_INFO("Built transaction {}, broadcasting", tx->Id());
@@ -150,7 +150,7 @@ std::shared_ptr<Tx> Wallet::SendValue(uint64_t value, uint64_t fee, const std::s
 	return tx;
 }
 
-Wallet::TxStatusResponse Wallet::GetTxStatus_Miner(const std::string& txId)
+Wallet::TxStatusResponse Wallet::GetTxStatus_Miner(const std::string& tx_id)
 {
 	TxStatusResponse ret;
 
@@ -159,7 +159,7 @@ Wallet::TxStatusResponse Wallet::GetTxStatus_Miner(const std::string& txId)
 
 		for (const auto& tx : Mempool::Map | std::views::keys)
 		{
-			if (tx == txId)
+			if (tx == tx_id)
 			{
 				ret.Status = TxStatus::Mempool;
 
@@ -176,7 +176,7 @@ Wallet::TxStatusResponse Wallet::GetTxStatus_Miner(const std::string& txId)
 			const auto& block = Chain::ActiveChain[height];
 			for (const auto& tx : block->Txs)
 			{
-				if (tx->Id() == txId)
+				if (tx->Id() == tx_id)
 				{
 					ret.Status = TxStatus::Mined;
 					ret.BlockId = block->Id();
@@ -193,7 +193,7 @@ Wallet::TxStatusResponse Wallet::GetTxStatus_Miner(const std::string& txId)
 	return ret;
 }
 
-Wallet::TxStatusResponse Wallet::GetTxStatus(const std::string& txId)
+Wallet::TxStatusResponse Wallet::GetTxStatus(const std::string& tx_id)
 {
 	TxStatusResponse ret;
 
@@ -221,7 +221,7 @@ Wallet::TxStatusResponse Wallet::GetTxStatus(const std::string& txId)
 
 	for (const auto& tx : MsgCache::SendMempoolMsg->Mempool)
 	{
-		if (tx == txId)
+		if (tx == tx_id)
 		{
 			ret.Status = TxStatus::Mempool;
 
@@ -256,7 +256,7 @@ Wallet::TxStatusResponse Wallet::GetTxStatus(const std::string& txId)
 		const auto& block = MsgCache::SendActiveChainMsg->ActiveChain[height];
 		for (const auto& tx : block->Txs)
 		{
-			if (tx->Id() == txId)
+			if (tx->Id() == tx_id)
 			{
 				ret.Status = TxStatus::Mined;
 				ret.BlockId = block->Id();
@@ -272,26 +272,26 @@ Wallet::TxStatusResponse Wallet::GetTxStatus(const std::string& txId)
 	return ret;
 }
 
-void Wallet::PrintTxStatus(const std::string& txId)
+void Wallet::PrintTxStatus(const std::string& tx_id)
 {
-	auto response = GetTxStatus(txId);
+	auto response = GetTxStatus(tx_id);
 	switch (response.Status)
 	{
 	case TxStatus::Mempool:
 		{
-			LOG_INFO("Transaction {} is in mempool", txId);
+			LOG_INFO("Transaction {} is in mempool", tx_id);
 
 			break;
 		}
 	case TxStatus::Mined:
 		{
-			LOG_INFO("Transaction {} is mined in {} at height {}", txId, response.BlockId, response.BlockHeight);
+			LOG_INFO("Transaction {} is mined in {} at height {}", tx_id, response.BlockId, response.BlockHeight);
 
 			break;
 		}
 	case TxStatus::NotFound:
 		{
-			LOG_INFO("Transaction {} not found", txId);
+			LOG_INFO("Transaction {} not found", tx_id);
 
 			break;
 		}
@@ -325,8 +325,8 @@ void Wallet::PrintBalance(const std::string& address)
 }
 
 std::shared_ptr<Tx> Wallet::BuildTxFromUTXOs(std::vector<std::shared_ptr<UTXO>>& utxos, uint64_t value, uint64_t fee,
-                                             const std::string& address, const std::string& changeAddress,
-                                             const std::vector<uint8_t>& privKey)
+                                             const std::string& address, const std::string& change_address,
+                                             const std::vector<uint8_t>& priv_key)
 {
 	std::ranges::sort(utxos,
 	                  [](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
@@ -364,17 +364,17 @@ std::shared_ptr<Tx> Wallet::BuildTxFromUTXOs(std::vector<std::shared_ptr<UTXO>>&
 
 		return nullptr;
 	}
-	const auto txOut = std::make_shared<TxOut>(value, address);
+	const auto tx_out = std::make_shared<TxOut>(value, address);
 	uint64_t change = in_sum - value - total_fee_est;
-	const auto txOut_change = std::make_shared<TxOut>(change, changeAddress);
-	std::vector txOuts{ txOut, txOut_change };
+	const auto tx_out_change = std::make_shared<TxOut>(change, change_address);
+	std::vector tx_outs{ tx_out, tx_out_change };
 	std::vector<std::shared_ptr<TxIn>> txIns;
 	txIns.reserve(selected_utxos.size());
 	for (const auto& selected_coin : selected_utxos)
 	{
-		txIns.emplace_back(BuildTxIn(privKey, selected_coin->TxOutPoint, txOuts));
+		txIns.emplace_back(BuildTxIn(priv_key, selected_coin->TxOutPoint, tx_outs));
 	}
-	auto tx = std::make_shared<Tx>(txIns, txOuts, 0);
+	auto tx = std::make_shared<Tx>(txIns, tx_outs, 0);
 	const uint32_t tx_size = tx->Serialize().GetBuffer().size();
 	const uint32_t real_fee = total_fee_est / tx_size;
 	LOG_INFO("Built transaction {} with {} coins/byte fee", tx->Id(), real_fee);
@@ -382,11 +382,11 @@ std::shared_ptr<Tx> Wallet::BuildTxFromUTXOs(std::vector<std::shared_ptr<UTXO>>&
 }
 
 std::shared_ptr<Tx> Wallet::BuildTx_Miner(uint64_t value, uint64_t fee, const std::string& address,
-                                          const std::vector<uint8_t>& privKey)
+                                          const std::vector<uint8_t>& priv_key)
 {
-	const auto pubKey = ECDSA::GetPubKeyFromPrivKey(privKey);
-	const auto myAddress = PubKeyToAddress(pubKey);
-	auto my_coins = FindUTXOsForAddress_Miner(myAddress);
+	const auto pub_key = ECDSA::GetPubKeyFromPrivKey(priv_key);
+	const auto my_address = PubKeyToAddress(pub_key);
+	auto my_coins = FindUTXOsForAddress_Miner(my_address);
 	if (my_coins.empty())
 	{
 		LOG_ERROR("No coins found");
@@ -394,22 +394,22 @@ std::shared_ptr<Tx> Wallet::BuildTx_Miner(uint64_t value, uint64_t fee, const st
 		return nullptr;
 	}
 
-	return BuildTxFromUTXOs(my_coins, value, fee, address, myAddress, privKey);
+	return BuildTxFromUTXOs(my_coins, value, fee, address, my_address, priv_key);
 }
 
 std::shared_ptr<Tx> Wallet::BuildTx(uint64_t value, uint64_t fee, const std::string& address,
-                                    const std::vector<uint8_t>& privKey)
+                                    const std::vector<uint8_t>& priv_key)
 {
-	const auto pubKey = ECDSA::GetPubKeyFromPrivKey(privKey);
-	const auto myAddress = PubKeyToAddress(pubKey);
-	auto my_coins = FindUTXOsForAddress(myAddress);
+	const auto pub_key = ECDSA::GetPubKeyFromPrivKey(priv_key);
+	const auto my_address = PubKeyToAddress(pub_key);
+	auto my_coins = FindUTXOsForAddress(my_address);
 	if (my_coins.empty())
 	{
 		LOG_ERROR("No coins found");
 
 		return nullptr;
 	}
-	return BuildTxFromUTXOs(my_coins, value, fee, address, myAddress, privKey);
+	return BuildTxFromUTXOs(my_coins, value, fee, address, my_address, priv_key);
 }
 
 std::vector<std::shared_ptr<UTXO>> Wallet::FindUTXOsForAddress_Miner(const std::string& address)

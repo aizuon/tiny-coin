@@ -18,31 +18,31 @@ std::vector<std::shared_ptr<Tx>> Mempool::OrphanedTxs;
 
 std::recursive_mutex Mempool::Mutex;
 
-std::shared_ptr<UTXO> Mempool::Find_UTXO_InMempool(const std::shared_ptr<TxOutPoint>& txOutPoint)
+std::shared_ptr<UTXO> Mempool::Find_UTXO_InMempool(const std::shared_ptr<TxOutPoint>& tx_out_point)
 {
 	std::scoped_lock lock(Mutex);
 
-	if (!Map.contains(txOutPoint->TxId))
+	if (!Map.contains(tx_out_point->TxId))
 		return nullptr;
 
-	const auto& tx = Map[txOutPoint->TxId];
-	if (tx->TxOuts.size() - 1 < txOutPoint->TxOutIdx)
+	const auto& tx = Map[tx_out_point->TxId];
+	if (tx->TxOuts.size() - 1 < tx_out_point->TxOutIdx)
 	{
-		LOG_ERROR("Unable to find UTXO in mempool for {}", txOutPoint->TxId);
+		LOG_ERROR("Unable to find UTXO in mempool for {}", tx_out_point->TxId);
 
 		return nullptr;
 	}
 
-	const auto& txOut = tx->TxOuts[txOutPoint->TxOutIdx];
+	const auto& tx_out = tx->TxOuts[tx_out_point->TxOutIdx];
 
-	return std::make_shared<UTXO>(txOut, txOutPoint, false, -1);
+	return std::make_shared<UTXO>(tx_out, tx_out_point, false, -1);
 }
 
 std::shared_ptr<Block> Mempool::SelectFromMempool(const std::shared_ptr<Block>& block)
 {
 	std::scoped_lock lock(Mutex);
 
-	auto newBlock = std::make_shared<Block>(*block);
+	auto new_block = std::make_shared<Block>(*block);
 
 	std::vector<std::pair<std::string, std::shared_ptr<Tx>>> map_vector(Map.begin(), Map.end());
 	std::ranges::sort(map_vector,
@@ -54,21 +54,21 @@ std::shared_ptr<Block> Mempool::SelectFromMempool(const std::shared_ptr<Block>& 
 		                  return PoW::CalculateFees(a_tx) < PoW::CalculateFees(b_tx);
 	                  });
 
-	std::set<std::string> addedToBlock;
-	for (const auto& txId : map_vector | std::views::keys)
-		newBlock = TryAddToBlock(newBlock, txId, addedToBlock);
+	std::set<std::string> added_to_block;
+	for (const auto& tx_id : map_vector | std::views::keys)
+		new_block = TryAddToBlock(new_block, tx_id, added_to_block);
 
-	return newBlock;
+	return new_block;
 }
 
 void Mempool::AddTxToMempool(const std::shared_ptr<Tx>& tx)
 {
 	std::scoped_lock lock(Mutex);
 
-	const auto txId = tx->Id();
-	if (Map.contains(txId))
+	const auto tx_id = tx->Id();
+	if (Map.contains(tx_id))
 	{
-		LOG_INFO("Transaction {} already seen", txId);
+		LOG_INFO("Transaction {} already seen", tx_id);
 
 		return;
 	}
@@ -87,14 +87,14 @@ void Mempool::AddTxToMempool(const std::shared_ptr<Tx>& tx)
 
 			return;
 		}
-		LOG_ERROR("Transaction {} rejected", txId);
+		LOG_ERROR("Transaction {} rejected", tx_id);
 
 		return;
 	}
 
-	Map[txId] = tx;
+	Map[tx_id] = tx;
 
-	LOG_TRACE("Transaction {} added to mempool", txId);
+	LOG_TRACE("Transaction {} added to mempool", tx_id);
 
 	NetClient::SendMsgRandom(TxInfoMsg(tx));
 }
@@ -104,35 +104,35 @@ bool Mempool::CheckBlockSize(const std::shared_ptr<Block>& block)
 	return block->Serialize().GetSize() < NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES;
 }
 
-std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, const std::string& txId,
-                                              std::set<std::string>& addedToBlock)
+std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, const std::string& tx_id,
+                                              std::set<std::string>& added_to_block)
 {
 	std::scoped_lock lock(Mutex);
 
-	if (addedToBlock.contains(txId))
+	if (added_to_block.contains(tx_id))
 		return block;
 
-	if (!Map.contains(txId))
+	if (!Map.contains(tx_id))
 		return block;
 
-	const auto& tx = Map[txId];
+	const auto& tx = Map[tx_id];
 
-	for (const auto& txIn : tx->TxIns)
+	for (const auto& tx_in : tx->TxIns)
 	{
-		const auto& toSpend = txIn->ToSpend;
+		const auto& to_spend = tx_in->ToSpend;
 
-		if (UTXO::FindInMap(toSpend) != nullptr)
+		if (UTXO::FindInMap(to_spend) != nullptr)
 			continue;
 
-		const auto& inMempool = Find_UTXO_InMempool(toSpend);
-		if (inMempool == nullptr)
+		const auto& in_mempool = Find_UTXO_InMempool(to_spend);
+		if (in_mempool == nullptr)
 		{
-			LOG_ERROR("Unable to find UTXO for {}", txIn->ToSpend->TxId);
+			LOG_ERROR("Unable to find UTXO for {}", tx_in->ToSpend->TxId);
 
 			return nullptr;
 		}
 
-		block = TryAddToBlock(block, inMempool->TxOutPoint->TxId, addedToBlock);
+		block = TryAddToBlock(block, in_mempool->TxOutPoint->TxId, added_to_block);
 		if (block == nullptr)
 		{
 			LOG_ERROR("Unable to add parent");
@@ -141,20 +141,20 @@ std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, con
 		}
 	}
 
-	auto newBlock = std::make_shared<Block>(*block);
-	const auto& blockTxs = block->Txs;
+	auto new_block = std::make_shared<Block>(*block);
+	const auto& block_txs = block->Txs;
 	std::vector<std::shared_ptr<Tx>> txs;
-	txs.insert(txs.end(), blockTxs.begin(), blockTxs.end());
+	txs.insert(txs.end(), block_txs.begin(), block_txs.end());
 	txs.push_back(tx);
-	newBlock->Txs = txs;
+	new_block->Txs = txs;
 
-	if (CheckBlockSize(newBlock))
+	if (CheckBlockSize(new_block))
 	{
-		LOG_TRACE("Added transaction {} to block {}", txId, block->Id());
+		LOG_TRACE("Added transaction {} to block {}", tx_id, block->Id());
 
-		addedToBlock.insert(txId);
+		added_to_block.insert(tx_id);
 
-		return newBlock;
+		return new_block;
 	}
 	return block;
 }

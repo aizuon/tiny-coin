@@ -32,8 +32,8 @@ bool SendUTXOsMsg::Deserialize(BinaryBuffer& buffer)
 {
 	auto copy = *this;
 
-	uint32_t utxoMapSize = 0;
-	if (!buffer.ReadSize(utxoMapSize))
+	uint32_t utxo_map_size = 0;
+	if (!buffer.ReadSize(utxo_map_size))
 	{
 		*this = std::move(copy);
 
@@ -41,11 +41,11 @@ bool SendUTXOsMsg::Deserialize(BinaryBuffer& buffer)
 	}
 	if (!UTXO_Map.empty())
 		UTXO_Map.clear();
-	UTXO_Map.reserve(utxoMapSize);
-	for (uint32_t i = 0; i < utxoMapSize; i++)
+	UTXO_Map.reserve(utxo_map_size);
+	for (uint32_t i = 0; i < utxo_map_size; i++)
 	{
-		auto txOutPoint = std::make_shared<TxOutPoint>();
-		if (!txOutPoint->Deserialize(buffer))
+		auto tx_out_point = std::make_shared<TxOutPoint>();
+		if (!tx_out_point->Deserialize(buffer))
 		{
 			*this = std::move(copy);
 
@@ -58,7 +58,7 @@ bool SendUTXOsMsg::Deserialize(BinaryBuffer& buffer)
 
 			return false;
 		}
-		UTXO_Map[txOutPoint] = utxo;
+		UTXO_Map[tx_out_point] = utxo;
 	}
 
 	return true;

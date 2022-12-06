@@ -16,17 +16,17 @@ void InvMsg::Handle(std::shared_ptr<Connection>& con)
 	LOG_INFO("Recieved initial sync from {}:{}", con->Socket.remote_endpoint().address().to_string(),
 	         con->Socket.remote_endpoint().port());
 
-	std::vector<std::shared_ptr<Block>> newBlocks;
+	std::vector<std::shared_ptr<Block>> new_blocks;
 	for (const auto& block : Blocks)
 	{
 		const auto [found_block, found_height, found_idx] = Chain::LocateBlockInAllChains(block->Id());
 		if (found_block == nullptr)
 		{
-			newBlocks.push_back(block);
+			new_blocks.push_back(block);
 		}
 	}
 
-	if (newBlocks.empty())
+	if (new_blocks.empty())
 	{
 		LOG_INFO("Initial block download complete");
 
@@ -35,7 +35,7 @@ void InvMsg::Handle(std::shared_ptr<Connection>& con)
 		return;
 	}
 
-	for (const auto& newBlock : newBlocks)
+	for (const auto& newBlock : new_blocks)
 		Chain::ConnectBlock(newBlock);
 
 	auto new_tip_id = Chain::ActiveChain.back()->Id();
@@ -61,15 +61,15 @@ bool InvMsg::Deserialize(BinaryBuffer& buffer)
 {
 	auto copy = *this;
 
-	uint32_t blocksSize = 0;
-	if (!buffer.ReadSize(blocksSize))
+	uint32_t blocks_size = 0;
+	if (!buffer.ReadSize(blocks_size))
 	{
 		*this = std::move(copy);
 
 		return false;
 	}
-	Blocks.reserve(blocksSize);
-	for (uint32_t i = 0; i < blocksSize; i++)
+	Blocks.reserve(blocks_size);
+	for (uint32_t i = 0; i < blocks_size; i++)
 	{
 		auto block = std::make_shared<Block>();
 		if (!block->Deserialize(buffer))

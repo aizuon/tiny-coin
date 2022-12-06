@@ -30,8 +30,8 @@ bool SendActiveChainMsg::Deserialize(BinaryBuffer& buffer)
 {
 	auto copy = *this;
 
-	uint32_t activeChainSize = 0;
-	if (!buffer.ReadSize(activeChainSize))
+	uint32_t active_chain_size = 0;
+	if (!buffer.ReadSize(active_chain_size))
 	{
 		*this = std::move(copy);
 
@@ -39,8 +39,8 @@ bool SendActiveChainMsg::Deserialize(BinaryBuffer& buffer)
 	}
 	if (!ActiveChain.empty())
 		ActiveChain.clear();
-	ActiveChain.reserve(activeChainSize);
-	for (uint32_t i = 0; i < activeChainSize; i++)
+	ActiveChain.reserve(active_chain_size);
+	for (uint32_t i = 0; i < active_chain_size; i++)
 	{
 		auto block = std::make_shared<Block>();
 		if (!block->Deserialize(buffer))

@@ -15,105 +15,105 @@
 
 TEST(SerializationTest, TxSerialization)
 {
-	std::vector<std::shared_ptr<TxIn>> txIns;
-	auto toSpend = std::make_shared<TxOutPoint>("foo", 0);
-	const auto txIn = std::make_shared<TxIn>(toSpend, std::vector<uint8_t>(), std::vector<uint8_t>(), -1);
-	txIns.push_back(txIn);
+	std::vector<std::shared_ptr<TxIn>> tx_ins;
+	auto to_spend = std::make_shared<TxOutPoint>("foo", 0);
+	const auto tx_in = std::make_shared<TxIn>(to_spend, std::vector<uint8_t>(), std::vector<uint8_t>(), -1);
+	tx_ins.push_back(tx_in);
 
-	std::vector<std::shared_ptr<TxOut>> txOuts;
-	const auto txOut = std::make_shared<TxOut>(0, "foo");
-	txOuts.push_back(txOut);
+	std::vector<std::shared_ptr<TxOut>> tx_outs;
+	const auto tx_out = std::make_shared<TxOut>(0, "foo");
+	tx_outs.push_back(tx_out);
 
-	const auto tx = std::make_shared<Tx>(txIns, txOuts, 0);
+	const auto tx = std::make_shared<Tx>(tx_ins, tx_outs, 0);
 
-	auto serializedBuffer = tx->Serialize();
+	auto serialized_buffer = tx->Serialize();
 
 	auto tx2 = std::make_shared<Tx>();
-	ASSERT_TRUE(tx2->Deserialize(serializedBuffer));
+	ASSERT_TRUE(tx2->Deserialize(serialized_buffer));
 
 	EXPECT_TRUE(tx2->TxIns.size() == 1);
-	auto& txIn2 = tx2->TxIns[0];
-	EXPECT_EQ(txIn2->Sequence, txIn->Sequence);
-	auto& toSpend2 = txIn2->ToSpend;
-	EXPECT_EQ(toSpend2->TxId, toSpend->TxId);
-	EXPECT_EQ(toSpend2->TxOutIdx, toSpend->TxOutIdx);
-	EXPECT_EQ(txIn2->UnlockPubKey, txIn->UnlockPubKey);
-	EXPECT_EQ(txIn2->UnlockSig, txIn->UnlockSig);
+	auto& tx_in2 = tx2->TxIns[0];
+	EXPECT_EQ(tx_in2->Sequence, tx_in->Sequence);
+	auto& to_spend2 = tx_in2->ToSpend;
+	EXPECT_EQ(to_spend2->TxId, to_spend->TxId);
+	EXPECT_EQ(to_spend2->TxOutIdx, to_spend->TxOutIdx);
+	EXPECT_EQ(tx_in2->UnlockPubKey, tx_in->UnlockPubKey);
+	EXPECT_EQ(tx_in2->UnlockSig, tx_in->UnlockSig);
 
 	EXPECT_TRUE(tx2->TxOuts.size() == 1);
-	auto& txOut2 = tx2->TxOuts[0];
-	EXPECT_EQ(txOut2->ToAddress, txOut->ToAddress);
-	EXPECT_EQ(txOut2->Value, txOut->Value);
+	auto& tx_out2 = tx2->TxOuts[0];
+	EXPECT_EQ(tx_out2->ToAddress, tx_out->ToAddress);
+	EXPECT_EQ(tx_out2->Value, tx_out->Value);
 
 	EXPECT_EQ(tx2->LockTime, tx->LockTime);
 }
 
 TEST(SerializationTest, TxInSerialization)
 {
-	auto toSpend = std::make_shared<TxOutPoint>("foo", 0);
-	const auto txIn = std::make_shared<TxIn>(toSpend, std::vector<uint8_t>(), std::vector<uint8_t>(), -1);
+	auto to_spend = std::make_shared<TxOutPoint>("foo", 0);
+	const auto tx_in = std::make_shared<TxIn>(to_spend, std::vector<uint8_t>(), std::vector<uint8_t>(), -1);
 
-	auto serializedBuffer = txIn->Serialize();
+	auto serialized_buffer = tx_in->Serialize();
 
-	const auto txIn2 = std::make_shared<TxIn>();
-	ASSERT_TRUE(txIn2->Deserialize(serializedBuffer));
+	const auto tx_in2 = std::make_shared<TxIn>();
+	ASSERT_TRUE(tx_in2->Deserialize(serialized_buffer));
 
-	EXPECT_EQ(txIn2->Sequence, txIn->Sequence);
+	EXPECT_EQ(tx_in2->Sequence, tx_in->Sequence);
 
-	const auto& toSpend2 = txIn2->ToSpend;
-	EXPECT_EQ(toSpend2->TxId, toSpend->TxId);
-	EXPECT_EQ(toSpend2->TxOutIdx, toSpend->TxOutIdx);
+	const auto& to_spend2 = tx_in2->ToSpend;
+	EXPECT_EQ(to_spend2->TxId, to_spend->TxId);
+	EXPECT_EQ(to_spend2->TxOutIdx, to_spend->TxOutIdx);
 
-	EXPECT_EQ(txIn2->UnlockPubKey, txIn->UnlockPubKey);
-	EXPECT_EQ(txIn2->UnlockSig, txIn->UnlockSig);
+	EXPECT_EQ(tx_in2->UnlockPubKey, tx_in->UnlockPubKey);
+	EXPECT_EQ(tx_in2->UnlockSig, tx_in->UnlockSig);
 }
 
 TEST(SerializationTest, TxOutSerialization)
 {
-	const auto txOut = std::make_shared<TxOut>(0, "foo");
+	const auto tx_out = std::make_shared<TxOut>(0, "foo");
 
-	auto serializedBuffer = txOut->Serialize();
+	auto serialized_buffer = tx_out->Serialize();
 
-	const auto txOut2 = std::make_shared<TxOut>();
-	ASSERT_TRUE(txOut2->Deserialize(serializedBuffer));
+	const auto tx_out2 = std::make_shared<TxOut>();
+	ASSERT_TRUE(tx_out2->Deserialize(serialized_buffer));
 
-	EXPECT_EQ(txOut2->ToAddress, txOut->ToAddress);
-	EXPECT_EQ(txOut2->Value, txOut->Value);
+	EXPECT_EQ(tx_out2->ToAddress, tx_out->ToAddress);
+	EXPECT_EQ(tx_out2->Value, tx_out->Value);
 }
 
 TEST(SerializationTest, TxOutPointSerialization)
 {
-	const auto txOutPoint = std::make_shared<TxOutPoint>("foo", 0);
+	const auto tx_out_point = std::make_shared<TxOutPoint>("foo", 0);
 
-	auto serializedBuffer = txOutPoint->Serialize();
+	auto serialized_buffer = tx_out_point->Serialize();
 
-	const auto txOutPoint2 = std::make_shared<TxOutPoint>();
-	ASSERT_TRUE(txOutPoint2->Deserialize(serializedBuffer));
+	const auto tx_out_point2 = std::make_shared<TxOutPoint>();
+	ASSERT_TRUE(tx_out_point2->Deserialize(serialized_buffer));
 
-	EXPECT_EQ(txOutPoint2->TxId, txOutPoint->TxId);
-	EXPECT_EQ(txOutPoint2->TxOutIdx, txOutPoint->TxOutIdx);
+	EXPECT_EQ(tx_out_point2->TxId, tx_out_point->TxId);
+	EXPECT_EQ(tx_out_point2->TxOutIdx, tx_out_point->TxOutIdx);
 }
 
 TEST(SerializationTest, UnspentTxOutSerialization)
 {
-	auto txOut = std::make_shared<TxOut>(0, "foo");
+	auto tx_out = std::make_shared<TxOut>(0, "foo");
 
-	auto txOutPoint = std::make_shared<TxOutPoint>("foo", 0);
+	auto tx_out_point = std::make_shared<TxOutPoint>("foo", 0);
 
-	const auto utxo = std::make_shared<UTXO>(txOut, txOutPoint, false, 0);
+	const auto utxo = std::make_shared<UTXO>(tx_out, tx_out_point, false, 0);
 
-	auto serializedBuffer = utxo->Serialize();
+	auto serialized_buffer = utxo->Serialize();
 
 	const auto utxo2 = std::make_shared<UTXO>();
-	ASSERT_TRUE(utxo2->Deserialize(serializedBuffer));
+	ASSERT_TRUE(utxo2->Deserialize(serialized_buffer));
 
-	const auto& txOut2 = utxo->TxOut;
-	EXPECT_EQ(txOut2->ToAddress, txOut->ToAddress);
-	EXPECT_EQ(txOut2->Value, txOut->Value);
+	const auto& tx_out2 = utxo->TxOut;
+	EXPECT_EQ(tx_out2->ToAddress, tx_out->ToAddress);
+	EXPECT_EQ(tx_out2->Value, tx_out->Value);
 
-	const auto& txOutPoint2 = utxo->TxOutPoint;
-	EXPECT_EQ(txOutPoint2->TxId, txOutPoint->TxId);
-	EXPECT_EQ(txOutPoint2->TxOutIdx, txOutPoint->TxOutIdx);
+	const auto& tx_out_point2 = utxo->TxOutPoint;
+	EXPECT_EQ(tx_out_point2->TxId, tx_out_point->TxId);
+	EXPECT_EQ(tx_out_point2->TxOutIdx, tx_out_point->TxOutIdx);
 
 	EXPECT_EQ(utxo2->IsCoinbase, utxo->IsCoinbase);
 	EXPECT_EQ(utxo2->Height, utxo->Height);

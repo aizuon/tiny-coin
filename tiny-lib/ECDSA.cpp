@@ -9,27 +9,27 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t>> ECDSA::Generate()
 {
 	EVP_PKEY* ec_key = nullptr;
 
-	EVP_PKEY_CTX* pCtx = EVP_PKEY_CTX_new_from_name(nullptr, "EC", nullptr);
-	if (pCtx == nullptr)
+	EVP_PKEY_CTX* p_ctx = EVP_PKEY_CTX_new_from_name(nullptr, "EC", nullptr);
+	if (p_ctx == nullptr)
 	{
 		return {};
 	}
-	EVP_PKEY_keygen_init(pCtx);
+	EVP_PKEY_keygen_init(p_ctx);
 
-	auto* param_bld = CreateParamBuild();
+	auto param_bld = CreateParamBuild();
 	if (param_bld == nullptr)
 	{
 		return {};
 	}
 
-	auto* params = OSSL_PARAM_BLD_to_param(param_bld);
+	auto params = OSSL_PARAM_BLD_to_param(param_bld);
 	OSSL_PARAM_BLD_free(param_bld);
 	if (params == nullptr)
 	{
 		return {};
 	}
 
-	if (!EVP_PKEY_CTX_set_params(pCtx, params))
+	if (!EVP_PKEY_CTX_set_params(p_ctx, params))
 	{
 		OSSL_PARAM_free(params);
 
@@ -37,7 +37,7 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t>> ECDSA::Generate()
 	}
 	OSSL_PARAM_free(params);
 
-	EVP_PKEY_generate(pCtx, &ec_key);
+	EVP_PKEY_generate(p_ctx, &ec_key);
 	if (ec_key == nullptr)
 	{
 		return { {}, {} };
@@ -48,7 +48,7 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t>> ECDSA::Generate()
 	if (priv_key == nullptr)
 	{
 		EVP_PKEY_free(ec_key);
-		EVP_PKEY_CTX_free(pCtx);
+		EVP_PKEY_CTX_free(p_ctx);
 
 		return { {}, {} };
 	}
@@ -57,7 +57,7 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t>> ECDSA::Generate()
 	if (!BN_bn2bin(priv_key, priv_key_buffer.data()))
 	{
 		EVP_PKEY_free(ec_key);
-		EVP_PKEY_CTX_free(pCtx);
+		EVP_PKEY_CTX_free(p_ctx);
 
 		return { {}, {} };
 	}
@@ -66,27 +66,27 @@ std::pair<std::vector<uint8_t>, std::vector<uint8_t>> ECDSA::Generate()
 	if (pub_key_buffer.empty())
 	{
 		EVP_PKEY_free(ec_key);
-		EVP_PKEY_CTX_free(pCtx);
+		EVP_PKEY_CTX_free(p_ctx);
 
 		return { {}, {} };
 	}
 
 	EVP_PKEY_free(ec_key);
-	EVP_PKEY_CTX_free(pCtx);
+	EVP_PKEY_CTX_free(p_ctx);
 
 	return { priv_key_buffer, pub_key_buffer };
 }
 
-std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(const std::vector<uint8_t>& privKey)
+std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(const std::vector<uint8_t>& priv_key)
 {
-	auto* ec_key = CreateKey(privKey, true);
+	auto ec_key = CreateKey(priv_key, true);
 	if (ec_key == nullptr)
 	{
 		return {};
 	}
 
-	auto* pCtx = EVP_PKEY_CTX_new_from_pkey(nullptr, ec_key, nullptr);
-	if (pCtx == nullptr)
+	auto p_ctx = EVP_PKEY_CTX_new_from_pkey(nullptr, ec_key, nullptr);
+	if (p_ctx == nullptr)
 	{
 		EVP_PKEY_free(ec_key);
 
@@ -97,99 +97,99 @@ std::vector<uint8_t> ECDSA::GetPubKeyFromPrivKey(const std::vector<uint8_t>& pri
 	if (pub_key_buffer.empty())
 	{
 		EVP_PKEY_free(ec_key);
-		EVP_PKEY_CTX_free(pCtx);
+		EVP_PKEY_CTX_free(p_ctx);
 
 		return {};
 	}
 
 	EVP_PKEY_free(ec_key);
-	EVP_PKEY_CTX_free(pCtx);
+	EVP_PKEY_CTX_free(p_ctx);
 
 	return pub_key_buffer;
 }
 
-std::vector<uint8_t> ECDSA::SignMsg(const std::vector<uint8_t>& msg, const std::vector<uint8_t>& privKey)
+std::vector<uint8_t> ECDSA::SignMsg(const std::vector<uint8_t>& msg, const std::vector<uint8_t>& priv_key)
 {
-	auto* ec_key = CreateKey(privKey, true);
+	auto ec_key = CreateKey(priv_key, true);
 	if (ec_key == nullptr)
 	{
 		return {};
 	}
 
-	auto* pCtx = EVP_PKEY_CTX_new_from_pkey(nullptr, ec_key, nullptr);
-	if (pCtx == nullptr)
+	auto p_ctx = EVP_PKEY_CTX_new_from_pkey(nullptr, ec_key, nullptr);
+	if (p_ctx == nullptr)
 	{
 		EVP_PKEY_free(ec_key);
 
 		return {};
 	}
 
-	if (!EVP_PKEY_sign_init(pCtx))
+	if (!EVP_PKEY_sign_init(p_ctx))
 	{
 		EVP_PKEY_free(ec_key);
-		EVP_PKEY_CTX_free(pCtx);
+		EVP_PKEY_CTX_free(p_ctx);
 
 		return {};
 	}
 	size_t sig_size = 0;
-	EVP_PKEY_sign(pCtx, nullptr, &sig_size, msg.data(), msg.size());
+	EVP_PKEY_sign(p_ctx, nullptr, &sig_size, msg.data(), msg.size());
 	std::vector<uint8_t> sig(sig_size);
-	if (!EVP_PKEY_sign(pCtx, sig.data(), &sig_size, msg.data(), msg.size()))
+	if (!EVP_PKEY_sign(p_ctx, sig.data(), &sig_size, msg.data(), msg.size()))
 	{
 		EVP_PKEY_free(ec_key);
-		EVP_PKEY_CTX_free(pCtx);
+		EVP_PKEY_CTX_free(p_ctx);
 
 		return {};
 	}
 	sig.resize(sig_size);
 
 	EVP_PKEY_free(ec_key);
-	EVP_PKEY_CTX_free(pCtx);
+	EVP_PKEY_CTX_free(p_ctx);
 
 	return sig;
 }
 
 bool ECDSA::VerifySig(const std::vector<uint8_t>& sig, const std::vector<uint8_t>& msg,
-                      const std::vector<uint8_t>& pubKey)
+                      const std::vector<uint8_t>& pub_key)
 {
-	auto* ec_key = CreateKey(pubKey);
+	auto ec_key = CreateKey(pub_key);
 	if (ec_key == nullptr)
 	{
 		return {};
 	}
 
-	auto* pCtx = EVP_PKEY_CTX_new_from_pkey(nullptr, ec_key, nullptr);
-	if (pCtx == nullptr)
+	auto p_ctx = EVP_PKEY_CTX_new_from_pkey(nullptr, ec_key, nullptr);
+	if (p_ctx == nullptr)
 	{
 		EVP_PKEY_free(ec_key);
 
 		return {};
 	}
 
-	if (!EVP_PKEY_verify_init(pCtx))
+	if (!EVP_PKEY_verify_init(p_ctx))
 	{
 		EVP_PKEY_free(ec_key);
-		EVP_PKEY_CTX_free(pCtx);
+		EVP_PKEY_CTX_free(p_ctx);
 
 		return {};
 	}
-	if (!EVP_PKEY_verify(pCtx, sig.data(), sig.size(), msg.data(), msg.size()))
+	if (!EVP_PKEY_verify(p_ctx, sig.data(), sig.size(), msg.data(), msg.size()))
 	{
 		EVP_PKEY_free(ec_key);
-		EVP_PKEY_CTX_free(pCtx);
+		EVP_PKEY_CTX_free(p_ctx);
 
 		return {};
 	}
 
 	EVP_PKEY_free(ec_key);
-	EVP_PKEY_CTX_free(pCtx);
+	EVP_PKEY_CTX_free(p_ctx);
 
 	return true;
 }
 
 OSSL_PARAM_BLD* ECDSA::CreateParamBuild()
 {
-	auto* param_bld = OSSL_PARAM_BLD_new();
+	auto param_bld = OSSL_PARAM_BLD_new();
 	if (param_bld == nullptr)
 	{
 		return nullptr;
@@ -201,35 +201,35 @@ OSSL_PARAM_BLD* ECDSA::CreateParamBuild()
 	return param_bld;
 }
 
-bool ECDSA::AddPrivKeyParam(OSSL_PARAM_BLD* param_bld, const std::vector<uint8_t>& privKey)
+bool ECDSA::AddPrivKeyParam(OSSL_PARAM_BLD* param_bld, const std::vector<uint8_t>& priv_key)
 {
-	BIGNUM* priv_key = BN_bin2bn(privKey.data(), privKey.size(), nullptr);
-	if (priv_key == nullptr)
+	BIGNUM* priv_key_bn = BN_bin2bn(priv_key.data(), priv_key.size(), nullptr);
+	if (priv_key_bn == nullptr)
 	{
 		return false;
 	}
 
-	return OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_PRIV_KEY, priv_key);
+	return OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_PRIV_KEY, priv_key_bn);
 }
 
-bool ECDSA::AddPubKeyParam(OSSL_PARAM_BLD* param_bld, const std::vector<uint8_t>& pubKey)
+bool ECDSA::AddPubKeyParam(OSSL_PARAM_BLD* param_bld, const std::vector<uint8_t>& pub_key)
 {
-	return OSSL_PARAM_BLD_push_octet_string(param_bld, OSSL_PKEY_PARAM_ENCODED_PUBLIC_KEY, pubKey.data(),
-	                                        pubKey.size());
+	return OSSL_PARAM_BLD_push_octet_string(param_bld, OSSL_PKEY_PARAM_ENCODED_PUBLIC_KEY, pub_key.data(),
+	                                        pub_key.size());
 }
 
 EVP_PKEY* ECDSA::CreateKey(const std::vector<uint8_t>& key, bool priv /*= false*/)
 {
 	EVP_PKEY* ec_key = nullptr;
 
-	EVP_PKEY_CTX* pCtx = EVP_PKEY_CTX_new_from_name(nullptr, "EC", nullptr);
-	if (pCtx == nullptr)
+	EVP_PKEY_CTX* p_ctx = EVP_PKEY_CTX_new_from_name(nullptr, "EC", nullptr);
+	if (p_ctx == nullptr)
 	{
 		return nullptr;
 	}
-	EVP_PKEY_fromdata_init(pCtx);
+	EVP_PKEY_fromdata_init(p_ctx);
 
-	auto* param_bld = CreateParamBuild();
+	auto param_bld = CreateParamBuild();
 	if (param_bld == nullptr)
 	{
 		return nullptr;
@@ -242,23 +242,23 @@ EVP_PKEY* ECDSA::CreateKey(const std::vector<uint8_t>& key, bool priv /*= false*
 		return nullptr;
 	}
 
-	auto* params = OSSL_PARAM_BLD_to_param(param_bld);
+	auto params = OSSL_PARAM_BLD_to_param(param_bld);
 	OSSL_PARAM_BLD_free(param_bld);
 	if (params == nullptr)
 	{
 		return nullptr;
 	}
 
-	EVP_PKEY_fromdata(pCtx, &ec_key, EVP_PKEY_KEYPAIR, params);
+	EVP_PKEY_fromdata(p_ctx, &ec_key, EVP_PKEY_KEYPAIR, params);
 	OSSL_PARAM_free(params);
 	if (ec_key == nullptr)
 	{
-		EVP_PKEY_CTX_free(pCtx);
+		EVP_PKEY_CTX_free(p_ctx);
 
 		return nullptr;
 	}
 
-	EVP_PKEY_CTX_free(pCtx);
+	EVP_PKEY_CTX_free(p_ctx);
 
 	return ec_key;
 }
@@ -286,13 +286,13 @@ std::vector<uint8_t> ECDSA::GetPubKey(EVP_PKEY* ec_key)
 			return {};
 		}
 
-		auto* ec_group = EC_GROUP_new_by_curve_name(group_nid);
+		auto ec_group = EC_GROUP_new_by_curve_name(group_nid);
 		if (ec_group == nullptr)
 		{
 			return {};
 		}
 
-		auto* pub_key = EC_POINT_new(ec_group);
+		auto pub_key = EC_POINT_new(ec_group);
 		if (pub_key == nullptr)
 		{
 			EC_GROUP_free(ec_group);
@@ -343,20 +343,20 @@ std::vector<uint8_t> ECDSA::GetPubKey(EVP_PKEY* ec_key)
 			return {};
 		}
 
-		auto* pCtx = EVP_PKEY_CTX_new_from_pkey(nullptr, ec_key, nullptr);
-		if (pCtx == nullptr)
+		auto p_ctx = EVP_PKEY_CTX_new_from_pkey(nullptr, ec_key, nullptr);
+		if (p_ctx == nullptr)
 		{
 			return {};
 		}
 
-		if (!EVP_PKEY_public_check_quick(pCtx))
+		if (!EVP_PKEY_public_check_quick(p_ctx))
 		{
-			EVP_PKEY_CTX_free(pCtx);
+			EVP_PKEY_CTX_free(p_ctx);
 
 			return {};
 		}
 
-		EVP_PKEY_CTX_free(pCtx);
+		EVP_PKEY_CTX_free(p_ctx);
 	}
 
 	return pub_key_buffer;

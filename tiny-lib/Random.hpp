@@ -1,5 +1,6 @@
 #pragma once
 #include <random>
+#include <mutex>
 
 class Random
 {
@@ -9,4 +10,5 @@ public:
 private:
 	static std::random_device rd;
 	static std::mt19937 gen;
+	static std::mutex mtx;
 };

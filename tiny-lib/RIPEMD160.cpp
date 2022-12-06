@@ -9,32 +9,32 @@ std::vector<uint8_t> RIPEMD160::HashBinary(const std::vector<uint8_t>& buffer)
 {
 	std::vector<uint8_t> hash(RIPEMD160_DIGEST_LENGTH);
 
-	EVP_MD_CTX* mdCtx = EVP_MD_CTX_new();
-	if (mdCtx == nullptr)
+	EVP_MD_CTX* md_ctx = EVP_MD_CTX_new();
+	if (md_ctx == nullptr)
 	{
-		EVP_MD_CTX_free(mdCtx);
+		EVP_MD_CTX_free(md_ctx);
 
 		return {};
 	}
-	if (!EVP_DigestInit_ex(mdCtx, md, nullptr))
+	if (!EVP_DigestInit_ex(md_ctx, md, nullptr))
 	{
-		EVP_MD_CTX_free(mdCtx);
+		EVP_MD_CTX_free(md_ctx);
 
 		return {};
 	}
-	if (!EVP_DigestUpdate(mdCtx, buffer.data(), buffer.size()))
+	if (!EVP_DigestUpdate(md_ctx, buffer.data(), buffer.size()))
 	{
-		EVP_MD_CTX_free(mdCtx);
+		EVP_MD_CTX_free(md_ctx);
 
 		return {};
 	}
-	if (!EVP_DigestFinal_ex(mdCtx, hash.data(), nullptr))
+	if (!EVP_DigestFinal_ex(md_ctx, hash.data(), nullptr))
 	{
-		EVP_MD_CTX_free(mdCtx);
+		EVP_MD_CTX_free(md_ctx);
 
 		return {};
 	}
-	EVP_MD_CTX_free(mdCtx);
+	EVP_MD_CTX_free(md_ctx);
 
 	return hash;
 }

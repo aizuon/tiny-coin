@@ -86,8 +86,8 @@ bool BinaryBuffer::Read(std::string& obj)
 
 	const uint32_t length = size * sizeof(std::string::value_type);
 
-	const uint32_t finalOffset = ReadOffset + length;
-	if (Buffer.size() < finalOffset)
+	const uint32_t final_offset = ReadOffset + length;
+	if (Buffer.size() < final_offset)
 		return false;
 
 	obj.resize(size);
@@ -113,13 +113,13 @@ bool BinaryBuffer::operator==(const BinaryBuffer& obj) const
 
 void BinaryBuffer::GrowIfNeeded(uint32_t writeLength)
 {
-	const uint32_t finalLength = WriteOffset + writeLength;
-	const bool reserve_needed = Buffer.capacity() <= finalLength;
-	const bool resize_needed = Buffer.size() <= finalLength;
+	const uint32_t final_length = WriteOffset + writeLength;
+	const bool reserve_needed = Buffer.capacity() <= final_length;
+	const bool resize_needed = Buffer.size() <= final_length;
 
 	if (reserve_needed)
-		Buffer.reserve(finalLength * BUFFER_GROW_FACTOR);
+		Buffer.reserve(final_length * BUFFER_GROW_FACTOR);
 
 	if (resize_needed)
-		Buffer.resize(finalLength);
+		Buffer.resize(final_length);
 }

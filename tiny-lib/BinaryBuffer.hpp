@@ -73,7 +73,7 @@ public:
 
 		const uint32_t length = sizeof(T);
 		GrowIfNeeded(length);
-		memcpy(Buffer.data() + WriteOffset, &obj, length);
+		std::memcpy(Buffer.data() + WriteOffset, &obj, length);
 		WriteOffset += length;
 	}
 
@@ -121,16 +121,16 @@ public:
 
 		const uint32_t length = sizeof(T);
 
-		const uint32_t finalOffset = ReadOffset + length;
-		if (Buffer.size() < finalOffset)
+		const uint32_t final_offset = ReadOffset + length;
+		if (Buffer.size() < final_offset)
 			return false;
 
-		memcpy(&obj, Buffer.data() + ReadOffset, length);
+		std::memcpy(&obj, Buffer.data() + ReadOffset, length);
 		if (!Utils::IsLittleEndian)
 		{
 			boost::endian::endian_reverse_inplace(obj);
 		}
-		ReadOffset = finalOffset;
+		ReadOffset = final_offset;
 
 		return true;
 	}
@@ -146,8 +146,8 @@ public:
 
 		const uint32_t length = size * sizeof(T);
 
-		const uint32_t finalOffset = ReadOffset + length;
-		if (Buffer.size() < finalOffset)
+		const uint32_t final_offset = ReadOffset + length;
+		if (Buffer.size() < final_offset)
 			return false;
 
 		obj.resize(size);
@@ -173,5 +173,5 @@ private:
 
 	static constexpr float BUFFER_GROW_FACTOR = 1.5f;
 
-	void GrowIfNeeded(uint32_t writeLength);
+	void GrowIfNeeded(uint32_t write_length);
 };

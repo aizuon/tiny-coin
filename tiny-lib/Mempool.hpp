@@ -20,7 +20,7 @@ public:
 
 	static std::recursive_mutex Mutex;
 
-	static std::shared_ptr<UTXO> Find_UTXO_InMempool(const std::shared_ptr<TxOutPoint>& txOutPoint);
+	static std::shared_ptr<UTXO> Find_UTXO_InMempool(const std::shared_ptr<TxOutPoint>& tx_out_point);
 
 	static std::shared_ptr<Block> SelectFromMempool(const std::shared_ptr<Block>& block);
 
@@ -29,6 +29,6 @@ public:
 private:
 	static bool CheckBlockSize(const std::shared_ptr<Block>& block);
 
-	static std::shared_ptr<Block> TryAddToBlock(std::shared_ptr<Block>& block, const std::string& txId,
-	                                            std::set<std::string>& addedToBlock);
+	static std::shared_ptr<Block> TryAddToBlock(std::shared_ptr<Block>& block, const std::string& tx_id,
+	                                            std::set<std::string>& added_to_block);
 };

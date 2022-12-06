@@ -36,7 +36,7 @@ int main(int argc, char** argv)
 		("wallet", po::value<std::string>(), "path to wallet");
 
 	po::variables_map vm;
-	po::store(parse_command_line(argc, argv, desc), vm);
+	po::store(po::parse_command_line(argc, argv, desc), vm);
 	po::notify(vm);
 
 	if (!vm.contains("port"))
@@ -72,14 +72,14 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	const auto [privKey, pubKey, address] = vm.contains("wallet")
+	const auto [priv_key, pub_key, address] = vm.contains("wallet")
 		                                        ? Wallet::InitWallet(vm["wallet"].as<std::string>())
 		                                        : Wallet::InitWallet();
 	const auto port = vm["port"].as<uint16_t>();
 	NetClient::ListenAsync(port);
 	NetClient::RunAsync();
 
-	std::vector<std::future<void>> pendingConnections;
+	std::vector<std::future<void>> pending_connections;
 	for (const auto& [k, v] : NetClient::InitialPeers)
 	{
 		if (v == port)
@@ -87,10 +87,10 @@ int main(int argc, char** argv)
 			continue;
 		}
 
-		pendingConnections.emplace_back(std::async(std::launch::async, &NetClient::Connect, k, v));
+		pending_connections.emplace_back(std::async(std::launch::async, &NetClient::Connect, k, v));
 	}
-	for (const auto& pendingConnection : pendingConnections)
-		pendingConnection.wait();
+	for (const auto& pending_connection : pending_connections)
+		pending_connection.wait();
 
 	if (NodeConfig::Type == NodeType::Miner)
 	{
@@ -144,11 +144,11 @@ int main(int argc, char** argv)
 				if (send_args.size() == 3)
 				{
 					const auto& send_fee = send_args[2];
-					Wallet::SendValue(std::stoull(send_value), std::stoull(send_fee), send_address, privKey);
+					Wallet::SendValue(std::stoull(send_value), std::stoull(send_fee), send_address, priv_key);
 				}
 				else
 				{
-					Wallet::SendValue(std::stoull(send_value), 100, send_address, privKey);
+					Wallet::SendValue(std::stoull(send_value), 100, send_address, priv_key);
 				}
 			}
 			else if (command.starts_with(tx_status))

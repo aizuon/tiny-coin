@@ -11,7 +11,7 @@ std::string Utils::ByteArrayToHexString(const std::vector<uint8_t>& vec)
 {
 	std::string hash;
 
-	boost::algorithm::hex_lower(vec.begin(), vec.end(), back_inserter(hash));
+	boost::algorithm::hex_lower(vec, std::back_inserter(hash));
 
 	return hash;
 }

@@ -107,9 +107,9 @@ void NetClient::ListenAsync(uint16_t port)
 
 void NetClient::SendMsg(std::shared_ptr<Connection>& con, const IMsg& msg)
 {
-	const auto msgBuffer = PrepareSendBuffer(msg);
+	const auto msg_buffer = PrepareSendBuffer(msg);
 
-	Write(con, msgBuffer);
+	Write(con, msg_buffer);
 }
 
 bool NetClient::SendMsgRandom(const IMsg& msg)
@@ -151,8 +151,8 @@ std::shared_ptr<Connection> NetClient::GetRandomConnection()
 	if (MinerConnections.empty())
 		return nullptr;
 
-	const auto randomIdx = Random::GetInt(0, MinerConnections.size() - 1);
-	return MinerConnections[randomIdx];
+	const auto random_idx = Random::GetInt(0, MinerConnections.size() - 1);
+	return MinerConnections[random_idx];
 }
 
 void NetClient::StartAccept()
@@ -199,16 +199,16 @@ void NetClient::HandleRead(std::shared_ptr<Connection>& con, const boost::system
 {
 	if (!err)
 	{
-		auto& readBuffer = con->ReadBuffer;
-		if (bytes_transferred > Magic.size() && readBuffer.size() >= bytes_transferred)
+		auto& read_buffer = con->ReadBuffer;
+		if (bytes_transferred > Magic.size() && read_buffer.size() >= bytes_transferred)
 		{
 			BinaryBuffer buffer;
 			buffer.GrowTo(bytes_transferred - Magic.size());
-			boost::asio::buffer_copy(boost::asio::buffer(buffer.GetWritableBuffer()), readBuffer.data());
+			boost::asio::buffer_copy(boost::asio::buffer(buffer.GetWritableBuffer()), read_buffer.data());
 
 			HandleMsg(con, buffer);
 
-			readBuffer.consume(bytes_transferred);
+			read_buffer.consume(bytes_transferred);
 		}
 
 		DoAsyncRead(con);
@@ -328,16 +328,16 @@ void NetClient::HandleMsg(std::shared_ptr<Connection>& con, BinaryBuffer& msg_bu
 
 BinaryBuffer NetClient::PrepareSendBuffer(const IMsg& msg)
 {
-	const auto serializedMsg = msg.Serialize().GetBuffer();
+	const auto serialized_msg = msg.Serialize().GetBuffer();
 	const auto opcode = static_cast<OpcodeType>(msg.GetOpcode());
 
-	BinaryBuffer msgBuffer;
-	msgBuffer.Reserve(sizeof(opcode) + serializedMsg.size() + Magic.size());
-	msgBuffer.Write(opcode);
-	msgBuffer.WriteRaw(serializedMsg);
-	msgBuffer.WriteRaw(Magic);
+	BinaryBuffer msg_buffer;
+	msg_buffer.Reserve(sizeof(opcode) + serialized_msg.size() + Magic.size());
+	msg_buffer.Write(opcode);
+	msg_buffer.WriteRaw(serialized_msg);
+	msg_buffer.WriteRaw(Magic);
 
-	return msgBuffer;
+	return msg_buffer;
 }
 
 void NetClient::Write(std::shared_ptr<Connection>& con, const BinaryBuffer& msg_buffer)

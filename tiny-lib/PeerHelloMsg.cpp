@@ -39,14 +39,14 @@ bool PeerHelloMsg::Deserialize(BinaryBuffer& buffer)
 {
 	auto copy = *this;
 
-	NodeTypeType nodeType = 0;
-	if (!buffer.Read(nodeType))
+	NodeTypeType node_type = 0;
+	if (!buffer.Read(node_type))
 	{
 		*this = std::move(copy);
 
 		return false;
 	}
-	NodeType = static_cast<::NodeType>(nodeType);
+	NodeType = static_cast<::NodeType>(node_type);
 
 	return true;
 }

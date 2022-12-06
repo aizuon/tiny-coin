@@ -14,8 +14,8 @@ TxValidationException::TxValidationException(const char* msg)
 {
 }
 
-TxValidationException::TxValidationException(const char* msg, const std::shared_ptr<Tx>& toOrphan)
-	: std::exception(msg), ToOrphan(toOrphan)
+TxValidationException::TxValidationException(const char* msg, const std::shared_ptr<Tx>& to_orphan)
+	: std::exception(msg), ToOrphan(to_orphan)
 {
 }
 
@@ -24,7 +24,7 @@ BlockValidationException::BlockValidationException(const char* msg)
 {
 }
 
-BlockValidationException::BlockValidationException(const char* msg, const std::shared_ptr<Block>& toOrphan)
-	: std::exception(msg), ToOrphan(toOrphan)
+BlockValidationException::BlockValidationException(const char* msg, const std::shared_ptr<Block>& to_orphan)
+	: std::exception(msg), ToOrphan(to_orphan)
 {
 }

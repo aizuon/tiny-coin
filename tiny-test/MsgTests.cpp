@@ -15,27 +15,27 @@
 
 TEST(MsgTest, SpendMsg)
 {
-	std::vector<std::shared_ptr<TxIn>> txIns;
-	auto toSpend = std::make_shared<TxOutPoint>("foo", 0);
-	const auto txIn = std::make_shared<TxIn>(toSpend, std::vector<uint8_t>(), std::vector<uint8_t>(), -1);
-	txIns.push_back(txIn);
+	std::vector<std::shared_ptr<TxIn>> tx_ins;
+	auto to_spend = std::make_shared<TxOutPoint>("foo", 0);
+	const auto tx_in = std::make_shared<TxIn>(to_spend, std::vector<uint8_t>(), std::vector<uint8_t>(), -1);
+	tx_ins.push_back(tx_in);
 
-	std::vector<std::shared_ptr<TxOut>> txOuts;
-	const auto txOut = std::make_shared<TxOut>(0, "foo");
-	txOuts.push_back(txOut);
+	std::vector<std::shared_ptr<TxOut>> tx_outs;
+	const auto tx_out = std::make_shared<TxOut>(0, "foo");
+	tx_outs.push_back(tx_out);
 
-	const auto tx = std::make_shared<Tx>(txIns, txOuts, 0);
+	const auto tx = std::make_shared<Tx>(tx_ins, tx_outs, 0);
 
-	const auto spendMsg = MsgSerializer::BuildSpendMsg(txIn->ToSpend, txIn->UnlockPubKey, txIn->Sequence, tx->TxOuts);
-	const auto spendMsg_str = Utils::ByteArrayToHexString(spendMsg);
+	const auto spend_msg = MsgSerializer::BuildSpendMsg(tx_in->ToSpend, tx_in->UnlockPubKey, tx_in->Sequence, tx->TxOuts);
+	const auto spend_msg_str = Utils::ByteArrayToHexString(spend_msg);
 
-	EXPECT_EQ(spendMsg_str, "d2cde10c62cdc1707ad78d7356e01a73d1376a7a1f775ca6d207d8a511fdff19");
+	EXPECT_EQ(spend_msg_str, "d2cde10c62cdc1707ad78d7356e01a73d1376a7a1f775ca6d207d8a511fdff19");
 
-	const auto txOut2 = std::make_shared<TxOut>(0, "foo");
-	tx->TxOuts.push_back(txOut2);
+	const auto tx_out2 = std::make_shared<TxOut>(0, "foo");
+	tx->TxOuts.push_back(tx_out2);
 
-	const auto spendMsg2 = MsgSerializer::BuildSpendMsg(txIn->ToSpend, txIn->UnlockPubKey, txIn->Sequence, tx->TxOuts);
-	const auto spendMsg2_str = Utils::ByteArrayToHexString(spendMsg2);
+	const auto spend_msg2 = MsgSerializer::BuildSpendMsg(tx_in->ToSpend, tx_in->UnlockPubKey, tx_in->Sequence, tx->TxOuts);
+	const auto spend_msg2_str = Utils::ByteArrayToHexString(spend_msg2);
 
-	EXPECT_NE(spendMsg2_str, spendMsg_str);
+	EXPECT_NE(spend_msg2_str, spend_msg_str);
 }
