@@ -11,7 +11,7 @@ InvMsg::InvMsg(const std::vector<std::shared_ptr<Block>>& blocks)
 {
 }
 
-void InvMsg::Handle(std::shared_ptr<Connection>& con)
+void InvMsg::Handle(std::shared_ptr<Connection> con)
 {
 	LOG_INFO("Recieved initial sync from {}:{}", con->Socket.remote_endpoint().address().to_string(),
 	         con->Socket.remote_endpoint().port());
@@ -31,6 +31,7 @@ void InvMsg::Handle(std::shared_ptr<Connection>& con)
 		LOG_INFO("Initial block download complete");
 
 		Chain::InitialBlockDownloadComplete = true;
+		Chain::SaveToDisk();
 
 		return;
 	}

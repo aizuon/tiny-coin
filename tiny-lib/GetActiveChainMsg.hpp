@@ -6,7 +6,7 @@ class GetActiveChainMsg : public IMsg
 public:
 	~GetActiveChainMsg() override = default;
 
-	void Handle(std::shared_ptr<Connection>& con) override;
+	void Handle(std::shared_ptr<Connection> con) override;
 	BinaryBuffer Serialize() const override;
 	bool Deserialize(BinaryBuffer& buffer) override;
 

@@ -4,7 +4,7 @@
 #include "Chain.hpp"
 #include "MsgCache.hpp"
 
-void SendActiveChainMsg::Handle(std::shared_ptr<Connection>& con)
+void SendActiveChainMsg::Handle(std::shared_ptr<Connection> con)
 {
 	MsgCache::SendActiveChainMsg = std::make_shared<SendActiveChainMsg>(*this);
 }

@@ -4,7 +4,7 @@
 #include "NetClient.hpp"
 #include "SendMempoolMsg.hpp"
 
-void GetMempoolMsg::Handle(std::shared_ptr<Connection>& con)
+void GetMempoolMsg::Handle(std::shared_ptr<Connection> con)
 {
 	NetClient::SendMsg(con, SendMempoolMsg());
 }

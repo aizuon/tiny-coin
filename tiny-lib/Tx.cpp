@@ -83,8 +83,10 @@ void Tx::Validate(const ValidateRequest& req) const
 		{
 			ValidateSignatureForSpend(txIn, utxo);
 		}
-		catch (const TxUnlockException&)
+		catch (const TxUnlockException& ex)
 		{
+			LOG_ERROR(ex.what());
+
 			throw TxValidationException(fmt::format("TxIn not a valid spend of UTXO").c_str());
 		}
 
@@ -223,7 +225,7 @@ bool Tx::operator==(const Tx& obj) const
 	return true;
 }
 
-void Tx::ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UTXO>& utxo) const
+void Tx::ValidateSignatureForSpend(std::shared_ptr<TxIn> txIn, std::shared_ptr<UTXO> utxo) const
 {
 	const auto pubKeyAsAddr = Wallet::PubKeyToAddress(txIn->UnlockPubKey);
 	if (pubKeyAsAddr != utxo->TxOut->ToAddress)

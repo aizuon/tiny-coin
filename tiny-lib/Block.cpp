@@ -1,8 +1,6 @@
 #include "pch.hpp"
 #include "Block.hpp"
 
-#include <fmt/format.h>
-
 #include "SHA256.hpp"
 #include "Utils.hpp"
 

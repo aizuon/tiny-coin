@@ -6,7 +6,7 @@
 #include "TxOut.hpp"
 #include "TxOutPoint.hpp"
 
-std::vector<uint8_t> MsgSerializer::BuildSpendMsg(const std::shared_ptr<TxOutPoint>& to_spend,
+std::vector<uint8_t> MsgSerializer::BuildSpendMsg(std::shared_ptr<TxOutPoint> to_spend,
                                                   const std::vector<uint8_t>& pub_key, int32_t sequence,
                                                   const std::vector<std::shared_ptr<TxOut>>& tx_outs)
 {

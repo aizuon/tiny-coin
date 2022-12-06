@@ -20,16 +20,16 @@ public:
 	static std::shared_ptr<Block> AssembleAndSolveBlock(const std::string& pay_coinbase_to_address,
 	                                                    const std::vector<std::shared_ptr<Tx>>& txs);
 
-	static std::shared_ptr<Block> Mine(const std::shared_ptr<Block>& block);
+	static std::shared_ptr<Block> Mine(std::shared_ptr<Block> block);
 	static void MineForever();
 
-	static uint64_t CalculateFees(const std::shared_ptr<Tx>& tx);
+	static uint64_t CalculateFees(std::shared_ptr<Tx> tx);
 
 private:
-	static void MineChunk(const std::shared_ptr<Block>& block, const uint256_t& target_hash, uint64_t start,
+	static void MineChunk(std::shared_ptr<Block> block, const uint256_t& target_hash, uint64_t start,
 	                      uint64_t chunk_size, std::atomic_bool& found, std::atomic<uint64_t>& found_nonce,
 	                      std::atomic<uint64_t>& hash_count);
 
-	static uint64_t CalculateFees(const std::shared_ptr<Block>& block);
+	static uint64_t CalculateFees(std::shared_ptr<Block> block);
 	static uint64_t GetBlockSubsidy();
 };

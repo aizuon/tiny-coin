@@ -18,7 +18,7 @@ std::vector<std::shared_ptr<Tx>> Mempool::OrphanedTxs;
 
 std::recursive_mutex Mempool::Mutex;
 
-std::shared_ptr<UTXO> Mempool::Find_UTXO_InMempool(const std::shared_ptr<TxOutPoint>& tx_out_point)
+std::shared_ptr<UTXO> Mempool::Find_UTXO_InMempool(std::shared_ptr<TxOutPoint> tx_out_point)
 {
 	std::scoped_lock lock(Mutex);
 
@@ -38,7 +38,7 @@ std::shared_ptr<UTXO> Mempool::Find_UTXO_InMempool(const std::shared_ptr<TxOutPo
 	return std::make_shared<UTXO>(tx_out, tx_out_point, false, -1);
 }
 
-std::shared_ptr<Block> Mempool::SelectFromMempool(const std::shared_ptr<Block>& block)
+std::shared_ptr<Block> Mempool::SelectFromMempool(std::shared_ptr<Block> block)
 {
 	std::scoped_lock lock(Mutex);
 
@@ -61,7 +61,7 @@ std::shared_ptr<Block> Mempool::SelectFromMempool(const std::shared_ptr<Block>& 
 	return new_block;
 }
 
-void Mempool::AddTxToMempool(const std::shared_ptr<Tx>& tx)
+void Mempool::AddTxToMempool(std::shared_ptr<Tx> tx)
 {
 	std::scoped_lock lock(Mutex);
 
@@ -79,6 +79,8 @@ void Mempool::AddTxToMempool(const std::shared_ptr<Tx>& tx)
 	}
 	catch (const TxValidationException& ex)
 	{
+		LOG_ERROR(ex.what());
+
 		if (ex.ToOrphan != nullptr)
 		{
 			LOG_INFO("Transaction {} submitted as orphan", ex.ToOrphan->Id());
@@ -99,12 +101,12 @@ void Mempool::AddTxToMempool(const std::shared_ptr<Tx>& tx)
 	NetClient::SendMsgRandom(TxInfoMsg(tx));
 }
 
-bool Mempool::CheckBlockSize(const std::shared_ptr<Block>& block)
+bool Mempool::CheckBlockSize(std::shared_ptr<Block> block)
 {
 	return block->Serialize().GetSize() < NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES;
 }
 
-std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block>& block, const std::string& tx_id,
+std::shared_ptr<Block> Mempool::TryAddToBlock(std::shared_ptr<Block> block, const std::string& tx_id,
                                               std::set<std::string>& added_to_block)
 {
 	std::scoped_lock lock(Mutex);

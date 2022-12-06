@@ -6,12 +6,12 @@
 #include "Log.hpp"
 #include "NetClient.hpp"
 
-GetBlockMsg::GetBlockMsg(const std::string& fromBlockId)
-	: FromBlockId(fromBlockId)
+GetBlockMsg::GetBlockMsg(const std::string& from_block_id)
+	: FromBlockId(from_block_id)
 {
 }
 
-void GetBlockMsg::Handle(std::shared_ptr<Connection>& con)
+void GetBlockMsg::Handle(std::shared_ptr<Connection> con)
 {
 	const auto& endpoint = con->Socket.remote_endpoint();
 	LOG_TRACE("Recieved GetBlockMsg from {}:{}", endpoint.address().to_string(), endpoint.port());
@@ -30,11 +30,11 @@ void GetBlockMsg::Handle(std::shared_ptr<Connection>& con)
 
 		if (max_height > Chain::ActiveChain.size())
 			max_height = Chain::ActiveChain.size();
-		for (uint32_t i = height; i < max_height - 1; i++)
+		for (uint32_t i = height; i < max_height; i++)
 			blocks.push_back(Chain::ActiveChain[i]);
 	}
 
-	LOG_TRACE("Sending {} blocks to {}:{}", blocks.size(), endpoint.address().to_string(), endpoint.port());
+	LOG_TRACE("Sending {} block(s) to {}:{}", blocks.size(), endpoint.address().to_string(), endpoint.port());
 	NetClient::SendMsg(con, InvMsg(blocks));
 }
 

@@ -110,7 +110,7 @@ std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::Init
 }
 
 std::shared_ptr<TxIn> Wallet::BuildTxIn(const std::vector<uint8_t>& priv_key,
-                                        const std::shared_ptr<TxOutPoint>& tx_out_point,
+                                        std::shared_ptr<TxOutPoint> tx_out_point,
                                         const std::vector<std::shared_ptr<TxOut>>& tx_outs)
 {
 	int32_t sequence = -1;

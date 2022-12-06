@@ -47,7 +47,7 @@ public:
 
 	inline void GrowTo(uint32_t size)
 	{
-		assert(size < Buffer.size());
+		assert(size > Buffer.size());
 
 		Buffer.resize(size);
 	}

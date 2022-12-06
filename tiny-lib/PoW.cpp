@@ -20,8 +20,6 @@
 #include "Utils.hpp"
 #include "Wallet.hpp"
 
-using namespace boost::placeholders;
-
 std::atomic_bool PoW::MineInterrupt = false;
 
 uint8_t PoW::GetNextWorkRequired(const std::string& prev_block_hash)
@@ -77,7 +75,7 @@ std::shared_ptr<Block> PoW::AssembleAndSolveBlock(const std::string& pay_coinbas
 	return Mine(block);
 }
 
-std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
+std::shared_ptr<Block> PoW::Mine(std::shared_ptr<Block> block)
 {
 	if (MineInterrupt)
 		MineInterrupt = false;
@@ -131,25 +129,24 @@ std::shared_ptr<Block> PoW::Mine(const std::shared_ptr<Block>& block)
 
 void PoW::MineForever()
 {
-	if (!Chain::LoadFromDisk())
+	Chain::LoadFromDisk();
+
+	if (NetClient::SendMsgRandom(GetBlockMsg(Chain::ActiveChain.back()->Id())))
 	{
-		if (NetClient::SendMsgRandom(GetBlockMsg(Chain::ActiveChain.back()->Id())))
+		LOG_INFO("Starting initial block sync");
+
+		const auto start = Utils::GetUnixTimestamp();
+		while (!Chain::InitialBlockDownloadComplete)
 		{
-			LOG_INFO("Starting initial block sync");
-
-			const auto start = Utils::GetUnixTimestamp();
-			while (!Chain::InitialBlockDownloadComplete)
+			if (Utils::GetUnixTimestamp() - start > 60)
 			{
-				if (Utils::GetUnixTimestamp() - start > 60)
-				{
-					//TODO: if sync has started but hasnt finished in time, cancel sync and reset chain
+				//TODO: if sync has started but hasnt finished in time, cancel sync and reset chain
 
-					LOG_ERROR("Timeout on initial block sync");
+				LOG_ERROR("Timeout on initial block sync");
 
-					break;
-				}
-				std::this_thread::sleep_for(std::chrono::milliseconds(16));
+				break;
 			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(16));
 		}
 	}
 
@@ -166,7 +163,7 @@ void PoW::MineForever()
 	}
 }
 
-uint64_t PoW::CalculateFees(const std::shared_ptr<Tx>& tx)
+uint64_t PoW::CalculateFees(std::shared_ptr<Tx> tx)
 {
 	uint64_t spent = 0;
 	for (const auto& tx_in : tx->TxIns)
@@ -187,7 +184,7 @@ uint64_t PoW::CalculateFees(const std::shared_ptr<Tx>& tx)
 	return spent - sent;
 }
 
-void PoW::MineChunk(const std::shared_ptr<Block>& block, const uint256_t& target_hash, uint64_t start,
+void PoW::MineChunk(std::shared_ptr<Block> block, const uint256_t& target_hash, uint64_t start,
                     uint64_t chunk_size, std::atomic_bool& found, std::atomic<uint64_t>& found_nonce,
                     std::atomic<uint64_t>& hash_count)
 {
@@ -208,7 +205,7 @@ void PoW::MineChunk(const std::shared_ptr<Block>& block, const uint256_t& target
 	found_nonce = start + i;
 }
 
-uint64_t PoW::CalculateFees(const std::shared_ptr<Block>& block)
+uint64_t PoW::CalculateFees(std::shared_ptr<Block> block)
 {
 	uint64_t fee = 0;
 

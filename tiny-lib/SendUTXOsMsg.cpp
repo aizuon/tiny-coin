@@ -5,7 +5,7 @@
 #include "NetClient.hpp"
 #include "UnspentTxOut.hpp"
 
-void SendUTXOsMsg::Handle(std::shared_ptr<Connection>& con)
+void SendUTXOsMsg::Handle(std::shared_ptr<Connection> con)
 {
 	MsgCache::SendUTXOsMsg = std::make_shared<SendUTXOsMsg>(*this);
 }

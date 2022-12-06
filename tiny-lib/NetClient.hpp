@@ -27,7 +27,7 @@ public:
 	static void Connect(const std::string& address, uint16_t port);
 	static void ListenAsync(uint16_t port);
 
-	static void SendMsg(std::shared_ptr<Connection>& con, const IMsg& msg);
+	static void SendMsg(std::shared_ptr<Connection> con, const IMsg& msg);
 	static bool SendMsgRandom(const IMsg& msg);
 
 	static void BroadcastMsg(const IMsg& msg);
@@ -48,16 +48,16 @@ private:
 	static std::shared_ptr<Connection> GetRandomConnection();
 
 	static void StartAccept();
-	static void HandleAccept(std::shared_ptr<Connection>& con, const boost::system::error_code& err);
+	static void HandleAccept(std::shared_ptr<Connection> con, const boost::system::error_code& err);
 
-	static void DoAsyncRead(const std::shared_ptr<Connection>& con);
-	static void HandleRead(std::shared_ptr<Connection>& con, const boost::system::error_code& err,
+	static void DoAsyncRead(std::shared_ptr<Connection> con);
+	static void HandleRead(std::shared_ptr<Connection> con, const boost::system::error_code& err,
 	                       size_t bytes_transferred);
 
-	static void HandleMsg(std::shared_ptr<Connection>& con, BinaryBuffer& msg_buffer);
+	static void HandleMsg(std::shared_ptr<Connection> con, BinaryBuffer& msg_buffer);
 
 	static BinaryBuffer PrepareSendBuffer(const IMsg& msg);
-	static void Write(std::shared_ptr<Connection>& con, const BinaryBuffer& msg_buffer);
+	static void Write(std::shared_ptr<Connection> con, const BinaryBuffer& msg_buffer);
 
-	static void RemoveConnection(std::shared_ptr<Connection>& con);
+	static void RemoveConnection(std::shared_ptr<Connection> con);
 };

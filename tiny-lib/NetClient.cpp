@@ -105,7 +105,7 @@ void NetClient::ListenAsync(uint16_t port)
 	StartAccept();
 }
 
-void NetClient::SendMsg(std::shared_ptr<Connection>& con, const IMsg& msg)
+void NetClient::SendMsg(std::shared_ptr<Connection> con, const IMsg& msg)
 {
 	const auto msg_buffer = PrepareSendBuffer(msg);
 
@@ -162,7 +162,7 @@ void NetClient::StartAccept()
 	Acceptor.async_accept(con->Socket, handler);
 }
 
-void NetClient::HandleAccept(std::shared_ptr<Connection>& con, const boost::system::error_code& err)
+void NetClient::HandleAccept(std::shared_ptr<Connection> con, const boost::system::error_code& err)
 {
 	if (!err)
 	{
@@ -187,14 +187,14 @@ void NetClient::HandleAccept(std::shared_ptr<Connection>& con, const boost::syst
 	StartAccept();
 }
 
-void NetClient::DoAsyncRead(const std::shared_ptr<Connection>& con)
+void NetClient::DoAsyncRead(std::shared_ptr<Connection> con)
 {
 	auto handler = boost::bind(&NetClient::HandleRead, con, boost::asio::placeholders::error,
 	                           boost::asio::placeholders::bytes_transferred);
 	boost::asio::async_read_until(con->Socket, con->ReadBuffer, Magic, handler);
 }
 
-void NetClient::HandleRead(std::shared_ptr<Connection>& con, const boost::system::error_code& err,
+void NetClient::HandleRead(std::shared_ptr<Connection> con, const boost::system::error_code& err,
                            size_t bytes_transferred)
 {
 	if (!err)
@@ -223,7 +223,7 @@ void NetClient::HandleRead(std::shared_ptr<Connection>& con, const boost::system
 	}
 }
 
-void NetClient::HandleMsg(std::shared_ptr<Connection>& con, BinaryBuffer& msg_buffer)
+void NetClient::HandleMsg(std::shared_ptr<Connection> con, BinaryBuffer& msg_buffer)
 {
 	OpcodeType opcode = 0;
 	if (!msg_buffer.Read(opcode))
@@ -340,7 +340,7 @@ BinaryBuffer NetClient::PrepareSendBuffer(const IMsg& msg)
 	return msg_buffer;
 }
 
-void NetClient::Write(std::shared_ptr<Connection>& con, const BinaryBuffer& msg_buffer)
+void NetClient::Write(std::shared_ptr<Connection> con, const BinaryBuffer& msg_buffer)
 {
 	std::scoped_lock lock(con->WriteMutex);
 
@@ -356,7 +356,7 @@ void NetClient::Write(std::shared_ptr<Connection>& con, const BinaryBuffer& msg_
 	}
 }
 
-void NetClient::RemoveConnection(std::shared_ptr<Connection>& con)
+void NetClient::RemoveConnection(std::shared_ptr<Connection> con)
 {
 	std::scoped_lock lock(ConnectionsMutex);
 

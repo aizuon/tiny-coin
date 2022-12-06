@@ -4,7 +4,7 @@
 #include "NetClient.hpp"
 #include "SendUTXOsMsg.hpp"
 
-void GetUTXOsMsg::Handle(std::shared_ptr<Connection>& con)
+void GetUTXOsMsg::Handle(std::shared_ptr<Connection> con)
 {
 	NetClient::SendMsg(con, SendUTXOsMsg());
 }

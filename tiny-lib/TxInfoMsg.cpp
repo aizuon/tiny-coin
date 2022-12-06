@@ -9,7 +9,7 @@ TxInfoMsg::TxInfoMsg(const std::shared_ptr<::Tx>& tx)
 {
 }
 
-void TxInfoMsg::Handle(std::shared_ptr<Connection>& con)
+void TxInfoMsg::Handle(std::shared_ptr<Connection> con)
 {
 	LOG_TRACE("Recieved transaction {} from peer {}:{}", Tx->Id(), con->Socket.remote_endpoint().address().to_string(),
 	          con->Socket.remote_endpoint().port());

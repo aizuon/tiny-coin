@@ -15,7 +15,7 @@ public:
 
 	std::shared_ptr<Tx> Tx;
 
-	void Handle(std::shared_ptr<Connection>& con) override;
+	void Handle(std::shared_ptr<Connection> con) override;
 	BinaryBuffer Serialize() const override;
 	bool Deserialize(BinaryBuffer& buffer) override;
 

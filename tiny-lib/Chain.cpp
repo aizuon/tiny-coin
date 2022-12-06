@@ -62,7 +62,7 @@ int64_t Chain::GetMedianTimePast(uint32_t num_last_blocks)
 	return ActiveChain[median_idx]->Timestamp;
 }
 
-uint32_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
+uint32_t Chain::ValidateBlock(std::shared_ptr<Block> block)
 {
 	std::scoped_lock lock(Mutex);
 
@@ -92,8 +92,10 @@ uint32_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 		{
 			txs[i]->ValidateBasics(i == 0);
 		}
-		catch (const TxValidationException&)
+		catch (const TxValidationException& ex)
 		{
+			LOG_ERROR(ex.what());
+
 			LOG_ERROR("Transaction {} in block {} failed validation", txs[i]->Id(), block->Id());
 
 			throw BlockValidationException(fmt::format("Transaction {} invalid", txs[i]->Id()).c_str());
@@ -139,8 +141,10 @@ uint32_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 		{
 			non_coinbase_tx->Validate(req);
 		}
-		catch (const TxValidationException&)
+		catch (const TxValidationException& ex)
 		{
+			LOG_ERROR(ex.what());
+
 			const std::string msg = fmt::format("Transaction {} failed to validate", non_coinbase_tx->Id());
 
 			LOG_ERROR(msg);
@@ -152,7 +156,7 @@ uint32_t Chain::ValidateBlock(const std::shared_ptr<Block>& block)
 	return prev_block_chain_idx;
 }
 
-int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doing_reorg /*= false*/)
+int64_t Chain::ConnectBlock(std::shared_ptr<Block> block, bool doing_reorg /*= false*/)
 {
 	std::scoped_lock lock(Mutex);
 
@@ -183,6 +187,8 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doing_reor
 	}
 	catch (const BlockValidationException& ex)
 	{
+		LOG_ERROR(ex.what());
+
 		LOG_ERROR("Block {} failed validation", block_id);
 		if (ex.ToOrphan != nullptr)
 		{
@@ -245,7 +251,7 @@ int64_t Chain::ConnectBlock(const std::shared_ptr<Block>& block, bool doing_reor
 	return chain_idx;
 }
 
-std::shared_ptr<Block> Chain::DisconnectBlock(const std::shared_ptr<Block>& block)
+std::shared_ptr<Block> Chain::DisconnectBlock(std::shared_ptr<Block> block)
 {
 	std::scoped_lock lock(Mutex);
 
@@ -287,7 +293,7 @@ std::shared_ptr<Block> Chain::DisconnectBlock(const std::shared_ptr<Block>& bloc
 	return back;
 }
 
-std::vector<std::shared_ptr<Block>> Chain::DisconnectToFork(const std::shared_ptr<Block>& fork_block)
+std::vector<std::shared_ptr<Block>> Chain::DisconnectToFork(std::shared_ptr<Block> fork_block)
 {
 	std::scoped_lock lock(Mutex);
 
@@ -359,7 +365,7 @@ bool Chain::TryReorg(const std::vector<std::shared_ptr<Block>>& branch, uint32_t
 }
 
 void Chain::RollbackReorg(const std::vector<std::shared_ptr<Block>>& old_active_chain,
-                          const std::shared_ptr<Block>& fork_block, uint32_t branch_idx)
+                          std::shared_ptr<Block> fork_block, uint32_t branch_idx)
 {
 	std::scoped_lock lock(Mutex);
 
@@ -421,7 +427,7 @@ std::tuple<std::shared_ptr<Block>, int64_t, int64_t> Chain::LocateBlockInAllChai
 }
 
 std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> Chain::FindTxOutForTxIn(
-	const std::shared_ptr<TxIn>& tx_in, const std::vector<std::shared_ptr<Block>>& chain)
+	std::shared_ptr<TxIn> tx_in, const std::vector<std::shared_ptr<Block>>& chain)
 {
 	std::scoped_lock lock(Mutex);
 
@@ -429,12 +435,12 @@ std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> 
 	{
 		for (const auto& tx : chain[height]->Txs)
 		{
-			const auto& toSpend = tx_in->ToSpend;
-			if (toSpend->TxId == tx->Id())
+			const auto& to_spend = tx_in->ToSpend;
+			if (to_spend->TxId == tx->Id())
 			{
-				const auto& tx_out = tx->TxOuts[toSpend->TxOutIdx];
+				const auto& tx_out = tx->TxOuts[to_spend->TxOutIdx];
 
-				return { tx_out, tx, toSpend->TxOutIdx, tx->IsCoinbase(), height };
+				return { tx_out, tx, to_spend->TxOutIdx, tx->IsCoinbase(), height };
 			}
 		}
 	}
@@ -443,7 +449,7 @@ std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> 
 }
 
 std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> Chain::FindTxOutForTxInInActiveChain(
-	const std::shared_ptr<TxIn>& tx_in)
+	std::shared_ptr<TxIn> tx_in)
 {
 	return FindTxOutForTxIn(tx_in, ActiveChain);
 }

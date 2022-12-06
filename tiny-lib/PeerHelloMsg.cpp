@@ -6,7 +6,7 @@
 #include "NetClient.hpp"
 #include "NodeConfig.hpp"
 
-void PeerHelloMsg::Handle(std::shared_ptr<Connection>& con)
+void PeerHelloMsg::Handle(std::shared_ptr<Connection> con)
 {
 	con->NodeType = NodeType;
 	if (con->NodeType & NodeType::Miner)

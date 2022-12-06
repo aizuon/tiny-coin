@@ -47,7 +47,7 @@ public:
 	bool operator==(const Tx& obj) const;
 
 private:
-	void ValidateSignatureForSpend(const std::shared_ptr<TxIn>& txIn, const std::shared_ptr<UnspentTxOut>& utxo) const;
+	void ValidateSignatureForSpend(std::shared_ptr<TxIn> txIn, std::shared_ptr<UnspentTxOut> utxo) const;
 
 	auto tied() const
 	{

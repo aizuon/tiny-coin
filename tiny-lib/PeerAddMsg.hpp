@@ -15,7 +15,7 @@ public:
 	std::string Hostname;
 	uint16_t Port = 0;
 
-	void Handle(std::shared_ptr<Connection>& con) override;
+	void Handle(std::shared_ptr<Connection> con) override;
 	BinaryBuffer Serialize() const override;
 	bool Deserialize(BinaryBuffer& buffer) override;
 

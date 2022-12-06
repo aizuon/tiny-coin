@@ -4,7 +4,7 @@
 #include "NetClient.hpp"
 #include "SendActiveChainMsg.hpp"
 
-void GetActiveChainMsg::Handle(std::shared_ptr<Connection>& con)
+void GetActiveChainMsg::Handle(std::shared_ptr<Connection> con)
 {
 	NetClient::SendMsg(con, SendActiveChainMsg());
 }
