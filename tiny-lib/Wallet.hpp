@@ -21,10 +21,11 @@ class Wallet
 public:
 	static std::string PubKeyToAddress(const std::vector<uint8_t>& pub_key);
 
-	static std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> GetWallet(const std::string& wallet_path);
-	static void PrintWalletAddress(const std::string& wallet_path);
 	static std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string>
-	InitWallet(const std::string& wallet_path);
+	GetWallet(const std::string& wallet_path);
+	static void PrintWalletAddress(const std::string& wallet_path);
+	static std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> InitWallet(
+		const std::string& wallet_path);
 	static std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> InitWallet();
 
 	static std::shared_ptr<TxIn> BuildTxIn(const std::vector<uint8_t>& priv_key,
@@ -57,7 +58,8 @@ private:
 
 	static std::shared_ptr<Tx> BuildTxFromUTXOs(std::vector<std::shared_ptr<UnspentTxOut>>& utxos, uint64_t value,
 	                                            uint64_t fee, const std::string& address,
-	                                            const std::string& change_address, const std::vector<uint8_t>& priv_key);
+	                                            const std::string& change_address,
+	                                            const std::vector<uint8_t>& priv_key);
 
 	static std::shared_ptr<Tx> BuildTx_Miner(uint64_t value, uint64_t fee, const std::string& address,
 	                                         const std::vector<uint8_t>& priv_key);

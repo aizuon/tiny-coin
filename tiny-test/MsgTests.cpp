@@ -26,7 +26,8 @@ TEST(MsgTest, SpendMsg)
 
 	const auto tx = std::make_shared<Tx>(tx_ins, tx_outs, 0);
 
-	const auto spend_msg = MsgSerializer::BuildSpendMsg(tx_in->ToSpend, tx_in->UnlockPubKey, tx_in->Sequence, tx->TxOuts);
+	const auto spend_msg = MsgSerializer::BuildSpendMsg(tx_in->ToSpend, tx_in->UnlockPubKey, tx_in->Sequence,
+	                                                    tx->TxOuts);
 	const auto spend_msg_str = Utils::ByteArrayToHexString(spend_msg);
 
 	EXPECT_EQ(spend_msg_str, "d2cde10c62cdc1707ad78d7356e01a73d1376a7a1f775ca6d207d8a511fdff19");
@@ -34,7 +35,8 @@ TEST(MsgTest, SpendMsg)
 	const auto tx_out2 = std::make_shared<TxOut>(0, "foo");
 	tx->TxOuts.push_back(tx_out2);
 
-	const auto spend_msg2 = MsgSerializer::BuildSpendMsg(tx_in->ToSpend, tx_in->UnlockPubKey, tx_in->Sequence, tx->TxOuts);
+	const auto spend_msg2 = MsgSerializer::BuildSpendMsg(tx_in->ToSpend, tx_in->UnlockPubKey, tx_in->Sequence,
+	                                                     tx->TxOuts);
 	const auto spend_msg2_str = Utils::ByteArrayToHexString(spend_msg2);
 
 	EXPECT_NE(spend_msg2_str, spend_msg_str);

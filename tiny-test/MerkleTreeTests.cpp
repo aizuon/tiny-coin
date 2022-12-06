@@ -19,7 +19,8 @@ TEST(MerkleTreeTest, OneChain)
 	const auto bar_h = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(bar)));
 
 	EXPECT_TRUE(root != nullptr);
-	const auto combined_h = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(foo_h + bar_h)));
+	const auto combined_h = Utils::ByteArrayToHexString(
+		SHA256::DoubleHashBinary(Utils::StringToByteArray(foo_h + bar_h)));
 	EXPECT_TRUE(root->Value == combined_h);
 	EXPECT_TRUE(root->Children[0]->Value == foo_h);
 	EXPECT_TRUE(root->Children[1]->Value == bar_h);

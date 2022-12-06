@@ -310,9 +310,9 @@ TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 
 	const auto& utxo1 = UTXO::Map.begin()->second;
 	auto tx_out1 = std::make_shared<TxOut>(901, utxo1->TxOut->ToAddress);
-	std::vector tx_outs1{tx_out1};
+	std::vector tx_outs1{ tx_out1 };
 	auto tx_in1 = Wallet::BuildTxIn(priv_key, utxo1->TxOutPoint, tx_outs1);
-	auto tx1 = std::make_shared<Tx>(std::vector{tx_in1}, tx_outs1, 0);
+	auto tx1 = std::make_shared<Tx>(std::vector{ tx_in1 }, tx_outs1, 0);
 
 	ASSERT_THROW(
 		{
@@ -334,10 +334,10 @@ TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 	ASSERT_TRUE(Mempool::Map.contains(tx1->Id()));
 
 	auto tx_out2 = std::make_shared<TxOut>(9001, tx_out1->ToAddress);
-	std::vector tx_outs2{tx_out2};
+	std::vector tx_outs2{ tx_out2 };
 	auto tx_out_point2 = std::make_shared<TxOutPoint>(tx1->Id(), 0);
 	auto tx_in2 = Wallet::BuildTxIn(priv_key, tx_out_point2, tx_outs2);
-	auto tx2 = std::make_shared<Tx>(std::vector{tx_in2}, tx_outs2, 0);
+	auto tx2 = std::make_shared<Tx>(std::vector{ tx_in2 }, tx_outs2, 0);
 
 	Mempool::AddTxToMempool(tx2);
 	ASSERT_FALSE(Mempool::Map.contains(tx2->Id()));
@@ -369,7 +369,7 @@ TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 
 	ASSERT_EQ(*Chain::ActiveChain.back(), *block);
 	ASSERT_EQ(block->Txs.size() - 1, 2);
-	std::array txs{tx1, tx2};
+	std::array txs{ tx1, tx2 };
 	for (uint32_t i = 0; i < txs.size(); i++)
 	{
 		ASSERT_EQ(*block->Txs[i + 1], *txs[i]);

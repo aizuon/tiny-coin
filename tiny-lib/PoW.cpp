@@ -63,7 +63,7 @@ std::shared_ptr<Block> PoW::AssembleAndSolveBlock(const std::string& pay_coinbas
 
 	const uint64_t fees = CalculateFees(block);
 	const auto coinbase_tx = Tx::CreateCoinbase(pay_coinbase_to_address, GetBlockSubsidy() + fees,
-	                                           Chain::ActiveChain.size());
+	                                            Chain::ActiveChain.size());
 	block->Txs.insert(block->Txs.begin(), coinbase_tx);
 	block->MerkleHash = MerkleTree::GetRootOfTxs(block->Txs)->Value;
 
@@ -96,8 +96,8 @@ std::shared_ptr<Block> PoW::Mine(std::shared_ptr<Block> block)
 	for (uint8_t i = 0; i < num_threads; i++)
 	{
 		thread_pool.create_thread(boost::bind(&PoW::MineChunk, new_block, target_hash,
-		                                     std::numeric_limits<uint64_t>::min() + chunk_size * i, chunk_size,
-		                                     boost::ref(found), boost::ref(found_nonce), boost::ref(hash_count)));
+		                                      std::numeric_limits<uint64_t>::min() + chunk_size * i, chunk_size,
+		                                      boost::ref(found), boost::ref(found_nonce), boost::ref(hash_count)));
 	}
 	thread_pool.join_all();
 
