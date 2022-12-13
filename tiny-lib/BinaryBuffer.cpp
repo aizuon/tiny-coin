@@ -111,9 +111,9 @@ bool BinaryBuffer::operator==(const BinaryBuffer& obj) const
 	return Buffer == obj.Buffer;
 }
 
-void BinaryBuffer::GrowIfNeeded(uint32_t writeLength)
+void BinaryBuffer::GrowIfNeeded(uint32_t write_length)
 {
-	const uint32_t final_length = WriteOffset + writeLength;
+	const uint32_t final_length = WriteOffset + write_length;
 	const bool reserve_needed = Buffer.capacity() <= final_length;
 	const bool resize_needed = Buffer.size() <= final_length;
 
