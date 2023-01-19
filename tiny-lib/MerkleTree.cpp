@@ -14,7 +14,7 @@ MerkleNode::MerkleNode(const std::string& value)
 {
 }
 
-std::shared_ptr<MerkleNode> MerkleTree::GetRoot(std::vector<std::string> leaves)
+std::shared_ptr<MerkleNode> MerkleTree::GetRoot(const std::vector<std::string>& leaves)
 {
 	std::vector<std::shared_ptr<MerkleNode>> nodes;
 	for (const auto& l : leaves)

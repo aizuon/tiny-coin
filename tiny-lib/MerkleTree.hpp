@@ -21,7 +21,7 @@ public:
 class MerkleTree
 {
 public:
-	static std::shared_ptr<MerkleNode> GetRoot(std::vector<std::string> leaves);
+	static std::shared_ptr<MerkleNode> GetRoot(const std::vector<std::string>& leaves);
 
 	static std::shared_ptr<MerkleNode> GetRootOfTxs(const std::vector<std::shared_ptr<Tx>>& txs);
 
