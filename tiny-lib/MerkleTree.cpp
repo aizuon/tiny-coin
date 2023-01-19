@@ -16,9 +16,6 @@ MerkleNode::MerkleNode(const std::string& value)
 
 std::shared_ptr<MerkleNode> MerkleTree::GetRoot(std::vector<std::string> leaves)
 {
-	if (leaves.size() % 2 == 1)
-		leaves.push_back(leaves.back());
-
 	std::vector<std::shared_ptr<MerkleNode>> nodes;
 	for (const auto& l : leaves)
 	{
@@ -28,7 +25,7 @@ std::shared_ptr<MerkleNode> MerkleTree::GetRoot(std::vector<std::string> leaves)
 		nodes.push_back(node);
 	}
 
-	return FindRooot(nodes);
+	return FindRoot(nodes);
 }
 
 std::shared_ptr<MerkleNode> MerkleTree::GetRootOfTxs(const std::vector<std::shared_ptr<Tx>>& txs)
@@ -58,17 +55,29 @@ std::vector<std::vector<std::shared_ptr<MerkleNode>>> MerkleTree::Chunk(
 			chunk.clear();
 		}
 	}
+	if (!chunk.empty())
+	{
+		while (chunk.size() != chunk_size)
+		{
+			chunk.push_back(chunk.back());
+		}
+		chunks.push_back(chunk);
+	}
 
 	return chunks;
 }
 
-std::shared_ptr<MerkleNode> MerkleTree::FindRooot(const std::vector<std::shared_ptr<MerkleNode>>& nodes)
+std::shared_ptr<MerkleNode> MerkleTree::FindRoot(const std::vector<std::shared_ptr<MerkleNode>>& nodes)
 {
 	std::vector<std::shared_ptr<MerkleNode>> new_level;
 	const auto chunks = Chunk(nodes, 2);
 	for (const auto& chunk : chunks)
 	{
-		std::string combined_id = chunk[0]->Value + chunk[1]->Value;
+		std::string combined_id;
+		for (const auto& node : chunk)
+		{
+			combined_id += node->Value;
+		}
 
 		std::string combined_hash = Utils::ByteArrayToHexString(
 			SHA256::DoubleHashBinary(Utils::StringToByteArray(combined_id)));
@@ -78,5 +87,5 @@ std::shared_ptr<MerkleNode> MerkleTree::FindRooot(const std::vector<std::shared_
 		new_level.push_back(node);
 	}
 
-	return new_level.size() > 1 ? FindRooot(new_level) : new_level[0];
+	return new_level.size() > 1 ? FindRoot(new_level) : new_level[0];
 }

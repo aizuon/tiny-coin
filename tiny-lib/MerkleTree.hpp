@@ -29,5 +29,5 @@ private:
 	static std::vector<std::vector<std::shared_ptr<MerkleNode>>> Chunk(
 		const std::vector<std::shared_ptr<MerkleNode>>& nodes, uint32_t chunk_size);
 
-	static std::shared_ptr<MerkleNode> FindRooot(const std::vector<std::shared_ptr<MerkleNode>>& nodes);
+	static std::shared_ptr<MerkleNode> FindRoot(const std::vector<std::shared_ptr<MerkleNode>>& nodes);
 };
