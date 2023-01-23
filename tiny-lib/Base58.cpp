@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "Base58.hpp"
 
-#include <ranges>
+#include <algorithm>
 #include <openssl/bn.h>
 
 #include "Utils.hpp"

@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "NetClient.hpp"
 
-#include <ranges>
+#include <algorithm>
 #include <boost/bind/bind.hpp>
 
 #include "BinaryBuffer.hpp"

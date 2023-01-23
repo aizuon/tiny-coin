@@ -6,7 +6,7 @@ Tinycoin is a minimal implementation of Bitcoin in C++. It is not designed to be
 
 ## Building
 
-Windows 10 with Visual Studio 2019 for build environment and vcpkg for library management is strongly suggested. The project depends on the following x64 and x86 static libraries: 
+Windows 11 with Visual Studio 2022 for build environment and vcpkg for library management is strongly suggested. The project depends on the following x64 and x86 static libraries: 
 
 - openssl
 - boost
