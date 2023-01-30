@@ -18,12 +18,11 @@ TEST(MerkleTreeTest, OneChain)
 	const auto foo_h = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(foo)));
 	const auto bar_h = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(bar)));
 
-	EXPECT_TRUE(root != nullptr);
 	const auto combined_h = Utils::ByteArrayToHexString(
 		SHA256::DoubleHashBinary(Utils::StringToByteArray(foo_h + bar_h)));
-	EXPECT_TRUE(root->Value == combined_h);
-	EXPECT_TRUE(root->Children[0]->Value == foo_h);
-	EXPECT_TRUE(root->Children[1]->Value == bar_h);
+	EXPECT_EQ(combined_h, root->Value);
+	EXPECT_EQ(foo_h, root->Children[0]->Value);
+	EXPECT_EQ(bar_h, root->Children[1]->Value);
 }
 
 TEST(MerkleTreeTest, TwoChain)
@@ -39,10 +38,9 @@ TEST(MerkleTreeTest, TwoChain)
 	auto bar_h = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(bar)));
 	auto baz_h = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(baz)));
 
-	EXPECT_TRUE(root != nullptr);
-	EXPECT_TRUE(root->Children.size() == 2);
+	EXPECT_EQ(2, root->Children.size());
 	auto combined_h1 = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(foo_h + bar_h)));
 	auto combined_h2 = Utils::ByteArrayToHexString(SHA256::DoubleHashBinary(Utils::StringToByteArray(baz_h + baz_h)));
-	EXPECT_TRUE(root->Children[0]->Value == combined_h1);
-	EXPECT_TRUE(root->Children[1]->Value == combined_h2);
+	EXPECT_EQ(combined_h1, root->Children[0]->Value);
+	EXPECT_EQ(combined_h2, root->Children[1]->Value);
 }

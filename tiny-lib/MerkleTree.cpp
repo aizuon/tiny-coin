@@ -17,6 +17,7 @@ MerkleNode::MerkleNode(const std::string& value)
 std::shared_ptr<MerkleNode> MerkleTree::GetRoot(const std::vector<std::string>& leaves)
 {
 	std::vector<std::shared_ptr<MerkleNode>> nodes;
+	nodes.reserve(leaves.size());
 	for (const auto& l : leaves)
 	{
 		auto node = std::make_shared<MerkleNode>(
@@ -69,8 +70,9 @@ std::vector<std::vector<std::shared_ptr<MerkleNode>>> MerkleTree::Chunk(
 
 std::shared_ptr<MerkleNode> MerkleTree::FindRoot(const std::vector<std::shared_ptr<MerkleNode>>& nodes)
 {
-	std::vector<std::shared_ptr<MerkleNode>> new_level;
 	const auto chunks = Chunk(nodes, 2);
+	std::vector<std::shared_ptr<MerkleNode>> new_level;
+	new_level.reserve(chunks.size());
 	for (const auto& chunk : chunks)
 	{
 		std::string combined_id;

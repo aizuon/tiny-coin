@@ -30,7 +30,7 @@ TEST(MsgTest, SpendMsg)
 	                                                    tx->TxOuts);
 	const auto spend_msg_str = Utils::ByteArrayToHexString(spend_msg);
 
-	EXPECT_EQ(spend_msg_str, "d2cde10c62cdc1707ad78d7356e01a73d1376a7a1f775ca6d207d8a511fdff19");
+	EXPECT_EQ("d2cde10c62cdc1707ad78d7356e01a73d1376a7a1f775ca6d207d8a511fdff19", spend_msg_str);
 
 	const auto tx_out2 = std::make_shared<TxOut>(0, "foo");
 	tx->TxOuts.push_back(tx_out2);
@@ -39,5 +39,5 @@ TEST(MsgTest, SpendMsg)
 	                                                     tx->TxOuts);
 	const auto spend_msg2_str = Utils::ByteArrayToHexString(spend_msg2);
 
-	EXPECT_NE(spend_msg2_str, spend_msg_str);
+	EXPECT_NE(spend_msg_str, spend_msg2_str);
 }

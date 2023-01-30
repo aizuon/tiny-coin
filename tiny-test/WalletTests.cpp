@@ -14,5 +14,5 @@ TEST(WalletTest, PubKeyToAddress)
 
 	const std::string address = Wallet::PubKeyToAddress(pub_key);
 
-	EXPECT_EQ(address, "1PMycacnJaSqwwJqjawXBErnLsZ7RkXUAs");
+	EXPECT_EQ("1PMycacnJaSqwwJqjawXBErnLsZ7RkXUAs", address);
 }

@@ -24,7 +24,7 @@ TEST(BlockChainTest, MedianTimePast)
 {
 	Chain::ActiveChain.clear();
 
-	EXPECT_TRUE(Chain::GetMedianTimePast(10) == 0);
+	EXPECT_EQ(0, Chain::GetMedianTimePast(10));
 
 	const std::array<int64_t, 5> timestamps{ 1, 30, 60, 90, 400 };
 
@@ -35,10 +35,10 @@ TEST(BlockChainTest, MedianTimePast)
 		Chain::ActiveChain.push_back(dummyBlock);
 	}
 
-	EXPECT_EQ(Chain::GetMedianTimePast(1), 400);
-	EXPECT_EQ(Chain::GetMedianTimePast(3), 90);
-	EXPECT_EQ(Chain::GetMedianTimePast(2), 90);
-	EXPECT_EQ(Chain::GetMedianTimePast(5), 60);
+	EXPECT_EQ(400, Chain::GetMedianTimePast(1));
+	EXPECT_EQ(90, Chain::GetMedianTimePast(3));
+	EXPECT_EQ(90, Chain::GetMedianTimePast(2));
+	EXPECT_EQ(60, Chain::GetMedianTimePast(5));
 }
 
 const auto chain1_block1_txs = std::vector{
@@ -138,7 +138,7 @@ TEST(BlockChainTest, Reorg)
 	UTXO::Map.clear();
 
 	for (const auto& block : chain1)
-		ASSERT_EQ(Chain::ConnectBlock(block), Chain::ActiveChainIdx);
+		ASSERT_EQ(Chain::ActiveChainIdx, Chain::ConnectBlock(block));
 
 	Chain::SideBranches.clear();
 	Mempool::Map.clear();
@@ -155,22 +155,22 @@ TEST(BlockChainTest, Reorg)
 		}
 	}
 
-	ASSERT_TRUE(UTXO::Map.size() == 3);
+	ASSERT_EQ(3, UTXO::Map.size());
 	ASSERT_FALSE(Chain::ReorgIfNecessary());
 
-	ASSERT_TRUE(Chain::ConnectBlock(chain2[1]) == 1);
+	ASSERT_EQ(1, Chain::ConnectBlock(chain2[1]));
 
 	ASSERT_FALSE(Chain::ReorgIfNecessary());
 	ASSERT_TRUE(Chain::SideBranches.size() == 1);
-	ASSERT_EQ(*Chain::SideBranches[0][0], *chain2[1]);
-	ASSERT_EQ(Chain::ActiveChain.size(), chain1.size());
+	ASSERT_EQ(*chain2[1], *Chain::SideBranches[0][0]);
+	ASSERT_EQ(chain1.size(), Chain::ActiveChain.size());
 	for (uint32_t i = 0; i < Chain::ActiveChain.size(); i++)
 	{
-		ASSERT_EQ(*Chain::ActiveChain[i], *chain1[i]);
+		ASSERT_EQ(*chain1[i], *Chain::ActiveChain[i]);
 	}
 	ASSERT_TRUE(Mempool::Map.empty());
 	const std::array<std::string, 3> tx_ids{ "b6678c", "b90f9b", "b6678c" };
-	ASSERT_EQ(UTXO::Map.size(), tx_ids.size());
+	ASSERT_EQ(tx_ids.size(), UTXO::Map.size());
 	for (const auto& k : UTXO::Map | std::views::keys)
 	{
 		bool found = false;
@@ -185,22 +185,22 @@ TEST(BlockChainTest, Reorg)
 		ASSERT_TRUE(found);
 	}
 
-	ASSERT_TRUE(Chain::ConnectBlock(chain2[2]) == 1);
+	ASSERT_EQ(1, Chain::ConnectBlock(chain2[2]));
 
 	ASSERT_FALSE(Chain::ReorgIfNecessary());
-	ASSERT_TRUE(Chain::SideBranches.size() == 1);
+	ASSERT_EQ(1, Chain::SideBranches.size());
 	std::array side_branch_test{ chain2[1], chain2[2] };
 	for (uint32_t i = 0; i < Chain::SideBranches[0].size(); i++)
 	{
-		ASSERT_EQ(*Chain::SideBranches[0][i], *side_branch_test[i]);
+		ASSERT_EQ(*side_branch_test[i], *Chain::SideBranches[0][i]);
 	}
 	ASSERT_EQ(Chain::ActiveChain.size(), chain1.size());
 	for (uint32_t i = 0; i < Chain::ActiveChain.size(); i++)
 	{
-		ASSERT_EQ(*Chain::ActiveChain[i], *chain1[i]);
+		ASSERT_EQ(*chain1[i], *Chain::ActiveChain[i]);
 	}
 	ASSERT_TRUE(Mempool::Map.empty());
-	ASSERT_EQ(UTXO::Map.size(), tx_ids.size());
+	ASSERT_EQ(tx_ids.size(), UTXO::Map.size());
 	for (const auto& k : UTXO::Map | std::views::keys)
 	{
 		bool found = false;
@@ -220,21 +220,21 @@ TEST(BlockChainTest, Reorg)
 	chain2_block4_copy->Nonce = 1;
 	chain3_faulty[3] = chain2_block4_copy;
 
-	ASSERT_TRUE(Chain::ConnectBlock(chain3_faulty[3]) == -1);
+	ASSERT_EQ(-1, Chain::ConnectBlock(chain3_faulty[3]));
 	ASSERT_FALSE(Chain::ReorgIfNecessary());
 
-	ASSERT_TRUE(Chain::SideBranches.size() == 1);
+	ASSERT_EQ(1, Chain::SideBranches.size());
 	for (uint32_t i = 0; i < Chain::SideBranches[0].size(); i++)
 	{
-		ASSERT_EQ(*Chain::SideBranches[0][i], *side_branch_test[i]);
+		ASSERT_EQ(*side_branch_test[i], *Chain::SideBranches[0][i]);
 	}
 	ASSERT_EQ(Chain::ActiveChain.size(), chain1.size());
 	for (uint32_t i = 0; i < Chain::ActiveChain.size(); i++)
 	{
-		ASSERT_EQ(*Chain::ActiveChain[i], *chain1[i]);
+		ASSERT_EQ(*chain1[i], *Chain::ActiveChain[i]);
 	}
 	ASSERT_TRUE(Mempool::Map.empty());
-	ASSERT_EQ(UTXO::Map.size(), tx_ids.size());
+	ASSERT_EQ(tx_ids.size(), UTXO::Map.size());
 	for (const auto& k : UTXO::Map | std::views::keys)
 	{
 		bool found = false;
@@ -249,11 +249,11 @@ TEST(BlockChainTest, Reorg)
 		ASSERT_TRUE(found);
 	}
 
-	ASSERT_TRUE(Chain::ConnectBlock(chain2[3]) == 1);
-	ASSERT_TRUE(Chain::ConnectBlock(chain2[4]) == 1);
+	ASSERT_EQ(1, Chain::ConnectBlock(chain2[3]));
+	ASSERT_EQ(1, Chain::ConnectBlock(chain2[4]));
 
-	ASSERT_TRUE(Chain::SideBranches.size() == 1);
-	ASSERT_TRUE(Chain::SideBranches[0].size() == 2);
+	ASSERT_EQ(1, Chain::SideBranches.size());
+	ASSERT_EQ(2, Chain::SideBranches[0].size());
 	std::vector<std::string> side_branch_ids;
 	side_branch_ids.reserve(Chain::SideBranches[0].size());
 	for (const auto& block : Chain::SideBranches[0])
@@ -266,11 +266,11 @@ TEST(BlockChainTest, Reorg)
 	{
 		chain1Ids.emplace_back(chain1[i]->Id());
 	}
-	ASSERT_EQ(side_branch_ids, chain1Ids);
+	ASSERT_EQ(chain1Ids, side_branch_ids);
 	std::array side_branch_test2{ chain1[1], chain1[2] };
 	for (uint32_t i = 0; i < Chain::SideBranches[0].size(); i++)
 	{
-		ASSERT_EQ(*Chain::SideBranches[0][i], *side_branch_test2[i]);
+		ASSERT_EQ(*side_branch_test2[i], *Chain::SideBranches[0][i]);
 	}
 	ASSERT_TRUE(Mempool::Map.empty());
 	const std::array<std::string, 5> tx_ids2{ "b90f9b", "b6678c", "b6678c", "b6678c", "b6678c" };
@@ -298,11 +298,11 @@ TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 	Mempool::Map.clear();
 	UTXO::Map.clear();
 
-	ASSERT_EQ(Chain::ConnectBlock(chain1[0]), Chain::ActiveChainIdx);
-	ASSERT_EQ(Chain::ConnectBlock(chain1[1]), Chain::ActiveChainIdx);
+	ASSERT_EQ(Chain::ActiveChainIdx, Chain::ConnectBlock(chain1[0]));
+	ASSERT_EQ(Chain::ActiveChainIdx, Chain::ConnectBlock(chain1[1]));
 
-	ASSERT_TRUE(Chain::ActiveChain.size() == 2);
-	ASSERT_TRUE(UTXO::Map.size() == 2);
+	ASSERT_EQ(2, Chain::ActiveChain.size());
+	ASSERT_EQ(2, UTXO::Map.size());
 
 	auto priv_key = Utils::HexStringToByteArray("18e14a7b6a307f426a94f8114701e7c8e774e7f9a47e2c2035db29a206321725");
 	auto pub_key = ECDSA::GetPubKeyFromPrivKey(priv_key);
@@ -365,14 +365,14 @@ TEST(BlockChainTest_LongRunning, DependentTxsInSingleBlock)
 
 	auto block = PoW::AssembleAndSolveBlock(address);
 
-	ASSERT_EQ(Chain::ConnectBlock(block), Chain::ActiveChainIdx);
+	ASSERT_EQ(Chain::ActiveChainIdx, Chain::ConnectBlock(block));
 
 	ASSERT_EQ(*Chain::ActiveChain.back(), *block);
-	ASSERT_EQ(block->Txs.size() - 1, 2);
+	ASSERT_EQ(2, block->Txs.size() - 1);
 	std::array txs{ tx1, tx2 };
 	for (uint32_t i = 0; i < txs.size(); i++)
 	{
-		ASSERT_EQ(*block->Txs[i + 1], *txs[i]);
+		ASSERT_EQ(*txs[i], *block->Txs[i + 1]);
 	}
 	ASSERT_FALSE(Mempool::Map.contains(tx1->Id()));
 	ASSERT_FALSE(Mempool::Map.contains(tx2->Id()));
