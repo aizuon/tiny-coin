@@ -16,9 +16,9 @@
 #include "Utils.hpp"
 #include "Wallet.hpp"
 
-Tx::Tx(const std::vector<std::shared_ptr<TxIn>>& txIns, const std::vector<std::shared_ptr<TxOut>>& txOuts,
+Tx::Tx(const std::vector<std::shared_ptr<TxIn>>& tx_ins, const std::vector<std::shared_ptr<TxOut>>& tx_outs,
        int64_t lockTime)
-	: TxIns(txIns), TxOuts(txOuts), LockTime(lockTime)
+	: TxIns(tx_ins), TxOuts(tx_outs), LockTime(lockTime)
 {
 }
 
@@ -176,14 +176,14 @@ bool Tx::Deserialize(BinaryBuffer& buffer)
 	return true;
 }
 
-std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& payToAddr, uint64_t value, int64_t height)
+std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& pay_to_addr, uint64_t value, int64_t height)
 {
 	BinaryBuffer tx_in_unlockSig;
 	tx_in_unlockSig.Reserve(sizeof(height));
 	tx_in_unlockSig.Write(height);
 	const auto tx_in = std::make_shared<TxIn>(nullptr, tx_in_unlockSig.GetBuffer(), std::vector<uint8_t>(), -1);
 
-	const auto tx_out = std::make_shared<TxOut>(value, payToAddr);
+	const auto tx_out = std::make_shared<TxOut>(value, pay_to_addr);
 
 	std::vector tx_ins{ tx_in };
 	std::vector tx_outs{ tx_out };
@@ -225,14 +225,14 @@ bool Tx::operator==(const Tx& obj) const
 	return true;
 }
 
-void Tx::ValidateSignatureForSpend(std::shared_ptr<TxIn> txIn, std::shared_ptr<UTXO> utxo) const
+void Tx::ValidateSignatureForSpend(std::shared_ptr<TxIn> tx_in, std::shared_ptr<UTXO> utxo) const
 {
-	const auto pubKeyAsAddr = Wallet::PubKeyToAddress(txIn->UnlockPubKey);
+	const auto pubKeyAsAddr = Wallet::PubKeyToAddress(tx_in->UnlockPubKey);
 	if (pubKeyAsAddr != utxo->TxOut->ToAddress)
 		throw TxUnlockException("Public key does not match");
 
-	const auto spend_msg = MsgSerializer::BuildSpendMsg(txIn->ToSpend, txIn->UnlockPubKey, txIn->Sequence, TxOuts);
-	if (!ECDSA::VerifySig(txIn->UnlockSig, spend_msg, txIn->UnlockPubKey))
+	const auto spend_msg = MsgSerializer::BuildSpendMsg(tx_in->ToSpend, tx_in->UnlockPubKey, tx_in->Sequence, TxOuts);
+	if (!ECDSA::VerifySig(tx_in->UnlockSig, spend_msg, tx_in->UnlockPubKey))
 	{
 		LOG_ERROR("Key verification failed");
 

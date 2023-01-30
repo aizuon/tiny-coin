@@ -1,8 +1,8 @@
 #include "pch.hpp"
 #include "TxOut.hpp"
 
-TxOut::TxOut(uint64_t value, const std::string& toAddress)
-	: Value(value), ToAddress(toAddress)
+TxOut::TxOut(uint64_t value, const std::string& to_address)
+	: Value(value), ToAddress(to_address)
 {
 }
 

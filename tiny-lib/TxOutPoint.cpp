@@ -1,8 +1,8 @@
 #include "pch.hpp"
 #include "TxOutPoint.hpp"
 
-TxOutPoint::TxOutPoint(const std::string& txId, int64_t txOutIdx)
-	: TxId(txId), TxOutIdx(txOutIdx)
+TxOutPoint::TxOutPoint(const std::string& tx_id, int64_t tx_out_idx)
+	: TxId(tx_id), TxOutIdx(tx_out_idx)
 {
 }
 

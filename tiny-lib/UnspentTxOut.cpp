@@ -5,9 +5,9 @@
 
 #include "Log.hpp"
 
-UnspentTxOut::UnspentTxOut(std::shared_ptr<::TxOut> txOut, std::shared_ptr<::TxOutPoint> txOutPoint,
-                           bool isCoinbase, int64_t height)
-	: TxOut(txOut), TxOutPoint(txOutPoint), IsCoinbase(isCoinbase), Height(height)
+UnspentTxOut::UnspentTxOut(std::shared_ptr<::TxOut> tx_out, std::shared_ptr<::TxOutPoint> tx_out_point,
+                           bool is_coinbase, int64_t height)
+	: TxOut(tx_out), TxOutPoint(tx_out_point), IsCoinbase(is_coinbase), Height(height)
 {
 }
 
@@ -64,42 +64,42 @@ std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>> U
 
 std::recursive_mutex UnspentTxOut::Mutex;
 
-void UnspentTxOut::AddToMap(std::shared_ptr<::TxOut> txOut, const std::string& txId, int64_t idx, bool isCoinbase,
+void UnspentTxOut::AddToMap(std::shared_ptr<::TxOut> tx_out, const std::string& tx_id, int64_t idx, bool is_coinbase,
                             int64_t height)
 {
 	std::scoped_lock lock(Mutex);
 
-	auto txOutPoint = std::make_shared<::TxOutPoint>(txId, idx);
+	auto txOutPoint = std::make_shared<::TxOutPoint>(tx_id, idx);
 
-	const auto utxo = std::make_shared<UnspentTxOut>(txOut, txOutPoint, isCoinbase, height);
+	const auto utxo = std::make_shared<UnspentTxOut>(tx_out, txOutPoint, is_coinbase, height);
 
 	LOG_TRACE("Adding TxOutPoint {} to UTXO map", utxo->TxOutPoint->TxId);
 
 	Map[utxo->TxOutPoint] = utxo;
 }
 
-void UnspentTxOut::RemoveFromMap(const std::string& txId, int64_t idx)
+void UnspentTxOut::RemoveFromMap(const std::string& tx_id, int64_t idx)
 {
 	std::scoped_lock lock(Mutex);
 
 	const auto map_it = std::ranges::find_if(Map,
-	                                         [&txId, idx](
+	                                         [&tx_id, idx](
 	                                         const std::pair<
 		                                         std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>>& p)
 	                                         {
 		                                         const auto& [txOutPoint, utxo] = p;
-		                                         return txOutPoint->TxId == txId && txOutPoint->TxOutIdx == idx;
+		                                         return txOutPoint->TxId == tx_id && txOutPoint->TxOutIdx == idx;
 	                                         });
 	if (map_it != Map.end())
 		Map.erase(map_it);
 }
 
-std::shared_ptr<UnspentTxOut> UnspentTxOut::FindInList(std::shared_ptr<TxIn> txIn,
+std::shared_ptr<UnspentTxOut> UnspentTxOut::FindInList(std::shared_ptr<TxIn> tx_in,
                                                        const std::vector<std::shared_ptr<Tx>>& txs)
 {
 	for (const auto& tx : txs)
 	{
-		const auto& toSpend = txIn->ToSpend;
+		const auto& toSpend = tx_in->ToSpend;
 
 		if (tx->Id() == toSpend->TxId)
 		{
@@ -115,18 +115,18 @@ std::shared_ptr<UnspentTxOut> UnspentTxOut::FindInList(std::shared_ptr<TxIn> txI
 	return nullptr;
 }
 
-std::shared_ptr<UnspentTxOut> UnspentTxOut::FindInMap(std::shared_ptr<::TxOutPoint> toSpend)
+std::shared_ptr<UnspentTxOut> UnspentTxOut::FindInMap(std::shared_ptr<::TxOutPoint> to_spend)
 {
 	std::scoped_lock lock(Mutex);
 
 	const auto map_it = std::ranges::find_if(Map,
-	                                         [&toSpend](
+	                                         [&to_spend](
 	                                         const std::pair<
 		                                         std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>>&
 	                                         p)
 	                                         {
 		                                         const auto& [txOutPoint, utxo] = p;
-		                                         return *txOutPoint == *toSpend;
+		                                         return *txOutPoint == *to_spend;
 	                                         });
 	if (map_it != Map.end())
 	{
@@ -137,26 +137,26 @@ std::shared_ptr<UnspentTxOut> UnspentTxOut::FindInMap(std::shared_ptr<::TxOutPoi
 }
 
 std::shared_ptr<TxOut> UnspentTxOut::FindTxOutInBlock(std::shared_ptr<Block> block,
-                                                      std::shared_ptr<TxIn> txIn)
+                                                      std::shared_ptr<TxIn> tx_in)
 {
 	for (const auto& tx : block->Txs)
 	{
-		if (tx->Id() == txIn->ToSpend->TxId)
+		if (tx->Id() == tx_in->ToSpend->TxId)
 		{
-			return tx->TxOuts[txIn->ToSpend->TxOutIdx];
+			return tx->TxOuts[tx_in->ToSpend->TxOutIdx];
 		}
 	}
 
 	return nullptr;
 }
 
-std::shared_ptr<TxOut> UnspentTxOut::FindTxOutInMap(std::shared_ptr<TxIn> txIn)
+std::shared_ptr<TxOut> UnspentTxOut::FindTxOutInMap(std::shared_ptr<TxIn> tx_in)
 {
 	std::scoped_lock lock(Mutex);
 
 	for (const auto& utxo : Map | std::ranges::views::values)
 	{
-		if (txIn->ToSpend->TxId == utxo->TxOutPoint->TxId && txIn->ToSpend->TxOutIdx == utxo->TxOutPoint->TxOutIdx)
+		if (tx_in->ToSpend->TxId == utxo->TxOutPoint->TxId && tx_in->ToSpend->TxOutIdx == utxo->TxOutPoint->TxOutIdx)
 		{
 			return utxo->TxOut;
 		}
@@ -166,13 +166,13 @@ std::shared_ptr<TxOut> UnspentTxOut::FindTxOutInMap(std::shared_ptr<TxIn> txIn)
 }
 
 std::shared_ptr<TxOut> UnspentTxOut::FindTxOutInMapOrBlock(std::shared_ptr<Block> block,
-                                                           std::shared_ptr<TxIn> txIn)
+                                                           std::shared_ptr<TxIn> tx_in)
 {
-	auto utxo = FindTxOutInMap(txIn);
+	auto utxo = FindTxOutInMap(tx_in);
 	if (utxo != nullptr)
 		return utxo;
 
-	return FindTxOutInBlock(block, txIn);
+	return FindTxOutInBlock(block, tx_in);
 }
 
 bool UnspentTxOut::operator==(const UnspentTxOut& obj) const

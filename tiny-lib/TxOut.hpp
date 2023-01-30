@@ -10,7 +10,7 @@ class TxOut : public ISerializable, public IDeserializable
 {
 public:
 	TxOut() = default;
-	TxOut(uint64_t value, const std::string& toAddress);
+	TxOut(uint64_t value, const std::string& to_address);
 
 	uint64_t Value = 0;
 	std::string ToAddress;

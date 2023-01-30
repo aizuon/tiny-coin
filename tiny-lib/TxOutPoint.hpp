@@ -10,7 +10,7 @@ class TxOutPoint : public ISerializable, public IDeserializable
 {
 public:
 	TxOutPoint() = default;
-	TxOutPoint(const std::string& txId, int64_t txOutIdx);
+	TxOutPoint(const std::string& tx_id, int64_t tx_out_idx);
 
 	std::string TxId;
 	int64_t TxOutIdx = -1;

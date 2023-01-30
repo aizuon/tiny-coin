@@ -19,7 +19,7 @@ class UnspentTxOut : public ISerializable, public IDeserializable
 {
 public:
 	UnspentTxOut() = default;
-	UnspentTxOut(std::shared_ptr<TxOut> txOut, std::shared_ptr<TxOutPoint> txOutPoint, bool isCoinbase,
+	UnspentTxOut(std::shared_ptr<TxOut> tx_out, std::shared_ptr<TxOutPoint> tx_out_point, bool is_coinbase,
 	             int64_t height);
 
 	std::shared_ptr<TxOut> TxOut;
@@ -37,19 +37,19 @@ public:
 
 	static std::recursive_mutex Mutex;
 
-	static void AddToMap(std::shared_ptr<::TxOut> txOut, const std::string& txId, int64_t idx, bool isCoinbase,
+	static void AddToMap(std::shared_ptr<::TxOut> tx_out, const std::string& tx_id, int64_t idx, bool is_coinbase,
 	                     int64_t height);
-	static void RemoveFromMap(const std::string& txId, int64_t idx);
+	static void RemoveFromMap(const std::string& tx_id, int64_t idx);
 
-	static std::shared_ptr<UnspentTxOut> FindInList(std::shared_ptr<TxIn> txIn,
+	static std::shared_ptr<UnspentTxOut> FindInList(std::shared_ptr<TxIn> tx_in,
 	                                                const std::vector<std::shared_ptr<Tx>>& txs);
-	static std::shared_ptr<UnspentTxOut> FindInMap(std::shared_ptr<::TxOutPoint> toSpend);
+	static std::shared_ptr<UnspentTxOut> FindInMap(std::shared_ptr<::TxOutPoint> to_spend);
 
 	static std::shared_ptr<::TxOut> FindTxOutInBlock(std::shared_ptr<Block> block,
-	                                                 std::shared_ptr<TxIn> txIn);
-	static std::shared_ptr<::TxOut> FindTxOutInMap(std::shared_ptr<TxIn> txIn);
+	                                                 std::shared_ptr<TxIn> tx_in);
+	static std::shared_ptr<::TxOut> FindTxOutInMap(std::shared_ptr<TxIn> tx_in);
 	static std::shared_ptr<::TxOut> FindTxOutInMapOrBlock(std::shared_ptr<Block> block,
-	                                                      std::shared_ptr<TxIn> txIn);
+	                                                      std::shared_ptr<TxIn> tx_in);
 
 	bool operator==(const UnspentTxOut& obj) const;
 

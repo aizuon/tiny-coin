@@ -1,9 +1,9 @@
 #include "pch.hpp"
 #include "TxIn.hpp"
 
-TxIn::TxIn(std::shared_ptr<TxOutPoint> toSpend, const std::vector<uint8_t>& unlockSig,
-           const std::vector<uint8_t>& unlockPubKey, int32_t sequence)
-	: ToSpend(toSpend), UnlockSig(unlockSig), UnlockPubKey(unlockPubKey), Sequence(sequence)
+TxIn::TxIn(std::shared_ptr<TxOutPoint> to_spend, const std::vector<uint8_t>& unlock_sig,
+           const std::vector<uint8_t>& unlock_pub_key, int32_t sequence)
+	: ToSpend(to_spend), UnlockSig(unlock_sig), UnlockPubKey(unlock_pub_key), Sequence(sequence)
 {
 }
 
