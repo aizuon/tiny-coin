@@ -30,9 +30,9 @@ TEST(BlockChainTest, MedianTimePast)
 
 	for (auto timestamp : timestamps)
 	{
-		auto dummyBlock = std::make_shared<Block>(0, "foo", "foo", timestamp, 1, 0, std::vector<std::shared_ptr<Tx>>());
+		auto dummy_block = std::make_shared<Block>(0, "foo", "foo", timestamp, 1, 0, std::vector<std::shared_ptr<Tx>>());
 
-		Chain::ActiveChain.push_back(dummyBlock);
+		Chain::ActiveChain.push_back(dummy_block);
 	}
 
 	EXPECT_EQ(400, Chain::GetMedianTimePast(1));
@@ -238,9 +238,9 @@ TEST(BlockChainTest, Reorg)
 	for (const auto& k : UTXO::Map | std::views::keys)
 	{
 		bool found = false;
-		for (const auto& txId : tx_ids)
+		for (const auto& tx_id : tx_ids)
 		{
-			found |= k->TxId.ends_with(txId);
+			found |= k->TxId.ends_with(tx_id);
 			if (found)
 			{
 				break;
@@ -260,13 +260,13 @@ TEST(BlockChainTest, Reorg)
 	{
 		side_branch_ids.emplace_back(block->Id());
 	}
-	std::vector<std::string> chain1Ids;
-	chain1Ids.reserve(chain1.size());
+	std::vector<std::string> chain1_ids;
+	chain1_ids.reserve(chain1.size());
 	for (uint32_t i = 1; i < chain1.size(); i++)
 	{
-		chain1Ids.emplace_back(chain1[i]->Id());
+		chain1_ids.emplace_back(chain1[i]->Id());
 	}
-	ASSERT_EQ(chain1Ids, side_branch_ids);
+	ASSERT_EQ(chain1_ids, side_branch_ids);
 	std::array side_branch_test2{ chain1[1], chain1[2] };
 	for (uint32_t i = 0; i < Chain::SideBranches[0].size(); i++)
 	{

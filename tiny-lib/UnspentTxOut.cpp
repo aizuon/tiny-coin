@@ -69,9 +69,9 @@ void UnspentTxOut::AddToMap(std::shared_ptr<::TxOut> tx_out, const std::string& 
 {
 	std::scoped_lock lock(Mutex);
 
-	auto txOutPoint = std::make_shared<::TxOutPoint>(tx_id, idx);
+	auto tx_out_point = std::make_shared<::TxOutPoint>(tx_id, idx);
 
-	const auto utxo = std::make_shared<UnspentTxOut>(tx_out, txOutPoint, is_coinbase, height);
+	const auto utxo = std::make_shared<UnspentTxOut>(tx_out, tx_out_point, is_coinbase, height);
 
 	LOG_TRACE("Adding TxOutPoint {} to UTXO map", utxo->TxOutPoint->TxId);
 
@@ -99,16 +99,16 @@ std::shared_ptr<UnspentTxOut> UnspentTxOut::FindInList(std::shared_ptr<TxIn> tx_
 {
 	for (const auto& tx : txs)
 	{
-		const auto& toSpend = tx_in->ToSpend;
+		const auto& to_spend = tx_in->ToSpend;
 
-		if (tx->Id() == toSpend->TxId)
+		if (tx->Id() == to_spend->TxId)
 		{
-			if (tx->TxOuts.size() - 1 < toSpend->TxOutIdx)
+			if (tx->TxOuts.size() - 1 < to_spend->TxOutIdx)
 				return nullptr;
 
-			auto& matchingTxOut = tx->TxOuts[toSpend->TxOutIdx];
-			auto txOutPoint = std::make_shared<::TxOutPoint>(toSpend->TxId, toSpend->TxOutIdx);
-			return std::make_shared<UnspentTxOut>(matchingTxOut, txOutPoint, false, -1);
+			auto& matching_tx_out = tx->TxOuts[to_spend->TxOutIdx];
+			auto tx_out_point = std::make_shared<::TxOutPoint>(to_spend->TxId, to_spend->TxOutIdx);
+			return std::make_shared<UnspentTxOut>(matching_tx_out, tx_out_point, false, -1);
 		}
 	}
 

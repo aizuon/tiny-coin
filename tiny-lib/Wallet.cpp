@@ -93,10 +93,10 @@ std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> Wallet::Init
 
 	const auto [priv_key, pub_key, address] = GetWallet(WalletPath);
 
-	static bool printedAddress = false;
-	if (!printedAddress)
+	static bool printed_address = false;
+	if (!printed_address)
 	{
-		printedAddress = true;
+		printed_address = true;
 
 		LOG_INFO("Your address is {}", address);
 	}

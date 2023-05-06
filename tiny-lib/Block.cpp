@@ -4,10 +4,10 @@
 #include "SHA256.hpp"
 #include "Utils.hpp"
 
-Block::Block(uint64_t version, const std::string& prevBlockHash, const std::string& markleHash, int64_t timestamp,
+Block::Block(uint64_t version, const std::string& prev_block_hash, const std::string& merkle_hash, int64_t timestamp,
              uint8_t bits, uint64_t nonce,
              const std::vector<std::shared_ptr<Tx>>& txs)
-	: Version(version), PrevBlockHash(prevBlockHash), MerkleHash(markleHash), Timestamp(timestamp), Bits(bits),
+	: Version(version), PrevBlockHash(prev_block_hash), MerkleHash(merkle_hash), Timestamp(timestamp), Bits(bits),
 	  Nonce(nonce), Txs(txs)
 {
 }
@@ -91,8 +91,8 @@ bool Block::Deserialize(BinaryBuffer& buffer)
 		return false;
 	}
 
-	uint32_t txsSize = 0;
-	if (!buffer.ReadSize(txsSize))
+	uint32_t txs_size = 0;
+	if (!buffer.ReadSize(txs_size))
 	{
 		*this = std::move(copy);
 
@@ -100,8 +100,8 @@ bool Block::Deserialize(BinaryBuffer& buffer)
 	}
 	if (!Txs.empty())
 		Txs.clear();
-	Txs.reserve(txsSize);
-	for (uint32_t i = 0; i < txsSize; i++)
+	Txs.reserve(txs_size);
+	for (uint32_t i = 0; i < txs_size; i++)
 	{
 		auto tx = std::make_shared<Tx>();
 		if (!tx->Deserialize(buffer))

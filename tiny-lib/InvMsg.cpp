@@ -36,8 +36,8 @@ void InvMsg::Handle(std::shared_ptr<Connection> con)
 		return;
 	}
 
-	for (const auto& newBlock : new_blocks)
-		Chain::ConnectBlock(newBlock);
+	for (const auto& new_block : new_blocks)
+		Chain::ConnectBlock(new_block);
 
 	auto new_tip_id = Chain::ActiveChain.back()->Id();
 	LOG_INFO("Continuing initial sync from {}", new_tip_id);

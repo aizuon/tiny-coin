@@ -15,9 +15,9 @@ std::string Base58::Encode(const std::vector<uint8_t>& buffer)
 	auto dv = BN_new();
 	auto rem = BN_new();
 
-	const auto hexString = Utils::ByteArrayToHexString(buffer);
+	const auto hex_string = Utils::ByteArrayToHexString(buffer);
 
-	if (!BN_hex2bn(&bn, hexString.c_str()) || !BN_hex2bn(&bn58, "3a") || !BN_hex2bn(&bn00, "00"))
+	if (!BN_hex2bn(&bn, hex_string.c_str()) || !BN_hex2bn(&bn58, "3a") || !BN_hex2bn(&bn00, "00"))
 	{
 		BN_free(rem);
 		BN_free(dv);

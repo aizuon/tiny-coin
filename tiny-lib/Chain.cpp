@@ -271,11 +271,11 @@ std::shared_ptr<Block> Chain::DisconnectBlock(std::shared_ptr<Block> block)
 			Mempool::Map[tx_id] = tx;
 		}
 
-		for (const auto& txIn : tx->TxIns)
+		for (const auto& tx_in : tx->TxIns)
 		{
-			if (txIn->ToSpend != nullptr)
+			if (tx_in->ToSpend != nullptr)
 			{
-				auto [tx_out, tx, tx_out_idx, is_coinbase, height] = FindTxOutForTxInInActiveChain(txIn);
+				auto [tx_out, tx, tx_out_idx, is_coinbase, height] = FindTxOutForTxInInActiveChain(tx_in);
 
 				UTXO::AddToMap(tx_out, tx_id, tx_out_idx, is_coinbase, height);
 			}
@@ -482,12 +482,12 @@ bool Chain::LoadFromDisk()
 	if (chain_in.good())
 	{
 		BinaryBuffer chain_data(std::vector<uint8_t>(std::istreambuf_iterator(chain_in), {}));
-		uint32_t blockSize = 0;
-		if (chain_data.ReadSize(blockSize))
+		uint32_t block_size = 0;
+		if (chain_data.ReadSize(block_size))
 		{
 			std::vector<std::shared_ptr<Block>> loaded_chain;
-			loaded_chain.reserve(blockSize);
-			for (uint32_t i = 0; i < blockSize; i++)
+			loaded_chain.reserve(block_size);
+			for (uint32_t i = 0; i < block_size; i++)
 			{
 				auto block = std::make_shared<Block>();
 				if (!block->Deserialize(chain_data))

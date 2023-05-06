@@ -13,7 +13,7 @@ class Block : public ISerializable, public IDeserializable
 {
 public:
 	Block() = default;
-	Block(uint64_t version, const std::string& prevBlockHash, const std::string& markleHash, int64_t timestamp,
+	Block(uint64_t version, const std::string& prev_block_hash, const std::string& merkle_hash, int64_t timestamp,
 	      uint8_t bits, uint64_t nonce,
 	      const std::vector<std::shared_ptr<Tx>>& txs);
 

@@ -11,9 +11,9 @@ BinaryBuffer TxIn::Serialize() const
 {
 	BinaryBuffer buffer;
 
-	const bool has_toSpend = ToSpend != nullptr;
-	buffer.Write(has_toSpend);
-	if (has_toSpend)
+	const bool has_to_spend = ToSpend != nullptr;
+	buffer.Write(has_to_spend);
+	if (has_to_spend)
 		buffer.WriteRaw(ToSpend->Serialize().GetBuffer());
 	buffer.Write(UnlockSig);
 	buffer.Write(UnlockPubKey);
@@ -26,14 +26,14 @@ bool TxIn::Deserialize(BinaryBuffer& buffer)
 {
 	auto copy = *this;
 
-	bool has_toSpend = false;
-	if (!buffer.Read(has_toSpend))
+	bool has_to_spend = false;
+	if (!buffer.Read(has_to_spend))
 	{
 		*this = std::move(copy);
 
 		return false;
 	}
-	if (has_toSpend)
+	if (has_to_spend)
 	{
 		ToSpend = std::make_shared<TxOutPoint>();
 		if (!ToSpend->Deserialize(buffer))

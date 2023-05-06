@@ -17,7 +17,7 @@ class Tx : public ISerializable, public IDeserializable
 public:
 	Tx() = default;
 	Tx(const std::vector<std::shared_ptr<TxIn>>& tx_ins, const std::vector<std::shared_ptr<TxOut>>& tx_outs,
-	   int64_t lockTime);
+	   int64_t lock_time);
 
 	std::vector<std::shared_ptr<TxIn>> TxIns;
 	std::vector<std::shared_ptr<TxOut>> TxOuts;

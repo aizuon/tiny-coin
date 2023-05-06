@@ -132,14 +132,14 @@ void NetClient::BroadcastMsg(const IMsg& msg)
 			return;
 	}
 
-	const auto msgBuffer = PrepareSendBuffer(msg);
+	const auto msg_buffer = PrepareSendBuffer(msg);
 
 	{
 		std::scoped_lock lock(ConnectionsMutex);
 
 		for (auto& con : MinerConnections)
 		{
-			Write(con, msgBuffer);
+			Write(con, msg_buffer);
 		}
 	}
 }

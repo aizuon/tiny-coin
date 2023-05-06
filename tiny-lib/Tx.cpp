@@ -17,8 +17,8 @@
 #include "Wallet.hpp"
 
 Tx::Tx(const std::vector<std::shared_ptr<TxIn>>& tx_ins, const std::vector<std::shared_ptr<TxOut>>& tx_outs,
-       int64_t lockTime)
-	: TxIns(tx_ins), TxOuts(tx_outs), LockTime(lockTime)
+       int64_t lock_time)
+	: TxIns(tx_ins), TxOuts(tx_outs), LockTime(lock_time)
 {
 }
 
@@ -40,11 +40,11 @@ void Tx::ValidateBasics(bool coinbase /*= false*/) const
 	if (Serialize().GetSize() > NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES)
 		throw TxValidationException("Too large");
 
-	uint64_t totalSpent = 0;
+	uint64_t total_spent = 0;
 	for (const auto& tx_out : TxOuts)
-		totalSpent += tx_out->Value;
+		total_spent += tx_out->Value;
 
-	if (totalSpent > NetParams::MAX_MONEY)
+	if (total_spent > NetParams::MAX_MONEY)
 		throw TxValidationException("Spent value too high");
 }
 
@@ -52,22 +52,22 @@ void Tx::Validate(const ValidateRequest& req) const
 {
 	ValidateBasics(req.AsCoinbase);
 
-	uint64_t avaliableToSpend = 0;
+	uint64_t avaliable_to_spend = 0;
 	for (uint32_t i = 0; i < TxIns.size(); i++)
 	{
-		const auto& txIn = TxIns[i];
+		const auto& tx_in = TxIns[i];
 
-		auto utxo = UTXO::FindInMap(txIn->ToSpend);
+		auto utxo = UTXO::FindInMap(tx_in->ToSpend);
 		if (utxo == nullptr)
 		{
 			if (!req.SiblingsInBlock.empty())
 			{
-				utxo = UTXO::FindInList(txIn, req.SiblingsInBlock);
+				utxo = UTXO::FindInList(tx_in, req.SiblingsInBlock);
 			}
 
 			if (req.Allow_UTXO_FromMempool)
 			{
-				utxo = Mempool::Find_UTXO_InMempool(txIn->ToSpend);
+				utxo = Mempool::Find_UTXO_InMempool(tx_in->ToSpend);
 			}
 
 			if (utxo == nullptr)
@@ -81,7 +81,7 @@ void Tx::Validate(const ValidateRequest& req) const
 
 		try
 		{
-			ValidateSignatureForSpend(txIn, utxo);
+			ValidateSignatureForSpend(tx_in, utxo);
 		}
 		catch (const TxUnlockException& ex)
 		{
@@ -90,14 +90,14 @@ void Tx::Validate(const ValidateRequest& req) const
 			throw TxValidationException(fmt::format("TxIn not a valid spend of UTXO").c_str());
 		}
 
-		avaliableToSpend += utxo->TxOut->Value;
+		avaliable_to_spend += utxo->TxOut->Value;
 	}
 
-	uint64_t totalSpent = 0;
-	for (const auto& txOut : TxOuts)
-		totalSpent += txOut->Value;
+	uint64_t total_spent = 0;
+	for (const auto& tx_out : TxOuts)
+		total_spent += tx_out->Value;
 
-	if (avaliableToSpend < totalSpent)
+	if (avaliable_to_spend < total_spent)
 		throw TxValidationException("Spent value more than available");
 }
 
@@ -122,8 +122,8 @@ bool Tx::Deserialize(BinaryBuffer& buffer)
 {
 	auto copy = *this;
 
-	uint32_t txInsSize = 0;
-	if (!buffer.ReadSize(txInsSize))
+	uint32_t tx_ins_size = 0;
+	if (!buffer.ReadSize(tx_ins_size))
 	{
 		*this = std::move(copy);
 
@@ -131,21 +131,21 @@ bool Tx::Deserialize(BinaryBuffer& buffer)
 	}
 	if (!TxIns.empty())
 		TxIns.clear();
-	TxIns.reserve(txInsSize);
-	for (uint32_t i = 0; i < txInsSize; i++)
+	TxIns.reserve(tx_ins_size);
+	for (uint32_t i = 0; i < tx_ins_size; i++)
 	{
-		auto txIn = std::make_shared<TxIn>();
-		if (!txIn->Deserialize(buffer))
+		auto tx_in = std::make_shared<TxIn>();
+		if (!tx_in->Deserialize(buffer))
 		{
 			*this = std::move(copy);
 
 			return false;
 		}
-		TxIns.push_back(txIn);
+		TxIns.push_back(tx_in);
 	}
 
-	uint32_t txOutsSize = 0;
-	if (!buffer.ReadSize(txOutsSize))
+	uint32_t tx_outs_size = 0;
+	if (!buffer.ReadSize(tx_outs_size))
 	{
 		*this = std::move(copy);
 
@@ -153,17 +153,17 @@ bool Tx::Deserialize(BinaryBuffer& buffer)
 	}
 	if (!TxOuts.empty())
 		TxOuts.clear();
-	TxOuts.reserve(txOutsSize);
-	for (uint32_t i = 0; i < txOutsSize; i++)
+	TxOuts.reserve(tx_outs_size);
+	for (uint32_t i = 0; i < tx_outs_size; i++)
 	{
-		auto txOut = std::make_shared<TxOut>();
-		if (!txOut->Deserialize(buffer))
+		auto tx_out = std::make_shared<TxOut>();
+		if (!tx_out->Deserialize(buffer))
 		{
 			*this = std::move(copy);
 
 			return false;
 		}
-		TxOuts.push_back(txOut);
+		TxOuts.push_back(tx_out);
 	}
 
 	if (!buffer.Read(LockTime))
@@ -178,10 +178,10 @@ bool Tx::Deserialize(BinaryBuffer& buffer)
 
 std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& pay_to_addr, uint64_t value, int64_t height)
 {
-	BinaryBuffer tx_in_unlockSig;
-	tx_in_unlockSig.Reserve(sizeof(height));
-	tx_in_unlockSig.Write(height);
-	const auto tx_in = std::make_shared<TxIn>(nullptr, tx_in_unlockSig.GetBuffer(), std::vector<uint8_t>(), -1);
+	BinaryBuffer tx_in_unlock_sig;
+	tx_in_unlock_sig.Reserve(sizeof(height));
+	tx_in_unlock_sig.Write(height);
+	const auto tx_in = std::make_shared<TxIn>(nullptr, tx_in_unlock_sig.GetBuffer(), std::vector<uint8_t>(), -1);
 
 	const auto tx_out = std::make_shared<TxOut>(value, pay_to_addr);
 
@@ -227,8 +227,8 @@ bool Tx::operator==(const Tx& obj) const
 
 void Tx::ValidateSignatureForSpend(std::shared_ptr<TxIn> tx_in, std::shared_ptr<UTXO> utxo) const
 {
-	const auto pubKeyAsAddr = Wallet::PubKeyToAddress(tx_in->UnlockPubKey);
-	if (pubKeyAsAddr != utxo->TxOut->ToAddress)
+	const auto pub_key_as_addr = Wallet::PubKeyToAddress(tx_in->UnlockPubKey);
+	if (pub_key_as_addr != utxo->TxOut->ToAddress)
 		throw TxUnlockException("Public key does not match");
 
 	const auto spend_msg = MsgSerializer::BuildSpendMsg(tx_in->ToSpend, tx_in->UnlockPubKey, tx_in->Sequence, TxOuts);
