@@ -368,13 +368,13 @@ std::shared_ptr<Tx> Wallet::BuildTxFromUTXOs(std::vector<std::shared_ptr<UTXO>>&
 	uint64_t change = in_sum - value - total_fee_est;
 	const auto tx_out_change = std::make_shared<TxOut>(change, change_address);
 	std::vector tx_outs{ tx_out, tx_out_change };
-	std::vector<std::shared_ptr<TxIn>> txIns;
-	txIns.reserve(selected_utxos.size());
+	std::vector<std::shared_ptr<TxIn>> tx_ins;
+	tx_ins.reserve(selected_utxos.size());
 	for (const auto& selected_coin : selected_utxos)
 	{
-		txIns.emplace_back(BuildTxIn(priv_key, selected_coin->TxOutPoint, tx_outs));
+		tx_ins.emplace_back(BuildTxIn(priv_key, selected_coin->TxOutPoint, tx_outs));
 	}
-	auto tx = std::make_shared<Tx>(txIns, tx_outs, 0);
+	auto tx = std::make_shared<Tx>(tx_ins, tx_outs, 0);
 	const uint32_t tx_size = tx->Serialize().GetBuffer().size();
 	const uint32_t real_fee = total_fee_est / tx_size;
 	LOG_INFO("Built transaction {} with {} coins/byte fee", tx->Id(), real_fee);
