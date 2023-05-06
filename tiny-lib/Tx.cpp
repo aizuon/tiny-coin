@@ -87,7 +87,7 @@ void Tx::Validate(const ValidateRequest& req) const
 		{
 			LOG_ERROR(ex.what());
 
-			throw TxValidationException(fmt::format("TxIn not a valid spend of UTXO").c_str());
+			throw TxValidationException(fmt::format("TxIn {} not a valid spend of UTXO", i).c_str());
 		}
 
 		avaliable_to_spend += utxo->TxOut->Value;
@@ -179,7 +179,6 @@ bool Tx::Deserialize(BinaryBuffer& buffer)
 std::shared_ptr<Tx> Tx::CreateCoinbase(const std::string& pay_to_addr, uint64_t value, int64_t height)
 {
 	BinaryBuffer tx_in_unlock_sig;
-	tx_in_unlock_sig.Reserve(sizeof(height));
 	tx_in_unlock_sig.Write(height);
 	const auto tx_in = std::make_shared<TxIn>(nullptr, tx_in_unlock_sig.GetBuffer(), std::vector<uint8_t>(), -1);
 
