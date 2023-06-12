@@ -1,0 +1,67 @@
+#include "pch.hpp"
+#include "P2P/GetBlockMsg.hpp"
+
+#include "BlockChain/Chain.hpp"
+#include "P2P/InvMsg.hpp"
+#include "Log.hpp"
+#include "P2P/NetClient.hpp"
+
+GetBlockMsg::GetBlockMsg(const std::string& from_block_id)
+	: FromBlockId(from_block_id)
+{
+}
+
+void GetBlockMsg::Handle(std::shared_ptr<Connection> con)
+{
+	const auto& endpoint = con->Socket.remote_endpoint();
+	LOG_TRACE("Recieved GetBlockMsg from {}:{}", endpoint.address().to_string(), endpoint.port());
+
+	auto [block, height] = Chain::LocateBlockInActiveChain(FromBlockId);
+	if (height == -1)
+		height = 1;
+
+	std::vector<std::shared_ptr<Block>> blocks;
+	blocks.reserve(ChunkSize);
+
+	uint32_t max_height = height + ChunkSize;
+
+	{
+		std::scoped_lock lock(Chain::Mutex);
+
+		if (max_height > Chain::ActiveChain.size())
+			max_height = Chain::ActiveChain.size();
+		for (uint32_t i = height; i < max_height; i++)
+			blocks.push_back(Chain::ActiveChain[i]);
+	}
+
+	LOG_TRACE("Sending {} block(s) to {}:{}", blocks.size(), endpoint.address().to_string(), endpoint.port());
+	NetClient::SendMsg(con, InvMsg(blocks));
+}
+
+BinaryBuffer GetBlockMsg::Serialize() const
+{
+	BinaryBuffer buffer;
+
+	buffer.Write(FromBlockId);
+
+	return buffer;
+}
+
+bool GetBlockMsg::Deserialize(BinaryBuffer& buffer)
+{
+	auto copy = *this;
+
+	if (!buffer.Read(FromBlockId))
+	{
+		*this = std::move(copy);
+
+		return false;
+	}
+
+	return true;
+}
+
+Opcode GetBlockMsg::GetOpcode() const
+{
+	return Opcode::GetBlockMsg;
+}
