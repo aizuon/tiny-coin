@@ -2,20 +2,21 @@
 
 ## What is it?
 
-Tinycoin is a minimal implementation of Bitcoin in C++. It is not designed to be used as a Bitcoin node, but rather to learn how Proof of Work cryptocurrencies function and provide a small example project. 
+Tinycoin is a minimal implementation of Bitcoin in C++. It is not designed to be used as a Bitcoin node, but rather to learn how Proof of Work cryptocurrencies function and provide a small example project.
 
 ## Building
 
-Windows 11 with Visual Studio 2022 for build environment and vcpkg for library management is strongly suggested. The project depends on the following x64 and x86 static libraries: 
+`CMake` for build environment and `vcpkg` for library management is employed. The project depends on the following dynamic libraries:
 
-- openssl
 - boost
 - fmt
 - spdlog
+- openssl
 
 ## Quick start
 
 - Run a miner node
+
   ```
   $ tiny-sandbox.exe --port 9901 --node_type miner --wallet miner.dat
   
@@ -23,7 +24,9 @@ Windows 11 with Visual Studio 2022 for build environment and vcpkg for library m
   [ 17:49:26 ] [ tc ] Your address is 172eJPtmt5wMq71bnT1fS55FYLHw1syhWB
   [ 17:49:28 ] [ tc ] Load chain failed, starting from genesis
   ```
+
 - Wait for a few blocks to go by
+
   ```
   [ 17:49:28 ] [ tc ] Start mining block 0881dfd39dbc50325850c3992b5c18ba8c30520a4c4fdce588fb899f53d82e44 with 0 fees
   [ 17:49:47 ] [ tc ] Block found => 19 s, 607 KH/s, 000000245f1ad9e00ba03836316fa2a896b79b08f8e0b3c32fac4da5225ba877, 2877728
@@ -33,26 +36,34 @@ Windows 11 with Visual Studio 2022 for build environment and vcpkg for library m
   [ 17:49:47 ] [ tc ] Saving chain with 2 blocks
   ...
   ```
+
 - Run a wallet node
+
   ```
   $ tiny-sandbox.exe --port 9902 --node_type wallet --wallet miner.dat
   
   [ 17:49:48 ] [ tc ] Your address is 172eJPtmt5wMq71bnT1fS55FYLHw1syhW
   ```
+
 - Generate an empty wallet
+
   ```
   $ address receiver.dat
 
   [ 17:50:57 ] [ tc ] Wallet receiver.dat belongs to address 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi
   ```
+
 - Send coins from miner wallet to empty wallet
+
   ```
   $ send 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi 50000
   
   [ 17:51:23 ] [ tc ] Built transaction a5328f5688ff6b39de25af6a7bab840cc4e1156a26dabb10e2d01b12cbfa9eef with 100 coins/byte fee
   [ 17:51:23 ] [ tc ] Built transaction a5328f5688ff6b39de25af6a7bab840cc4e1156a26dabb10e2d01b12cbfa9eef, broadcasting
   ```
+
 - Wait for transaction to get mined in a block
+
   ```
   ...
   [ 17:51:23 ] [ tc ] Recieved transaction a5328f5688ff6b39de25af6a7bab840cc4e1156a26dabb10e2d01b12cbfa9eef from peer 127.0.0.1:62256
@@ -69,7 +80,9 @@ Windows 11 with Visual Studio 2022 for build environment and vcpkg for library m
   [ 17:52:55 ] [ tc ] Saving chain with 6 blocks
   ...
   ```
+
 - Check balance of receiver wallet
+
   ```
   $ balance 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi
 
