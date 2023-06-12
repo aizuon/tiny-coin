@@ -10,8 +10,9 @@ endif()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+enable_testing()
+
 project(tiny-coin)
 
 add_subdirectory(tiny-lib)
 add_subdirectory(tiny-sandbox)
-add_subdirectory(tiny-test)

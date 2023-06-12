@@ -316,7 +316,7 @@ std::vector<uint8_t> ECDSA::GetPubKey(EVP_PKEY* ec_key)
 			return {};
 		}
 
-		pub_key_size = EC_POINT_point2oct(ec_group, pub_key, POINT_CONVERSION_COMPRESSED, nullptr, 0, nullptr);
+		pub_key_size = EC_POINT_point2oct(ec_group, pub_key, POINT_CONVERSION_UNCOMPRESSED, nullptr, 0, nullptr);
 		if (pub_key_size == 0)
 		{
 			EC_POINT_free(pub_key);
@@ -325,7 +325,7 @@ std::vector<uint8_t> ECDSA::GetPubKey(EVP_PKEY* ec_key)
 			return {};
 		}
 		pub_key_buffer.resize(pub_key_size);
-		if (!EC_POINT_point2oct(ec_group, pub_key, POINT_CONVERSION_COMPRESSED, pub_key_buffer.data(),
+		if (!EC_POINT_point2oct(ec_group, pub_key, POINT_CONVERSION_UNCOMPRESSED, pub_key_buffer.data(),
 			pub_key_buffer.size(), nullptr))
 		{
 			EC_POINT_free(pub_key);
