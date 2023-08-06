@@ -9,7 +9,7 @@ add_library(tiny-lib STATIC ${SOURCE_FILES} ${HEADER_FILES})
 find_package(Boost REQUIRED COMPONENTS thread)
 find_package(spdlog CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
-target_link_libraries(tiny-lib PRIVATE Boost::boost Boost::thread spdlog::spdlog OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(tiny-lib PUBLIC Boost::boost Boost::thread spdlog::spdlog OpenSSL::SSL OpenSSL::Crypto)
 
 target_include_directories(tiny-lib PUBLIC
     $<BUILD_INTERFACE:${BASE_DIR}>
