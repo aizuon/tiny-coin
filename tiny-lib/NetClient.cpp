@@ -35,13 +35,13 @@ std::recursive_mutex NetClient::ConnectionsMutex;
 std::vector<std::shared_ptr<Connection>> NetClient::Connections;
 std::vector<std::shared_ptr<Connection>> NetClient::MinerConnections;
 
-boost::asio::io_service NetClient::IO_Service;
+boost::asio::io_context NetClient::IO_Context;
 boost::thread NetClient::IO_Thread;
-boost::asio::ip::tcp::acceptor NetClient::Acceptor = boost::asio::ip::tcp::acceptor(IO_Service);
+boost::asio::ip::tcp::acceptor NetClient::Acceptor = boost::asio::ip::tcp::acceptor(IO_Context);
 
 void NetClient::RunAsync()
 {
-	IO_Thread = boost::thread(boost::bind(&boost::asio::io_service::run, &IO_Service));
+	IO_Thread = boost::thread(boost::bind(&boost::asio::io_context::run, &IO_Context));
 }
 
 void NetClient::Stop()
@@ -61,7 +61,7 @@ void NetClient::Stop()
 		}
 	}
 
-	IO_Service.stop();
+	IO_Context.stop();
 	if (IO_Thread.joinable())
 		IO_Thread.join();
 
@@ -75,8 +75,8 @@ void NetClient::Stop()
 
 void NetClient::Connect(const std::string& address, uint16_t port)
 {
-	const auto endpoint = boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::from_string(address), port);
-	auto con = std::make_shared<Connection>(IO_Service);
+	const auto endpoint = boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address_v4(address), port);
+	auto con = std::make_shared<Connection>(IO_Context);
 	try
 	{
 		con->Socket.connect(endpoint);
@@ -157,7 +157,7 @@ std::shared_ptr<Connection> NetClient::GetRandomConnection()
 
 void NetClient::StartAccept()
 {
-	const auto con = std::make_shared<Connection>(IO_Service);
+	const auto con = std::make_shared<Connection>(IO_Context);
 	auto handler = boost::bind(&NetClient::HandleAccept, con, boost::asio::placeholders::error);
 	Acceptor.async_accept(con->Socket, handler);
 }

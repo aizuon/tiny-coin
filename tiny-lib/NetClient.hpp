@@ -39,7 +39,7 @@ public:
 private:
 	static std::string Magic;
 
-	static boost::asio::io_service IO_Service;
+	static boost::asio::io_context IO_Context;
 	static boost::thread IO_Thread;
 	static boost::asio::ip::tcp::acceptor Acceptor;
 

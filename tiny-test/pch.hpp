@@ -13,4 +13,6 @@
 
 #include "gtest/gtest.h"
 
+#define FMT_UNICODE 0
+
 #endif //PCH_H

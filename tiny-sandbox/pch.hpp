@@ -8,4 +8,6 @@
 #include <string>
 #include <vector>
 
+#define FMT_UNICODE 0
+
 #endif //PCH_H

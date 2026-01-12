@@ -29,6 +29,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#define FMT_UNICODE 0
 #include <fmt/format.h>
 
 #include "Log.hpp"
