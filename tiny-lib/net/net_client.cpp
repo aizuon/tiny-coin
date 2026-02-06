@@ -1,6 +1,7 @@
 #include "net/net_client.hpp"
 
 #include <algorithm>
+#include <cstring>
 #include <boost/bind/bind.hpp>
 
 #include "util/binary_buffer.hpp"
@@ -18,6 +19,7 @@
 #include "net/send_active_chain_msg.hpp"
 #include "net/send_mempool_msg.hpp"
 #include "net/send_utxos_msg.hpp"
+#include "crypto/sha256.hpp"
 #include "net/tx_info_msg.hpp"
 
 using namespace boost::placeholders;
@@ -26,8 +28,6 @@ const std::vector<std::pair<std::string, uint16_t>> NetClient::initial_peers = s
 	std::string, uint16_t>>{
 		{ "127.0.0.1", 9900 }, { "127.0.0.1", 9901 }, { "127.0.0.1", 9902 }, { "127.0.0.1", 9903 }, { "127.0.0.1", 9904 }
 };
-
-std::string NetClient::magic = "\xf9\xbe\xb4\xd9";
 
 std::recursive_mutex NetClient::connections_mutex;
 
@@ -92,7 +92,7 @@ void NetClient::connect(const std::string& address, uint16_t port)
 		connections.push_back(con);
 	}
 	send_msg(con, PeerHelloMsg());
-	do_async_read(con);
+	do_async_read_header(con);
 }
 
 void NetClient::listen_async(uint16_t port)
@@ -125,22 +125,13 @@ bool NetClient::send_msg_random(const IMsg& msg)
 
 void NetClient::broadcast_msg(const IMsg& msg)
 {
-	{
-		std::scoped_lock lock(connections_mutex);
-
-		if (miner_connections.empty())
-			return;
-	}
-
 	const auto msg_buffer = prepare_send_buffer(msg);
 
-	{
-		std::scoped_lock lock(connections_mutex);
+	std::scoped_lock lock(connections_mutex);
 
-		for (auto& con : miner_connections)
-		{
-			write(con, msg_buffer);
-		}
+	for (auto& con : miner_connections)
+	{
+		write(con, msg_buffer);
 	}
 }
 
@@ -178,7 +169,7 @@ void NetClient::handle_accept(std::shared_ptr<Connection> con, const boost::syst
 			connections.push_back(con);
 		}
 		send_msg(con, PeerHelloMsg());
-		do_async_read(con);
+		do_async_read_header(con);
 	}
 	else
 	{
@@ -187,31 +178,96 @@ void NetClient::handle_accept(std::shared_ptr<Connection> con, const boost::syst
 	start_accept();
 }
 
-void NetClient::do_async_read(std::shared_ptr<Connection> con)
+void NetClient::do_async_read_header(std::shared_ptr<Connection> con)
 {
-	auto handler = boost::bind(&NetClient::handle_read, con, boost::asio::placeholders::error,
+	auto handler = boost::bind(&NetClient::handle_read_header, con, boost::asio::placeholders::error,
 		boost::asio::placeholders::bytes_transferred);
-	boost::asio::async_read_until(con->socket, con->read_buffer, magic, handler);
+	boost::asio::async_read(con->socket, con->read_buffer,
+		boost::asio::transfer_exactly(HEADER_SIZE), handler);
 }
 
-void NetClient::handle_read(std::shared_ptr<Connection> con, const boost::system::error_code& err,
+void NetClient::handle_read_header(std::shared_ptr<Connection> con, const boost::system::error_code& err,
 	size_t bytes_transferred)
 {
 	if (!err)
 	{
-		auto& read_buffer = con->read_buffer;
-		if (bytes_transferred > magic.size() && read_buffer.size() >= bytes_transferred)
+		if (bytes_transferred < HEADER_SIZE || con->read_buffer.size() < HEADER_SIZE)
 		{
-			BinaryBuffer buffer;
-			buffer.grow_to(static_cast<uint32_t>(bytes_transferred - magic.size()));
-			boost::asio::buffer_copy(boost::asio::buffer(buffer.get_writable_buffer()), read_buffer.data());
-
-			handle_msg(con, buffer);
-
-			read_buffer.consume(bytes_transferred);
+			remove_connection(con);
+			return;
 		}
 
-		do_async_read(con);
+		std::array<uint8_t, HEADER_SIZE> header{};
+		boost::asio::buffer_copy(boost::asio::buffer(header), con->read_buffer.data());
+		con->read_buffer.consume(HEADER_SIZE);
+
+		if (std::memcmp(header.data(), magic.data(), MAGIC_SIZE) != 0)
+		{
+			LOG_ERROR("Invalid magic bytes from peer");
+			remove_connection(con);
+			return;
+		}
+
+		uint32_t payload_length = 0;
+		std::memcpy(&payload_length, header.data() + MAGIC_SIZE, sizeof(payload_length));
+
+		if (payload_length == 0 || payload_length > MAX_PAYLOAD_SIZE)
+		{
+			LOG_ERROR("Invalid payload length {}", payload_length);
+			remove_connection(con);
+			return;
+		}
+
+		std::array<uint8_t, CHECKSUM_SIZE> expected_checksum{};
+		std::memcpy(expected_checksum.data(), header.data() + MAGIC_SIZE + sizeof(payload_length), CHECKSUM_SIZE);
+
+		do_async_read_payload(con, payload_length, expected_checksum);
+	}
+	else
+	{
+		if (err != boost::asio::error::eof && err != boost::asio::error::shut_down && err !=
+			boost::asio::error::connection_reset && err != boost::asio::error::operation_aborted)
+			LOG_ERROR(err.message());
+
+		remove_connection(con);
+	}
+}
+
+void NetClient::do_async_read_payload(std::shared_ptr<Connection> con, uint32_t payload_length,
+	std::array<uint8_t, CHECKSUM_SIZE> expected_checksum)
+{
+	auto handler = boost::bind(&NetClient::handle_read_payload, con, payload_length, expected_checksum,
+		boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred);
+	boost::asio::async_read(con->socket, con->read_buffer,
+		boost::asio::transfer_exactly(payload_length), handler);
+}
+
+void NetClient::handle_read_payload(std::shared_ptr<Connection> con, uint32_t payload_length,
+	std::array<uint8_t, CHECKSUM_SIZE> expected_checksum,
+	const boost::system::error_code& err, [[maybe_unused]] size_t bytes_transferred)
+{
+	if (!err)
+	{
+		if (con->read_buffer.size() >= payload_length)
+		{
+			BinaryBuffer buffer;
+			buffer.grow_to(payload_length);
+			boost::asio::buffer_copy(boost::asio::buffer(buffer.get_writable_buffer()),
+				con->read_buffer.data());
+			con->read_buffer.consume(payload_length);
+
+			const auto hash = SHA256::double_hash_binary(buffer.get_buffer());
+			if (std::memcmp(hash.data(), expected_checksum.data(), CHECKSUM_SIZE) != 0)
+			{
+				LOG_ERROR("Checksum mismatch, dropping message");
+			}
+			else
+			{
+				handle_msg(con, buffer);
+			}
+		}
+
+		do_async_read_header(con);
 	}
 	else
 	{
@@ -328,24 +384,36 @@ void NetClient::handle_msg(const std::shared_ptr<Connection>& con, BinaryBuffer&
 
 BinaryBuffer NetClient::prepare_send_buffer(const IMsg& msg)
 {
-	const auto serialized_msg = msg.serialize().get_buffer();
+	const auto serialized = msg.serialize();
+	const auto& serialized_msg = serialized.get_buffer();
 	const auto opcode = static_cast<OpcodeType>(msg.get_opcode());
+	const auto payload_length = static_cast<uint32_t>(sizeof(opcode) + serialized_msg.size());
+
+	std::vector<uint8_t> payload;
+	payload.reserve(payload_length);
+	payload.push_back(opcode);
+	payload.insert(payload.end(), serialized_msg.begin(), serialized_msg.end());
+
+	const auto hash = SHA256::double_hash_binary(payload);
 
 	BinaryBuffer msg_buffer;
-	msg_buffer.reserve(static_cast<uint32_t>(sizeof(opcode) + serialized_msg.size() + magic.size()));
-	msg_buffer.write(opcode);
-	msg_buffer.write_raw(serialized_msg);
-	msg_buffer.write_raw(magic);
+	msg_buffer.reserve(static_cast<uint32_t>(HEADER_SIZE + payload_length));
+	msg_buffer.write_raw(std::vector<uint8_t>(magic.begin(), magic.end()));
+	msg_buffer.write(payload_length);
+	msg_buffer.write_raw(std::vector<uint8_t>(hash.begin(), hash.begin() + CHECKSUM_SIZE));
+	msg_buffer.write_raw(payload);
 
 	return msg_buffer;
 }
 
 void NetClient::write(const std::shared_ptr<Connection>& con, const BinaryBuffer& msg_buffer)
 {
-	std::scoped_lock lock(con->write_mutex);
-
 	boost::system::error_code err;
-	boost::asio::write(con->socket, boost::asio::buffer(msg_buffer.get_buffer()), err);
+	{
+		std::scoped_lock lock(con->write_mutex);
+
+		boost::asio::write(con->socket, boost::asio::buffer(msg_buffer.get_buffer()), err);
+	}
 	if (err)
 	{
 		if (err != boost::asio::error::shut_down && err != boost::asio::error::connection_reset && err !=

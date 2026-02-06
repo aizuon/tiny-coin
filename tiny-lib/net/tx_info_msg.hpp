@@ -1,5 +1,4 @@
 #pragma once
-#include <cstdint>
 #include <memory>
 
 #include "net/i_msg.hpp"

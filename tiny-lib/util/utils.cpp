@@ -6,6 +6,7 @@
 std::string Utils::byte_array_to_hex_string(const std::vector<uint8_t>& vec)
 {
 	std::string hash;
+	hash.reserve(vec.size() * 2);
 
 	boost::algorithm::hex_lower(vec, std::back_inserter(hash));
 

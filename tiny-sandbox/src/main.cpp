@@ -17,6 +17,7 @@ namespace po = boost::program_options;
 
 void atexit_handler()
 {
+	NetClient::stop();
 	Crypto::cleanup();
 	Log::stop_log();
 }
@@ -169,8 +170,6 @@ int main(int argc, char** argv)
 			}
 		}
 	}
-
-	NetClient::stop();
 
 	return EXIT_SUCCESS;
 }

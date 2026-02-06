@@ -8,8 +8,8 @@
 class MerkleNode
 {
 public:
-	MerkleNode(const std::string& value, const std::vector<std::shared_ptr<MerkleNode>>& children);
-	MerkleNode(const std::string& value);
+	MerkleNode(std::string value, std::vector<std::shared_ptr<MerkleNode>> children);
+	MerkleNode(std::string value);
 
 	std::string value;
 	std::vector<std::shared_ptr<MerkleNode>> children;

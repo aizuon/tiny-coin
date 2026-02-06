@@ -1,8 +1,10 @@
 #include "mining/pow.hpp"
 
+#include <cstring>
 #include <stdexcept>
 #include <limits>
 #include <boost/bind/bind.hpp>
+#include <boost/endian/conversion.hpp>
 #include <boost/thread/thread.hpp>
 
 #include "core/chain.hpp"
@@ -31,12 +33,21 @@ uint8_t PoW::get_next_work_required(const std::string& prev_block_hash)
 	std::scoped_lock lock(Chain::mutex);
 	const auto& period_start_block = Chain::active_chain[std::max(
 		prev_block_height - (NetParams::DIFFICULTY_PERIOD_IN_BLOCKS - 1), 0LL)];
-	const int64_t actual_time_taken = prev_block->timestamp - period_start_block->timestamp;
-	if (actual_time_taken < NetParams::DIFFICULTY_PERIOD_IN_SECS_TARGET)
-		return prev_block->bits + 1;
-	if (actual_time_taken > NetParams::DIFFICULTY_PERIOD_IN_SECS_TARGET)
-		return prev_block->bits - 1;
-	return prev_block->bits;
+	int64_t actual_time_taken = prev_block->timestamp - period_start_block->timestamp;
+
+	constexpr int64_t target_secs = NetParams::DIFFICULTY_PERIOD_IN_SECS_TARGET;
+	if (actual_time_taken < target_secs / 4)
+		actual_time_taken = target_secs / 4;
+	if (actual_time_taken > target_secs * 4)
+		actual_time_taken = target_secs * 4;
+
+	const uint256_t old_target = uint256_t(1) << (std::numeric_limits<uint8_t>::max() - prev_block->bits);
+	const uint256_t new_target = old_target * actual_time_taken / target_secs;
+
+	const auto new_bits = static_cast<uint8_t>(
+		std::numeric_limits<uint8_t>::max() - static_cast<uint8_t>(msb(new_target)));
+
+	return new_bits;
 }
 
 std::shared_ptr<Block> PoW::assemble_and_solve_block(const std::string& pay_coinbase_to_address)
@@ -60,8 +71,13 @@ std::shared_ptr<Block> PoW::assemble_and_solve_block(const std::string& pay_coin
 		block = Mempool::select_from_mempool(block);
 
 	const uint64_t fees = calculate_fees(block);
+	uint64_t chain_height;
+	{
+		std::scoped_lock lock(Chain::mutex);
+		chain_height = Chain::active_chain.size();
+	}
 	const auto coinbase_tx = Tx::create_coinbase(pay_coinbase_to_address, get_block_subsidy() + fees,
-		Chain::active_chain.size());
+		chain_height);
 	block->txs.insert(block->txs.begin(), coinbase_tx);
 	block->merkle_hash = MerkleTree::get_root_of_txs(block->txs)->value;
 
@@ -75,8 +91,8 @@ std::shared_ptr<Block> PoW::assemble_and_solve_block(const std::string& pay_coin
 
 std::shared_ptr<Block> PoW::mine(const std::shared_ptr<Block>& block)
 {
-	if (mine_interrupt)
-		mine_interrupt = false;
+	bool expected = true;
+	mine_interrupt.compare_exchange_strong(expected, false);
 
 	auto new_block = std::make_shared<Block>(*block);
 	new_block->nonce = 0;
@@ -89,11 +105,13 @@ std::shared_ptr<Block> PoW::mine(const std::shared_ptr<Block>& block)
 	std::atomic<uint64_t> found_nonce = 0;
 	std::atomic<uint64_t> hash_count = 0;
 
+	const auto header_prefix = new_block->header_prefix();
+
 	const auto start = Utils::get_unix_timestamp();
 	boost::thread_group thread_pool;
 	for (int32_t i = 0; i < num_threads; i++)
 	{
-		thread_pool.create_thread(boost::bind(&PoW::mine_chunk, new_block, target_hash,
+		thread_pool.create_thread(boost::bind(&PoW::mine_chunk, boost::cref(header_prefix), boost::cref(target_hash),
 			std::numeric_limits<uint64_t>::min() + chunk_size * i, chunk_size,
 			boost::ref(found), boost::ref(found_nonce), boost::ref(hash_count)));
 	}
@@ -101,7 +119,8 @@ std::shared_ptr<Block> PoW::mine(const std::shared_ptr<Block>& block)
 
 	if (mine_interrupt)
 	{
-		mine_interrupt = false;
+		expected = true;
+		mine_interrupt.compare_exchange_strong(expected, false);
 
 		LOG_INFO("Mining interrupted");
 
@@ -129,7 +148,14 @@ void PoW::mine_forever()
 {
 	Chain::load_from_disk();
 
-	if (NetClient::send_msg_random(GetBlockMsg(Chain::active_chain.back()->id())))
+	std::string tip_id;
+	{
+		std::scoped_lock lock(Chain::mutex);
+		if (!Chain::active_chain.empty())
+			tip_id = Chain::active_chain.back()->id();
+	}
+
+	if (!tip_id.empty() && NetClient::send_msg_random(GetBlockMsg(tip_id)))
 	{
 		LOG_INFO("Starting initial block sync");
 
@@ -185,25 +211,51 @@ uint64_t PoW::calculate_fees(const std::shared_ptr<Tx>& tx)
 	return spent - sent;
 }
 
-void PoW::mine_chunk(const std::shared_ptr<Block>& block, const uint256_t& target_hash, uint64_t start,
+void PoW::mine_chunk(const BinaryBuffer& header_prefix, const uint256_t& target_hash, uint64_t start,
 	uint64_t chunk_size, std::atomic_bool& found, std::atomic<uint64_t>& found_nonce,
 	std::atomic<uint64_t>& hash_count)
 {
-	uint64_t i = 0;
-	while (!HashChecker::is_valid(
-		Utils::byte_array_to_hex_string(SHA256::double_hash_binary(block->header(start + i).get_buffer())),
-		target_hash))
-	{
-		++hash_count;
+	auto prefix_bytes = header_prefix.get_buffer();
+	const uint32_t nonce_offset = static_cast<uint32_t>(prefix_bytes.size());
+	prefix_bytes.resize(nonce_offset + sizeof(uint64_t));
 
-		i++;
-		if (found || i == chunk_size || mine_interrupt)
+	uint64_t i = 0;
+	uint64_t local_hash_count = 0;
+	while (true)
+	{
+		uint64_t current_nonce = start + i;
+		if constexpr (Utils::is_little_endian)
+			std::memcpy(prefix_bytes.data() + nonce_offset, &current_nonce, sizeof(uint64_t));
+		else
 		{
+			boost::endian::endian_reverse_inplace(current_nonce);
+			std::memcpy(prefix_bytes.data() + nonce_offset, &current_nonce, sizeof(uint64_t));
+		}
+
+		const auto hash = SHA256::double_hash_binary(prefix_bytes);
+		if (HashChecker::is_valid(hash, target_hash))
+		{
+			found = true;
+			found_nonce = start + i;
+			hash_count += local_hash_count;
+			return;
+		}
+
+		++local_hash_count;
+		i++;
+		if (i % 4096 == 0)
+		{
+			hash_count += local_hash_count;
+			local_hash_count = 0;
+			if (found || mine_interrupt)
+				return;
+		}
+		if (i == chunk_size)
+		{
+			hash_count += local_hash_count;
 			return;
 		}
 	}
-	found = true;
-	found_nonce = start + i;
 }
 
 uint64_t PoW::calculate_fees(const std::shared_ptr<Block>& block)
@@ -228,7 +280,8 @@ uint64_t PoW::calculate_fees(const std::shared_ptr<Block>& block)
 			sent += tx_out->value;
 		}
 
-		fee += spent - sent;
+		if (spent >= sent)
+			fee += spent - sent;
 	}
 
 	return fee;
@@ -236,7 +289,12 @@ uint64_t PoW::calculate_fees(const std::shared_ptr<Block>& block)
 
 uint64_t PoW::get_block_subsidy()
 {
-	const uint32_t halvings = static_cast<uint32_t>(Chain::active_chain.size() / NetParams::HALVE_SUBSIDY_AFTER_BLOCKS_NUM);
+	uint64_t chain_size;
+	{
+		std::scoped_lock lock(Chain::mutex);
+		chain_size = Chain::active_chain.size();
+	}
+	const uint32_t halvings = static_cast<uint32_t>(chain_size / NetParams::HALVE_SUBSIDY_AFTER_BLOCKS_NUM);
 
 	if (halvings >= 64)
 		return 0;

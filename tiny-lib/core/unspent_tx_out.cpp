@@ -6,7 +6,7 @@
 
 UnspentTxOut::UnspentTxOut(std::shared_ptr<::TxOut> tx_out, std::shared_ptr<::TxOutPoint> tx_out_point,
 	bool is_coinbase, int64_t height)
-	: tx_out(tx_out), tx_out_point(tx_out_point), is_coinbase(is_coinbase), height(height)
+	: tx_out(std::move(tx_out)), tx_out_point(std::move(tx_out_point)), is_coinbase(is_coinbase), height(height)
 {}
 
 BinaryBuffer UnspentTxOut::serialize() const
@@ -23,42 +23,31 @@ BinaryBuffer UnspentTxOut::serialize() const
 
 bool UnspentTxOut::deserialize(BinaryBuffer& buffer)
 {
-	auto copy = *this;
-
-	tx_out = std::make_shared<::TxOut>();
-	if (!tx_out->deserialize(buffer))
-	{
-		*this = std::move(copy);
-
+	auto new_tx_out = std::make_shared<::TxOut>();
+	if (!new_tx_out->deserialize(buffer))
 		return false;
-	}
 
-	tx_out_point = std::make_shared<::TxOutPoint>();
-	if (!tx_out_point->deserialize(buffer))
-	{
-		*this = std::move(copy);
-
+	auto new_tx_out_point = std::make_shared<::TxOutPoint>();
+	if (!new_tx_out_point->deserialize(buffer))
 		return false;
-	}
 
-	if (!buffer.read(is_coinbase))
-	{
-		*this = std::move(copy);
-
+	bool new_is_coinbase = false;
+	if (!buffer.read(new_is_coinbase))
 		return false;
-	}
 
-	if (!buffer.read(height))
-	{
-		*this = std::move(copy);
-
+	int64_t new_height = -1;
+	if (!buffer.read(new_height))
 		return false;
-	}
+
+	tx_out = std::move(new_tx_out);
+	tx_out_point = std::move(new_tx_out_point);
+	is_coinbase = new_is_coinbase;
+	height = new_height;
 
 	return true;
 }
 
-std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>> UnspentTxOut::map;
+std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UnspentTxOut>, TxOutPointHash, TxOutPointEqual> UnspentTxOut::map;
 
 std::recursive_mutex UnspentTxOut::mutex;
 
@@ -80,14 +69,8 @@ void UnspentTxOut::remove_from_map(const std::string& tx_id, int64_t idx)
 {
 	std::scoped_lock lock(mutex);
 
-	const auto it = std::ranges::find_if(map,
-		[&tx_id, idx](const auto& p)
-	{
-		const auto& [tx_out_point, utxo] = p;
-		return tx_out_point->tx_id == tx_id && tx_out_point->tx_out_idx == idx;
-	});
-	if (it != map.end())
-		map.erase(it);
+	auto key = std::make_shared<::TxOutPoint>(tx_id, idx);
+	map.erase(key);
 }
 
 std::shared_ptr<UnspentTxOut> UnspentTxOut::find_in_list(const std::shared_ptr<TxIn>& tx_in,
@@ -115,12 +98,7 @@ std::shared_ptr<UnspentTxOut> UnspentTxOut::find_in_map(const std::shared_ptr<::
 {
 	std::scoped_lock lock(mutex);
 
-	const auto it = std::ranges::find_if(map,
-		[&to_spend](const auto& p)
-	{
-		const auto& [tx_out_point, utxo] = p;
-		return *tx_out_point == *to_spend;
-	});
+	const auto it = map.find(to_spend);
 	if (it != map.end())
 		return it->second;
 
@@ -134,7 +112,10 @@ std::shared_ptr<TxOut> UnspentTxOut::find_tx_out_in_block(const std::shared_ptr<
 	{
 		if (tx->id() == tx_in->to_spend->tx_id)
 		{
-			return tx->tx_outs[tx_in->to_spend->tx_out_idx];
+			const auto idx = tx_in->to_spend->tx_out_idx;
+			if (idx < 0 || static_cast<size_t>(idx) >= tx->tx_outs.size())
+				return nullptr;
+			return tx->tx_outs[idx];
 		}
 	}
 
@@ -145,12 +126,7 @@ std::shared_ptr<TxOut> UnspentTxOut::find_tx_out_in_map(const std::shared_ptr<Tx
 {
 	std::scoped_lock lock(mutex);
 
-	const auto it = std::ranges::find_if(map,
-		[&tx_in](const auto& p)
-	{
-		const auto& [tx_out_point, utxo] = p;
-		return tx_in->to_spend->tx_id == tx_out_point->tx_id && tx_in->to_spend->tx_out_idx == tx_out_point->tx_out_idx;
-	});
+	const auto it = map.find(tx_in->to_spend);
 	if (it != map.end())
 		return it->second->tx_out;
 
@@ -170,9 +146,13 @@ std::shared_ptr<TxOut> UnspentTxOut::find_tx_out_in_map_or_block(const std::shar
 bool UnspentTxOut::operator==(const UnspentTxOut& obj) const
 {
 	if (this == &obj)
-	{
 		return true;
-	}
 
-	return tied() == obj.tied() && *tx_out == *obj.tx_out && *tx_out_point == *obj.tx_out_point;
+	if (tied() != obj.tied())
+		return false;
+
+	if (tx_out == nullptr || obj.tx_out == nullptr || tx_out_point == nullptr || obj.tx_out_point == nullptr)
+		return tx_out == obj.tx_out && tx_out_point == obj.tx_out_point;
+
+	return *tx_out == *obj.tx_out && *tx_out_point == *obj.tx_out_point;
 }

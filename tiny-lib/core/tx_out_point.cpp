@@ -1,9 +1,8 @@
 #include "core/tx_out_point.hpp"
 
-TxOutPoint::TxOutPoint(const std::string& tx_id, int64_t tx_out_idx)
-	: tx_id(tx_id), tx_out_idx(tx_out_idx)
-{
-}
+TxOutPoint::TxOutPoint(std::string tx_id, int64_t tx_out_idx)
+	: tx_id(std::move(tx_id)), tx_out_idx(tx_out_idx)
+{}
 
 BinaryBuffer TxOutPoint::serialize() const
 {
@@ -17,20 +16,16 @@ BinaryBuffer TxOutPoint::serialize() const
 
 bool TxOutPoint::deserialize(BinaryBuffer& buffer)
 {
-	auto copy = *this;
-
-	if (!buffer.read(tx_id))
-	{
-		*this = std::move(copy);
-
+	std::string new_tx_id;
+	if (!buffer.read(new_tx_id))
 		return false;
-	}
-	if (!buffer.read(tx_out_idx))
-	{
-		*this = std::move(copy);
 
+	int64_t new_tx_out_idx = -1;
+	if (!buffer.read(new_tx_out_idx))
 		return false;
-	}
+
+	tx_id = std::move(new_tx_id);
+	tx_out_idx = new_tx_out_idx;
 
 	return true;
 }

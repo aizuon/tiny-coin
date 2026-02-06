@@ -1,7 +1,6 @@
 #pragma once
 #include <cassert>
 #include <cstdint>
-#include <mutex>
 #include <string>
 #include <vector>
 #include <boost/endian/conversion.hpp>
@@ -14,11 +13,6 @@ public:
 	BinaryBuffer() = default;
 	BinaryBuffer(const std::vector<uint8_t>& obj);
 	BinaryBuffer(std::vector<uint8_t>&& obj);
-
-	BinaryBuffer(const BinaryBuffer& obj);
-	BinaryBuffer(BinaryBuffer&& obj) noexcept;
-	BinaryBuffer& operator=(const BinaryBuffer& obj);
-	BinaryBuffer& operator=(BinaryBuffer&& obj) noexcept;
 
 	inline const std::vector<uint8_t>& get_buffer() const
 	{
@@ -47,7 +41,8 @@ public:
 
 	inline void grow_to(uint32_t size)
 	{
-		assert(size > buffer_.size());
+		if (size <= buffer_.size())
+			return;
 
 		buffer_.resize(size);
 	}
@@ -64,8 +59,6 @@ public:
 	{
 		static_assert(std::is_arithmetic_v<T>);
 
-		std::scoped_lock lock(mutex_);
-
 		if (!Utils::is_little_endian)
 		{
 			boost::endian::endian_reverse_inplace(obj);
@@ -80,29 +73,46 @@ public:
 	template <typename T>
 	void write(const std::vector<T>& obj)
 	{
-		std::scoped_lock lock(mutex_);
+		static_assert(std::is_arithmetic_v<T>);
 
 		const uint32_t size = static_cast<uint32_t>(obj.size());
 		write_size(size);
 
-		const uint32_t length = size * sizeof(T);
-		grow_if_needed(length);
-		for (auto o : obj)
+		if constexpr (sizeof(T) == 1)
 		{
-			write(o);
+			const uint32_t length = size;
+			grow_if_needed(length);
+			std::memcpy(buffer_.data() + write_offset_, obj.data(), length);
+			write_offset_ += length;
+		}
+		else
+		{
+			for (auto o : obj)
+			{
+				write(o);
+			}
 		}
 	}
 
 	template <typename T>
 	void write_raw(const std::vector<T>& obj)
 	{
-		std::scoped_lock lock(mutex_);
-
-		const uint32_t length = static_cast<uint32_t>(obj.size() * sizeof(T));
+		const size_t byte_length = obj.size() * sizeof(T);
+		if (byte_length > UINT32_MAX)
+			return;
+		const uint32_t length = static_cast<uint32_t>(byte_length);
 		grow_if_needed(length);
-		for (auto o : obj)
+		if constexpr (sizeof(T) == 1)
 		{
-			write(o);
+			std::memcpy(buffer_.data() + write_offset_, obj.data(), length);
+			write_offset_ += length;
+		}
+		else
+		{
+			for (auto o : obj)
+			{
+				write(o);
+			}
 		}
 	}
 
@@ -117,9 +127,10 @@ public:
 	{
 		static_assert(std::is_arithmetic_v<T>);
 
-		std::scoped_lock lock(mutex_);
-
 		const uint32_t length = sizeof(T);
+
+		if (length > UINT32_MAX - read_offset_)
+			return false;
 
 		const uint32_t final_offset = read_offset_ + length;
 		if (buffer_.size() < final_offset)
@@ -138,23 +149,41 @@ public:
 	template <typename T>
 	bool read(std::vector<T>& obj)
 	{
-		std::scoped_lock lock(mutex_);
+		static_assert(std::is_arithmetic_v<T>);
 
 		uint32_t size = 0;
 		if (!read_size(size))
 			return false;
 
+		if constexpr (sizeof(T) > 1)
+		{
+			if (size > UINT32_MAX / sizeof(T))
+				return false;
+		}
+
 		const uint32_t length = size * sizeof(T);
+
+		if (length > UINT32_MAX - read_offset_)
+			return false;
 
 		const uint32_t final_offset = read_offset_ + length;
 		if (buffer_.size() < final_offset)
 			return false;
 
-		obj.resize(size);
-		for (uint32_t i = 0; i < size; i++)
+		if constexpr (sizeof(T) == 1)
 		{
-			if (!read(obj[i]))
-				return false;
+			obj.resize(size);
+			std::memcpy(obj.data(), buffer_.data() + read_offset_, length);
+			read_offset_ = final_offset;
+		}
+		else
+		{
+			obj.resize(size);
+			for (uint32_t i = 0; i < size; i++)
+			{
+				if (!read(obj[i]))
+					return false;
+			}
 		}
 
 		return true;
@@ -168,8 +197,6 @@ private:
 	std::vector<uint8_t> buffer_;
 	uint32_t write_offset_ = 0;
 	uint32_t read_offset_ = 0;
-
-	std::recursive_mutex mutex_;
 
 	void grow_if_needed(uint32_t write_length);
 };

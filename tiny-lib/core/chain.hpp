@@ -5,6 +5,7 @@
 #include <mutex>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -59,6 +60,15 @@ public:
 	static void save_to_disk();
 	static bool load_from_disk();
 
+	static void reset();
+
 private:
 	static constexpr char CHAIN_PATH[] = "chain.dat";
+
+	static std::unordered_map<std::string, uint32_t> active_chain_index;
+	static uint32_t last_saved_height;
+
+	static void index_block(const std::shared_ptr<Block>& block, uint32_t height);
+	static void unindex_block(const std::shared_ptr<Block>& block);
+	static void rebuild_active_chain_index();
 };

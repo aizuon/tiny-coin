@@ -12,8 +12,8 @@ class TxIn : public ISerializable, public IDeserializable
 {
 public:
 	TxIn() = default;
-	TxIn(std::shared_ptr<TxOutPoint> to_spend, const std::vector<uint8_t>& unlock_sig,
-	     const std::vector<uint8_t>& unlock_pub_key, int32_t sequence);
+	TxIn(std::shared_ptr<TxOutPoint> to_spend, std::vector<uint8_t> unlock_sig,
+		std::vector<uint8_t> unlock_pub_key, int32_t sequence);
 
 	std::shared_ptr<TxOutPoint> to_spend;
 

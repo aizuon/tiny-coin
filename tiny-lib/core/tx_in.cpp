@@ -1,8 +1,8 @@
 #include "core/tx_in.hpp"
 
-TxIn::TxIn(std::shared_ptr<TxOutPoint> to_spend, const std::vector<uint8_t>& unlock_sig,
-	const std::vector<uint8_t>& unlock_pub_key, int32_t sequence)
-	: to_spend(to_spend), unlock_sig(unlock_sig), unlock_pub_key(unlock_pub_key), sequence(sequence)
+TxIn::TxIn(std::shared_ptr<TxOutPoint> to_spend, std::vector<uint8_t> unlock_sig,
+	std::vector<uint8_t> unlock_pub_key, int32_t sequence)
+	: to_spend(std::move(to_spend)), unlock_sig(std::move(unlock_sig)), unlock_pub_key(std::move(unlock_pub_key)), sequence(sequence)
 {}
 
 BinaryBuffer TxIn::serialize() const
@@ -22,46 +22,34 @@ BinaryBuffer TxIn::serialize() const
 
 bool TxIn::deserialize(BinaryBuffer& buffer)
 {
-	auto copy = *this;
-
 	bool has_to_spend = false;
 	if (!buffer.read(has_to_spend))
-	{
-		*this = std::move(copy);
-
 		return false;
-	}
+
+	std::shared_ptr<TxOutPoint> new_to_spend;
 	if (has_to_spend)
 	{
-		to_spend = std::make_shared<TxOutPoint>();
-		if (!to_spend->deserialize(buffer))
-		{
-			*this = std::move(copy);
-
+		new_to_spend = std::make_shared<TxOutPoint>();
+		if (!new_to_spend->deserialize(buffer))
 			return false;
-		}
 	}
 
-	if (!buffer.read(unlock_sig))
-	{
-		*this = std::move(copy);
-
+	std::vector<uint8_t> new_unlock_sig;
+	if (!buffer.read(new_unlock_sig))
 		return false;
-	}
 
-	if (!buffer.read(unlock_pub_key))
-	{
-		*this = std::move(copy);
-
+	std::vector<uint8_t> new_unlock_pub_key;
+	if (!buffer.read(new_unlock_pub_key))
 		return false;
-	}
 
-	if (!buffer.read(sequence))
-	{
-		*this = std::move(copy);
-
+	int32_t new_sequence = -1;
+	if (!buffer.read(new_sequence))
 		return false;
-	}
+
+	to_spend = std::move(new_to_spend);
+	unlock_sig = std::move(new_unlock_sig);
+	unlock_pub_key = std::move(new_unlock_pub_key);
+	sequence = new_sequence;
 
 	return true;
 }

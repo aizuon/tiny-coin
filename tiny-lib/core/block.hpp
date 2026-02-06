@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <tuple>
@@ -18,6 +19,11 @@ public:
 		uint8_t bits, uint64_t nonce,
 		const std::vector<std::shared_ptr<Tx>>& txs);
 
+	Block(const Block& other);
+	Block& operator=(const Block& other);
+	Block(Block&& other) noexcept;
+	Block& operator=(Block&& other) noexcept;
+
 	uint64_t version = 0;
 
 	std::string prev_block_hash;
@@ -32,6 +38,7 @@ public:
 	std::vector<std::shared_ptr<Tx>> txs;
 
 	BinaryBuffer header(std::optional<uint64_t> nonce = std::nullopt) const;
+	BinaryBuffer header_prefix() const;
 
 	std::string id() const;
 
@@ -41,6 +48,9 @@ public:
 	bool operator==(const Block& obj) const;
 
 private:
+	mutable std::string cached_id_;
+	mutable std::mutex cached_id_mutex_;
+
 	auto tied() const
 	{
 		return std::tie(version, prev_block_hash, merkle_hash, timestamp, bits, nonce);

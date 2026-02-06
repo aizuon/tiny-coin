@@ -20,6 +20,40 @@ Tx::Tx(const std::vector<std::shared_ptr<TxIn>>& tx_ins, const std::vector<std::
 	: tx_ins(tx_ins), tx_outs(tx_outs), lock_time(lock_time)
 {}
 
+Tx::Tx(const Tx& other)
+	: tx_ins(other.tx_ins), tx_outs(other.tx_outs), lock_time(other.lock_time)
+{
+}
+
+Tx& Tx::operator=(const Tx& other)
+{
+	if (this != &other)
+	{
+		tx_ins = other.tx_ins;
+		tx_outs = other.tx_outs;
+		lock_time = other.lock_time;
+		cached_id_.clear();
+	}
+	return *this;
+}
+
+Tx::Tx(Tx&& other) noexcept
+	: tx_ins(std::move(other.tx_ins)), tx_outs(std::move(other.tx_outs)), lock_time(other.lock_time)
+{
+}
+
+Tx& Tx::operator=(Tx&& other) noexcept
+{
+	if (this != &other)
+	{
+		tx_ins = std::move(other.tx_ins);
+		tx_outs = std::move(other.tx_outs);
+		lock_time = other.lock_time;
+		cached_id_.clear();
+	}
+	return *this;
+}
+
 bool Tx::is_coinbase() const
 {
 	return tx_ins.size() == 1 && tx_ins.front()->to_spend == nullptr;
@@ -27,7 +61,12 @@ bool Tx::is_coinbase() const
 
 std::string Tx::id() const
 {
-	return Utils::byte_array_to_hex_string(SHA256::double_hash_binary(serialize().get_buffer()));
+	std::scoped_lock lock(cached_id_mutex_);
+
+	if (cached_id_.empty())
+		cached_id_ = Utils::byte_array_to_hex_string(SHA256::double_hash_binary(serialize().get_buffer()));
+
+	return cached_id_;
 }
 
 void Tx::validate_basics(bool coinbase /*= false*/) const
@@ -40,7 +79,13 @@ void Tx::validate_basics(bool coinbase /*= false*/) const
 
 	uint64_t total_spent = 0;
 	for (const auto& tx_out : tx_outs)
+	{
+		if (tx_out->value > NetParams::MAX_MONEY)
+			throw TxValidationException("Single output value too high");
+		if (total_spent + tx_out->value < total_spent)
+			throw TxValidationException("Output total overflow");
 		total_spent += tx_out->value;
+	}
 
 	if (total_spent > NetParams::MAX_MONEY)
 		throw TxValidationException("Spent value too high");
@@ -63,7 +108,7 @@ void Tx::validate(const ValidateRequest& req) const
 				utxo = UTXO::find_in_list(tx_in, req.siblings_in_block);
 			}
 
-			if (req.allow_utxo_from_mempool)
+			if (utxo == nullptr && req.allow_utxo_from_mempool)
 			{
 				utxo = Mempool::find_utxo_in_mempool(tx_in->to_spend);
 			}
@@ -88,12 +133,18 @@ void Tx::validate(const ValidateRequest& req) const
 			throw TxValidationException(fmt::format("TxIn {} not a valid spend of UTXO", i).c_str());
 		}
 
+		if (available_to_spend + utxo->tx_out->value < available_to_spend)
+			throw TxValidationException("Input total overflow");
 		available_to_spend += utxo->tx_out->value;
 	}
 
 	uint64_t total_spent = 0;
 	for (const auto& tx_out : tx_outs)
+	{
+		if (total_spent + tx_out->value < total_spent)
+			throw TxValidationException("Output total overflow");
 		total_spent += tx_out->value;
+	}
 
 	if (available_to_spend < total_spent)
 		throw TxValidationException("Spent value more than available");
@@ -118,56 +169,42 @@ BinaryBuffer Tx::serialize() const
 
 bool Tx::deserialize(BinaryBuffer& buffer)
 {
-	auto copy = *this;
-
 	uint32_t tx_ins_size = 0;
 	if (!buffer.read_size(tx_ins_size))
-	{
-		*this = std::move(copy);
-
 		return false;
-	}
-	tx_ins.clear();
-	tx_ins.reserve(tx_ins_size);
+
+	std::vector<std::shared_ptr<TxIn>> new_tx_ins;
+	new_tx_ins.reserve(tx_ins_size);
 	for (uint32_t i = 0; i < tx_ins_size; i++)
 	{
 		auto tx_in = std::make_shared<TxIn>();
 		if (!tx_in->deserialize(buffer))
-		{
-			*this = std::move(copy);
-
 			return false;
-		}
-		tx_ins.push_back(tx_in);
+		new_tx_ins.push_back(std::move(tx_in));
 	}
 
 	uint32_t tx_outs_size = 0;
 	if (!buffer.read_size(tx_outs_size))
-	{
-		*this = std::move(copy);
-
 		return false;
-	}
-	tx_outs.clear();
-	tx_outs.reserve(tx_outs_size);
+
+	std::vector<std::shared_ptr<TxOut>> new_tx_outs;
+	new_tx_outs.reserve(tx_outs_size);
 	for (uint32_t i = 0; i < tx_outs_size; i++)
 	{
 		auto tx_out = std::make_shared<TxOut>();
 		if (!tx_out->deserialize(buffer))
-		{
-			*this = std::move(copy);
-
 			return false;
-		}
-		tx_outs.push_back(tx_out);
+		new_tx_outs.push_back(std::move(tx_out));
 	}
 
-	if (!buffer.read(lock_time))
-	{
-		*this = std::move(copy);
-
+	int64_t new_lock_time = 0;
+	if (!buffer.read(new_lock_time))
 		return false;
-	}
+
+	tx_ins = std::move(new_tx_ins);
+	tx_outs = std::move(new_tx_outs);
+	lock_time = new_lock_time;
+	cached_id_.clear();
 
 	return true;
 }

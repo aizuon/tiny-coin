@@ -26,8 +26,8 @@ void Log::start_log(bool async /*= true*/)
 #endif
 	char log_file[256];
 	std::snprintf(log_file, sizeof(log_file), "TinyCoin_%4d%02d%02d_%02d%02d%02d.log",
-	              tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-	              tm.tm_hour, tm.tm_min, tm.tm_sec);
+		tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+		tm.tm_hour, tm.tm_min, tm.tm_sec);
 	const auto path = (log_folder / log_file).string();
 	log_sinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(path));
 	log_sinks[0]->set_pattern("[ %T ] [ %l ] [ %n ] %v");
@@ -46,15 +46,16 @@ void Log::start_log(bool async /*= true*/)
 	{
 		logger = std::make_shared<spdlog::logger>("tc", log_sinks.begin(), log_sinks.end());
 	}
-	
+
 	logger->set_level(spdlog::level::trace);
-	logger->flush_on(spdlog::level::trace);
+	logger->flush_on(spdlog::level::warn);
 	spdlog::register_logger(logger);
 	spdlog::set_default_logger(logger);
 }
 
 void Log::stop_log()
 {
-	logger->flush();
+	if (logger)
+		logger->flush();
 	spdlog::shutdown();
 }

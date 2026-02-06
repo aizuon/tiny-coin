@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -18,6 +19,11 @@ public:
 	Tx() = default;
 	Tx(const std::vector<std::shared_ptr<TxIn>>& tx_ins, const std::vector<std::shared_ptr<TxOut>>& tx_outs,
 		int64_t lock_time);
+
+	Tx(const Tx& other);
+	Tx& operator=(const Tx& other);
+	Tx(Tx&& other) noexcept;
+	Tx& operator=(Tx&& other) noexcept;
 
 	std::vector<std::shared_ptr<TxIn>> tx_ins;
 	std::vector<std::shared_ptr<TxOut>> tx_outs;
@@ -48,6 +54,9 @@ public:
 
 private:
 	void validate_signature_for_spend(const std::shared_ptr<TxIn>& tx_in, const std::shared_ptr<UnspentTxOut>& utxo) const;
+
+	mutable std::string cached_id_;
+	mutable std::mutex cached_id_mutex_;
 
 	auto tied() const
 	{

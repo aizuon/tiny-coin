@@ -18,9 +18,7 @@ std::vector<uint8_t> MsgSerializer::build_spend_msg(const std::shared_ptr<TxOutP
 		spend_message.write_raw(tx_out->serialize().get_buffer());
 	}
 
-	const auto buffer = spend_message.get_buffer();
+	const auto& buffer = spend_message.get_buffer();
 
-	auto hash = SHA256::double_hash_binary(buffer);
-
-	return hash;
+	return SHA256::double_hash_binary(buffer);
 }

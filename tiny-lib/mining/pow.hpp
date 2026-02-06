@@ -26,7 +26,7 @@ public:
 	static uint64_t calculate_fees(const std::shared_ptr<Tx>& tx);
 
 private:
-	static void mine_chunk(const std::shared_ptr<Block>& block, const uint256_t& target_hash, uint64_t start,
+	static void mine_chunk(const BinaryBuffer& header_prefix, const uint256_t& target_hash, uint64_t start,
 		uint64_t chunk_size, std::atomic_bool& found, std::atomic<uint64_t>& found_nonce,
 		std::atomic<uint64_t>& hash_count);
 

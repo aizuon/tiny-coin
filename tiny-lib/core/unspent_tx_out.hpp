@@ -33,7 +33,7 @@ public:
 	BinaryBuffer serialize() const override;
 	bool deserialize(BinaryBuffer& buffer) override;
 
-	static std::unordered_map<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>> map;
+	static std::unordered_map<std::shared_ptr<::TxOutPoint>, std::shared_ptr<UnspentTxOut>, TxOutPointHash, TxOutPointEqual> map;
 
 	static std::recursive_mutex mutex;
 

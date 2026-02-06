@@ -45,18 +45,31 @@ std::shared_ptr<Block> Mempool::select_from_mempool(const std::shared_ptr<Block>
 	auto new_block = std::make_shared<Block>(*block);
 
 	std::vector<std::pair<std::string, std::shared_ptr<Tx>>> map_vector(map.begin(), map.end());
+
+	std::unordered_map<std::string, uint64_t> fee_cache;
+	fee_cache.reserve(map_vector.size());
+	for (const auto& [tx_id, tx] : map_vector)
+		fee_cache[tx_id] = PoW::calculate_fees(tx);
+
 	std::ranges::sort(map_vector,
-		[](const std::pair<std::string, std::shared_ptr<Tx>>& a,
+		[&fee_cache](const std::pair<std::string, std::shared_ptr<Tx>>& a,
 			const std::pair<std::string, std::shared_ptr<Tx>>& b) -> bool
 	{
-		const auto& [a_tx_id, a_tx] = a;
-		const auto& [b_tx_id, b_tx] = b;
-		return PoW::calculate_fees(a_tx) < PoW::calculate_fees(b_tx);
+		return fee_cache[a.first] > fee_cache[b.first];
 	});
 
 	std::set<std::string> added_to_block;
+	uint32_t current_block_size = new_block->serialize().get_size();
 	for (const auto& tx_id : map_vector | std::views::keys)
-		new_block = try_add_to_block(new_block, tx_id, added_to_block);
+	{
+		new_block = try_add_to_block(new_block, tx_id, added_to_block, current_block_size);
+		if (new_block == nullptr)
+		{
+			LOG_ERROR("Block assembly failed, returning partial block");
+
+			return std::make_shared<Block>(*block);
+		}
+	}
 
 	return new_block;
 }
@@ -101,13 +114,14 @@ void Mempool::add_tx_to_mempool(const std::shared_ptr<Tx>& tx)
 	NetClient::send_msg_random(TxInfoMsg(tx));
 }
 
-bool Mempool::check_block_size(const std::shared_ptr<Block>& block)
+bool Mempool::check_block_size(uint32_t current_size)
 {
-	return block->serialize().get_size() < NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES;
+	return current_size < NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES;
 }
 
 std::shared_ptr<Block> Mempool::try_add_to_block(std::shared_ptr<Block> block, const std::string& tx_id,
-	std::set<std::string>& added_to_block)
+	std::set<std::string>& added_to_block, uint32_t& current_block_size)
+
 {
 	std::scoped_lock lock(mutex);
 
@@ -135,7 +149,7 @@ std::shared_ptr<Block> Mempool::try_add_to_block(std::shared_ptr<Block> block, c
 			return nullptr;
 		}
 
-		block = try_add_to_block(block, in_mempool->tx_out_point->tx_id, added_to_block);
+		block = try_add_to_block(block, in_mempool->tx_out_point->tx_id, added_to_block, current_block_size);
 		if (block == nullptr)
 		{
 			LOG_ERROR("Unable to add parent");
@@ -144,16 +158,16 @@ std::shared_ptr<Block> Mempool::try_add_to_block(std::shared_ptr<Block> block, c
 		}
 	}
 
-	auto new_block = std::make_shared<Block>(*block);
-	new_block->txs.push_back(tx);
+	const uint32_t tx_serialized_size = tx->serialize().get_size();
+	if (!check_block_size(current_block_size + tx_serialized_size))
+		return block;
 
-	if (check_block_size(new_block))
-	{
-		LOG_TRACE("Added transaction {} to block {}", tx_id, block->id());
+	block->txs.push_back(tx);
+	current_block_size += tx_serialized_size;
 
-		added_to_block.insert(tx_id);
+	LOG_TRACE("Added transaction {} to block {}", tx_id, block->id());
 
-		return new_block;
-	}
+	added_to_block.insert(tx_id);
+
 	return block;
 }

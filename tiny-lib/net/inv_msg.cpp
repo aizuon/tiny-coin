@@ -11,10 +11,12 @@ InvMsg::InvMsg(const std::vector<std::shared_ptr<Block>>& blocks)
 
 void InvMsg::handle(const std::shared_ptr<Connection>& con)
 {
-	LOG_INFO("Recieved initial sync from {}:{}", con->socket.remote_endpoint().address().to_string(),
-		con->socket.remote_endpoint().port());
+	const auto endpoint = con->socket.remote_endpoint();
+	LOG_INFO("Received initial sync from {}:{}", endpoint.address().to_string(),
+		endpoint.port());
 
 	std::vector<std::shared_ptr<Block>> new_blocks;
+	new_blocks.reserve(blocks.size());
 	for (const auto& block : blocks)
 	{
 		const auto [found_block, found_height, found_idx] = Chain::locate_block_in_all_chains(block->id());
@@ -34,12 +36,21 @@ void InvMsg::handle(const std::shared_ptr<Connection>& con)
 		return;
 	}
 
+	bool any_connected = false;
 	for (const auto& new_block : new_blocks)
-		Chain::connect_block(new_block);
+	{
+		if (Chain::connect_block(new_block) >= 0)
+			any_connected = true;
+	}
+
+	if (any_connected)
+		Chain::save_to_disk();
 
 	std::string new_tip_id;
 	{
 		std::scoped_lock lock(Chain::mutex);
+		if (Chain::active_chain.empty())
+			return;
 		new_tip_id = Chain::active_chain.back()->id();
 	}
 	LOG_INFO("Continuing initial sync from {}", new_tip_id);
@@ -62,27 +73,21 @@ BinaryBuffer InvMsg::serialize() const
 
 bool InvMsg::deserialize(BinaryBuffer& buffer)
 {
-	auto copy = *this;
-
 	uint32_t blocks_size = 0;
 	if (!buffer.read_size(blocks_size))
-	{
-		*this = std::move(copy);
-
 		return false;
-	}
-	blocks.reserve(blocks_size);
+
+	std::vector<std::shared_ptr<Block>> new_blocks;
+	new_blocks.reserve(blocks_size);
 	for (uint32_t i = 0; i < blocks_size; i++)
 	{
 		auto block = std::make_shared<Block>();
 		if (!block->deserialize(buffer))
-		{
-			*this = std::move(copy);
-
 			return false;
-		}
-		blocks.push_back(block);
+		new_blocks.push_back(std::move(block));
 	}
+
+	blocks = std::move(new_blocks);
 
 	return true;
 }

@@ -329,7 +329,6 @@ std::vector<uint8_t> ECDSA::get_pub_key(EVP_PKEY* ec_key)
 		return {};
 	}
 
-	// Try to get public key bytes directly from the key
 	size_t pub_key_size = 0;
 	EVP_PKEY_get_octet_string_param(ec_key, OSSL_PKEY_PARAM_PUB_KEY, nullptr, 0, &pub_key_size);
 	std::vector<uint8_t> pub_key_buffer(pub_key_size);
@@ -347,7 +346,6 @@ std::vector<uint8_t> ECDSA::get_pub_key(EVP_PKEY* ec_key)
 	}
 	else
 	{
-		// Derive public key from private key
 		BIGNUM* priv_key = nullptr;
 		if (!EVP_PKEY_get_bn_param(ec_key, OSSL_PKEY_PARAM_PRIV_KEY, &priv_key))
 		{
@@ -368,7 +366,6 @@ std::vector<uint8_t> ECDSA::get_pub_key(EVP_PKEY* ec_key)
 		BN_free(priv_key);
 	}
 
-	// Always encode as compressed
 	pub_key_size = EC_POINT_point2oct(ec_group, pub_key_point, POINT_CONVERSION_COMPRESSED, nullptr, 0, nullptr);
 	if (pub_key_size == 0)
 	{

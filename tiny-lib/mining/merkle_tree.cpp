@@ -3,12 +3,12 @@
 #include "crypto/sha256.hpp"
 #include "util/utils.hpp"
 
-MerkleNode::MerkleNode(const std::string& value, const std::vector<std::shared_ptr<MerkleNode>>& children)
-	: value(value), children(children)
+MerkleNode::MerkleNode(std::string value, std::vector<std::shared_ptr<MerkleNode>> children)
+	: value(std::move(value)), children(std::move(children))
 {}
 
-MerkleNode::MerkleNode(const std::string& value)
-	: value(value)
+MerkleNode::MerkleNode(std::string value)
+	: value(std::move(value))
 {}
 
 std::shared_ptr<MerkleNode> MerkleTree::get_root(const std::vector<std::string>& leaves)
@@ -28,13 +28,13 @@ std::shared_ptr<MerkleNode> MerkleTree::get_root(const std::vector<std::string>&
 
 std::shared_ptr<MerkleNode> MerkleTree::get_root_of_txs(const std::vector<std::shared_ptr<Tx>>& txs)
 {
-	std::vector<std::string> hashes;
-	hashes.reserve(txs.size());
+	std::vector<std::shared_ptr<MerkleNode>> nodes;
+	nodes.reserve(txs.size());
 	for (const auto& tx : txs)
 	{
-		hashes.emplace_back(tx->id());
+		nodes.push_back(std::make_shared<MerkleNode>(tx->id()));
 	}
-	return get_root(hashes);
+	return find_root(nodes);
 }
 
 std::vector<std::vector<std::shared_ptr<MerkleNode>>> MerkleTree::chunk(
@@ -68,24 +68,28 @@ std::vector<std::vector<std::shared_ptr<MerkleNode>>> MerkleTree::chunk(
 
 std::shared_ptr<MerkleNode> MerkleTree::find_root(const std::vector<std::shared_ptr<MerkleNode>>& nodes)
 {
+	if (nodes.empty())
+		return nullptr;
+
+	if (nodes.size() == 1)
+		return nodes.front();
+
 	const auto chunks = chunk(nodes, 2);
 	std::vector<std::shared_ptr<MerkleNode>> new_level;
 	new_level.reserve(chunks.size());
 	for (const auto& chunk : chunks)
 	{
-		std::string combined_id;
-		for (const auto& node : chunk)
-		{
-			combined_id += node->value;
-		}
+		auto combined_bytes = Utils::hex_string_to_byte_array(chunk[0]->value);
+		auto right_bytes = Utils::hex_string_to_byte_array(chunk[1]->value);
+		combined_bytes.insert(combined_bytes.end(), right_bytes.begin(), right_bytes.end());
 
 		std::string combined_hash = Utils::byte_array_to_hex_string(
-			SHA256::double_hash_binary(Utils::string_to_byte_array(combined_id)));
+			SHA256::double_hash_binary(combined_bytes));
 
-		auto node = std::make_shared<MerkleNode>(combined_hash, chunk);
+		auto node = std::make_shared<MerkleNode>(std::move(combined_hash), chunk);
 
 		new_level.push_back(node);
 	}
 
-	return new_level.size() > 1 ? find_root(new_level) : new_level[0];
+	return new_level.size() > 1 ? find_root(new_level) : new_level.front();
 }

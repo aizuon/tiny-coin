@@ -16,14 +16,24 @@ void Crypto::init()
 		throw std::runtime_error("Failed to load default OpenSSL provider");
 	p_legacy = OSSL_PROVIDER_load(nullptr, "legacy");
 	if (p_legacy == nullptr)
+	{
+		OSSL_PROVIDER_unload(p_default);
+		p_default = nullptr;
 		throw std::runtime_error("Failed to load legacy OpenSSL provider");
+	}
 
 	SHA256::md = EVP_MD_fetch(nullptr, "SHA256", nullptr);
 	if (SHA256::md == nullptr)
+	{
+		cleanup();
 		throw std::runtime_error("Failed to load SHA256");
+	}
 	RIPEMD160::md = EVP_MD_fetch(nullptr, "RIPEMD160", nullptr);
 	if (RIPEMD160::md == nullptr)
+	{
+		cleanup();
 		throw std::runtime_error("Failed to load RIPEMD160");
+	}
 }
 
 void Crypto::cleanup()

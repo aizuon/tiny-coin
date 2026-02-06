@@ -1,7 +1,7 @@
 #include "core/tx_out.hpp"
 
-TxOut::TxOut(uint64_t value, const std::string& to_address)
-	: value(value), to_address(to_address)
+TxOut::TxOut(uint64_t value, std::string to_address)
+	: value(value), to_address(std::move(to_address))
 {}
 
 BinaryBuffer TxOut::serialize() const
@@ -16,20 +16,16 @@ BinaryBuffer TxOut::serialize() const
 
 bool TxOut::deserialize(BinaryBuffer& buffer)
 {
-	auto copy = *this;
-
-	if (!buffer.read(value))
-	{
-		*this = std::move(copy);
-
+	uint64_t new_value = 0;
+	if (!buffer.read(new_value))
 		return false;
-	}
-	if (!buffer.read(to_address))
-	{
-		*this = std::move(copy);
 
+	std::string new_to_address;
+	if (!buffer.read(new_to_address))
 		return false;
-	}
+
+	value = new_value;
+	to_address = std::move(new_to_address);
 
 	return true;
 }

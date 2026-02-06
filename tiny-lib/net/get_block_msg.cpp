@@ -14,11 +14,13 @@ GetBlockMsg::GetBlockMsg(const std::string& from_block_id)
 void GetBlockMsg::handle(const std::shared_ptr<Connection>& con)
 {
 	const auto& endpoint = con->socket.remote_endpoint();
-	LOG_TRACE("Recieved GetBlockMsg from {}:{}", endpoint.address().to_string(), endpoint.port());
+	LOG_TRACE("Received GetBlockMsg from {}:{}", endpoint.address().to_string(), endpoint.port());
 
 	auto [block, height] = Chain::locate_block_in_active_chain(from_block_id);
 	if (height == -1)
 		height = 1;
+	else
+		height += 1;
 
 	std::vector<std::shared_ptr<Block>> blocks;
 	blocks.reserve(CHUNK_SIZE);
@@ -47,14 +49,11 @@ BinaryBuffer GetBlockMsg::serialize() const
 
 bool GetBlockMsg::deserialize(BinaryBuffer& buffer)
 {
-	auto copy = *this;
-
-	if (!buffer.read(from_block_id))
-	{
-		*this = std::move(copy);
-
+	std::string new_from_block_id;
+	if (!buffer.read(new_from_block_id))
 		return false;
-	}
+
+	from_block_id = std::move(new_from_block_id);
 
 	return true;
 }

@@ -8,32 +8,6 @@ BinaryBuffer::BinaryBuffer(std::vector<uint8_t>&& obj)
 	: buffer_(std::move(obj)), write_offset_(static_cast<uint32_t>(buffer_.size()))
 {}
 
-BinaryBuffer::BinaryBuffer(const BinaryBuffer& obj)
-	: buffer_(obj.buffer_), write_offset_(obj.write_offset_), read_offset_(obj.read_offset_)
-{}
-
-BinaryBuffer::BinaryBuffer(BinaryBuffer&& obj) noexcept
-	: buffer_(std::move(obj.buffer_)), write_offset_(obj.write_offset_), read_offset_(obj.read_offset_)
-{}
-
-BinaryBuffer& BinaryBuffer::operator=(const BinaryBuffer& obj)
-{
-	buffer_ = obj.buffer_;
-	write_offset_ = obj.write_offset_;
-	read_offset_ = obj.read_offset_;
-
-	return *this;
-}
-
-BinaryBuffer& BinaryBuffer::operator=(BinaryBuffer&& obj) noexcept
-{
-	std::swap(buffer_, obj.buffer_);
-	std::swap(write_offset_, obj.write_offset_);
-	std::swap(read_offset_, obj.read_offset_);
-
-	return *this;
-}
-
 void BinaryBuffer::write_size(uint32_t obj)
 {
 	write(obj);
@@ -41,29 +15,20 @@ void BinaryBuffer::write_size(uint32_t obj)
 
 void BinaryBuffer::write(const std::string& obj)
 {
-	std::scoped_lock lock(mutex_);
-
 	const uint32_t size = static_cast<uint32_t>(obj.size());
 	write_size(size);
 
-	const uint32_t length = size * sizeof(std::string::value_type);
-	grow_if_needed(length);
-	for (auto o : obj)
-	{
-		write(o);
-	}
+	grow_if_needed(size);
+	std::memcpy(buffer_.data() + write_offset_, obj.data(), size);
+	write_offset_ += size;
 }
 
 void BinaryBuffer::write_raw(const std::string& obj)
 {
-	std::scoped_lock lock(mutex_);
-
 	const uint32_t length = static_cast<uint32_t>(obj.size());
 	grow_if_needed(length);
-	for (auto o : obj)
-	{
-		write(o);
-	}
+	std::memcpy(buffer_.data() + write_offset_, obj.data(), length);
+	write_offset_ += length;
 }
 
 bool BinaryBuffer::read_size(uint32_t& obj)
@@ -73,24 +38,19 @@ bool BinaryBuffer::read_size(uint32_t& obj)
 
 bool BinaryBuffer::read(std::string& obj)
 {
-	std::scoped_lock lock(mutex_);
-
 	uint32_t size = 0;
 	if (!read_size(size))
 		return false;
 
-	const uint32_t length = size * sizeof(std::string::value_type);
+	if (size > UINT32_MAX - read_offset_)
+		return false;
 
-	const uint32_t final_offset = read_offset_ + length;
+	const uint32_t final_offset = read_offset_ + size;
 	if (buffer_.size() < final_offset)
 		return false;
 
-	obj.resize(size);
-	for (uint32_t i = 0; i < size; i++)
-	{
-		if (!read(obj[i]))
-			return false;
-	}
+	obj.assign(reinterpret_cast<const char*>(buffer_.data() + read_offset_), size);
+	read_offset_ = final_offset;
 
 	return true;
 }
@@ -108,6 +68,9 @@ bool BinaryBuffer::operator==(const BinaryBuffer& obj) const
 
 void BinaryBuffer::grow_if_needed(uint32_t write_length)
 {
+	if (write_length > UINT32_MAX - write_offset_)
+		return;
+
 	const uint32_t final_length = write_offset_ + write_length;
 	const bool reserve_needed = buffer_.capacity() < final_length;
 	const bool resize_needed = buffer_.size() < final_length;

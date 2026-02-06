@@ -23,20 +23,16 @@ BinaryBuffer PeerAddMsg::serialize() const
 
 bool PeerAddMsg::deserialize(BinaryBuffer& buffer)
 {
-	auto copy = *this;
-
-	if (!buffer.read(hostname))
-	{
-		*this = std::move(copy);
-
+	std::string new_hostname;
+	if (!buffer.read(new_hostname))
 		return false;
-	}
-	if (!buffer.read(port))
-	{
-		*this = std::move(copy);
 
+	uint16_t new_port = 0;
+	if (!buffer.read(new_port))
 		return false;
-	}
+
+	hostname = std::move(new_hostname);
+	port = new_port;
 
 	return true;
 }

@@ -10,7 +10,7 @@
 class SendUTXOsMsg : public IMsg
 {
 public:
-	std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UTXO>> utxo_map;
+	std::unordered_map<std::shared_ptr<TxOutPoint>, std::shared_ptr<UTXO>, TxOutPointHash, TxOutPointEqual> utxo_map;
 
 	~SendUTXOsMsg() override = default;
 

@@ -26,6 +26,7 @@ public:
 	static std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> init_wallet();
 
 	static std::shared_ptr<TxIn> build_tx_in(const std::vector<uint8_t>& priv_key,
+		const std::vector<uint8_t>& pub_key,
 		const std::shared_ptr<TxOutPoint>& tx_out_point,
 		const std::vector<std::shared_ptr<TxOut>>& tx_outs);
 	static std::shared_ptr<Tx> send_value_miner(uint64_t value, uint64_t fee, const std::string& address,
@@ -49,14 +50,14 @@ public:
 	static void print_balance(const std::string& address);
 
 private:
-	static constexpr char PUB_KEY_HASH_VERSION = '1';
 	static constexpr char DEFAULT_WALLET_PATH[] = "wallet.dat";
 	static std::string wallet_path;
 
 	static std::shared_ptr<Tx> build_tx_from_utxos(std::vector<std::shared_ptr<UnspentTxOut>>& utxos, uint64_t value,
 		uint64_t fee, const std::string& address,
 		const std::string& change_address,
-		const std::vector<uint8_t>& priv_key);
+		const std::vector<uint8_t>& priv_key,
+		const std::vector<uint8_t>& pub_key);
 
 	static std::shared_ptr<Tx> build_tx_miner(uint64_t value, uint64_t fee, const std::string& address,
 		const std::vector<uint8_t>& priv_key);

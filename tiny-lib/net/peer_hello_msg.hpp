@@ -5,7 +5,9 @@
 class PeerHelloMsg : public IMsg
 {
 public:
-	NodeType node_type;
+	PeerHelloMsg();
+
+	NodeType node_type = NodeType::Unspecified;
 
 	~PeerHelloMsg() override = default;
 

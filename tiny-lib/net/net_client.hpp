@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <mutex>
@@ -34,7 +35,11 @@ public:
 	static std::vector<std::shared_ptr<Connection>> miner_connections;
 
 private:
-	static std::string magic;
+	static constexpr uint32_t MAGIC_SIZE = 4;
+	static constexpr uint32_t CHECKSUM_SIZE = 4;
+	static constexpr uint32_t HEADER_SIZE = MAGIC_SIZE + sizeof(uint32_t) + CHECKSUM_SIZE;
+	static constexpr uint32_t MAX_PAYLOAD_SIZE = 4 * 1024 * 1024;
+	static constexpr std::array<uint8_t, MAGIC_SIZE> magic = { 0xf9, 0xbe, 0xb4, 0xd9 };
 
 	static boost::asio::io_context io_context;
 	static boost::thread io_thread;
@@ -47,9 +52,15 @@ private:
 	static void start_accept();
 	static void handle_accept(std::shared_ptr<Connection> con, const boost::system::error_code& err);
 
-	static void do_async_read(std::shared_ptr<Connection> con);
-	static void handle_read(std::shared_ptr<Connection> con, const boost::system::error_code& err,
+	static void do_async_read_header(std::shared_ptr<Connection> con);
+	static void handle_read_header(std::shared_ptr<Connection> con, const boost::system::error_code& err,
 		size_t bytes_transferred);
+
+	static void do_async_read_payload(std::shared_ptr<Connection> con, uint32_t payload_length,
+		std::array<uint8_t, CHECKSUM_SIZE> expected_checksum);
+	static void handle_read_payload(std::shared_ptr<Connection> con, uint32_t payload_length,
+		std::array<uint8_t, CHECKSUM_SIZE> expected_checksum,
+		const boost::system::error_code& err, size_t bytes_transferred);
 
 	static void handle_msg(const std::shared_ptr<Connection>& con, BinaryBuffer& msg_buffer);
 

@@ -9,8 +9,9 @@ TxInfoMsg::TxInfoMsg(const std::shared_ptr<::Tx>& tx)
 
 void TxInfoMsg::handle(const std::shared_ptr<Connection>& con)
 {
-	LOG_TRACE("Recieved transaction {} from peer {}:{}", tx->id(), con->socket.remote_endpoint().address().to_string(),
-		con->socket.remote_endpoint().port());
+	const auto endpoint = con->socket.remote_endpoint();
+	LOG_TRACE("Received transaction {} from peer {}:{}", tx->id(), endpoint.address().to_string(),
+		endpoint.port());
 
 	Mempool::add_tx_to_mempool(tx);
 }
@@ -26,15 +27,11 @@ BinaryBuffer TxInfoMsg::serialize() const
 
 bool TxInfoMsg::deserialize(BinaryBuffer& buffer)
 {
-	auto copy = *this;
-
-	tx = std::make_shared<::Tx>();
-	if (!tx->deserialize(buffer))
-	{
-		*this = std::move(copy);
-
+	auto new_tx = std::make_shared<::Tx>();
+	if (!new_tx->deserialize(buffer))
 		return false;
-	}
+
+	tx = std::move(new_tx);
 
 	return true;
 }

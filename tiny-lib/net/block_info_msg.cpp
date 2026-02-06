@@ -9,11 +9,12 @@ BlockInfoMsg::BlockInfoMsg(const std::shared_ptr<::Block>& block)
 
 void BlockInfoMsg::handle(const std::shared_ptr<Connection>& con)
 {
-	LOG_INFO("Recieved block {} from peer {}:{}", block->id(), con->socket.remote_endpoint().address().to_string(),
-		con->socket.remote_endpoint().port());
+	const auto endpoint = con->socket.remote_endpoint();
+	LOG_INFO("Received block {} from peer {}:{}", block->id(), endpoint.address().to_string(),
+		endpoint.port());
 
-	Chain::connect_block(block);
-	Chain::save_to_disk();
+	if (Chain::connect_block(block) >= 0)
+		Chain::save_to_disk();
 }
 
 BinaryBuffer BlockInfoMsg::serialize() const
@@ -27,15 +28,11 @@ BinaryBuffer BlockInfoMsg::serialize() const
 
 bool BlockInfoMsg::deserialize(BinaryBuffer& buffer)
 {
-	auto copy = *this;
-
-	block = std::make_shared<::Block>();
-	if (!block->deserialize(buffer))
-	{
-		*this = std::move(copy);
-
+	auto new_block = std::make_shared<::Block>();
+	if (!new_block->deserialize(buffer))
 		return false;
-	}
+
+	block = std::move(new_block);
 
 	return true;
 }

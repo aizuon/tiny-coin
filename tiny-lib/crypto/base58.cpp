@@ -3,8 +3,6 @@
 #include <algorithm>
 #include <openssl/bn.h>
 
-#include "util/utils.hpp"
-
 std::string Base58::encode(const std::vector<uint8_t>& buffer)
 {
 	auto bn_ctx = BN_CTX_new();
@@ -14,9 +12,7 @@ std::string Base58::encode(const std::vector<uint8_t>& buffer)
 	auto dv = BN_new();
 	auto rem = BN_new();
 
-	const auto hex_string = Utils::byte_array_to_hex_string(buffer);
-
-	if (!BN_hex2bn(&bn, hex_string.c_str()) || !BN_hex2bn(&bn58, "3a") || !BN_hex2bn(&bn00, "00"))
+	auto cleanup = [&]()
 	{
 		BN_free(rem);
 		BN_free(dv);
@@ -24,33 +20,36 @@ std::string Base58::encode(const std::vector<uint8_t>& buffer)
 		BN_free(bn00);
 		BN_free(bn);
 		BN_CTX_free(bn_ctx);
+	};
 
+	if (!BN_bin2bn(buffer.data(), static_cast<int>(buffer.size()), bn)
+		|| !BN_set_word(bn58, 58))
+	{
+		cleanup();
 		return {};
 	}
+	BN_zero(bn00);
+
 	std::string result;
 	while (BN_cmp(bn, bn00) > 0)
 	{
 		if (!BN_div(dv, rem, bn, bn58, bn_ctx) || BN_copy(bn, dv) == nullptr)
 		{
-			BN_free(rem);
-			BN_free(dv);
-			BN_free(bn58);
-			BN_free(bn00);
-			BN_free(bn);
-			BN_CTX_free(bn_ctx);
-
+			cleanup();
 			return {};
 		}
 		const auto base58char = table[BN_get_word(rem)];
 		result += base58char;
 	}
 
-	BN_free(rem);
-	BN_free(dv);
-	BN_free(bn58);
-	BN_free(bn00);
-	BN_free(bn);
-	BN_CTX_free(bn_ctx);
+	cleanup();
+
+	for (const auto& byte : buffer)
+	{
+		if (byte != 0x00)
+			break;
+		result += '1';
+	}
 
 	std::ranges::reverse(result);
 
