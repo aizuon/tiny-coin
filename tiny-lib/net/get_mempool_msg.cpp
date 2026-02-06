@@ -15,7 +15,7 @@ BinaryBuffer GetMempoolMsg::serialize() const
 	return buffer;
 }
 
-bool GetMempoolMsg::deserialize(BinaryBuffer& buffer)
+bool GetMempoolMsg::deserialize([[maybe_unused]] BinaryBuffer& buffer)
 {
 	return true;
 }

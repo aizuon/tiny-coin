@@ -15,7 +15,7 @@ BinaryBuffer GetUTXOsMsg::serialize() const
 	return buffer;
 }
 
-bool GetUTXOsMsg::deserialize(BinaryBuffer& buffer)
+bool GetUTXOsMsg::deserialize([[maybe_unused]] BinaryBuffer& buffer)
 {
 	return true;
 }

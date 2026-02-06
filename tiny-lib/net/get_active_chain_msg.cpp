@@ -15,7 +15,7 @@ BinaryBuffer GetActiveChainMsg::serialize() const
 	return buffer;
 }
 
-bool GetActiveChainMsg::deserialize(BinaryBuffer& buffer)
+bool GetActiveChainMsg::deserialize([[maybe_unused]] BinaryBuffer& buffer)
 {
 	return true;
 }

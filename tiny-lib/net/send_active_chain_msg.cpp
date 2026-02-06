@@ -3,7 +3,7 @@
 #include "core/chain.hpp"
 #include "net/msg_cache.hpp"
 
-void SendActiveChainMsg::handle(const std::shared_ptr<Connection>& con)
+void SendActiveChainMsg::handle([[maybe_unused]] const std::shared_ptr<Connection>& con)
 {
 	MsgCache::send_active_chain_msg = std::make_shared<SendActiveChainMsg>(*this);
 }

@@ -3,7 +3,7 @@
 #include "net/msg_cache.hpp"
 #include "core/unspent_tx_out.hpp"
 
-void SendUTXOsMsg::handle(const std::shared_ptr<Connection>& con)
+void SendUTXOsMsg::handle([[maybe_unused]] const std::shared_ptr<Connection>& con)
 {
 	MsgCache::send_utxos_msg = std::make_shared<SendUTXOsMsg>(*this);
 }

@@ -60,7 +60,7 @@ const auto chain1_block2_txs = std::vector{
 const auto chain1_block2 = std::make_shared<Block>(
 	0, "0000001616129fcc8a1240972d1e39a8569c7db3e965e38db70ccd4418815efd",
 	"8b0485e1a7823fc2ad3195837146e2b01e860a18f0cf81e524078b0116400430",
-	1501826444, 24, 13835058055285570289, chain1_block2_txs);
+	1501826444, 24, 13835058055285570289ULL, chain1_block2_txs);
 const auto chain1_block3_txs = std::vector{
 	std::make_shared<Tx>(
 		std::vector{
@@ -72,7 +72,7 @@ const auto chain1_block3_txs = std::vector{
 const auto chain1_block3 = std::make_shared<Block>(
 	0, "000000731ba1a0b651182140e8332287186c6a93ddbfc42455c3f88e020a5ce8",
 	"8b0485e1a7823fc2ad3195837146e2b01e860a18f0cf81e524078b0116400430",
-	1501826556, 24, 9223372036856676382, chain1_block3_txs);
+	1501826556, 24, 9223372036856676382ULL, chain1_block3_txs);
 const auto chain1 = std::vector{ chain1_block1, chain1_block2, chain1_block3 };
 
 const auto chain2_block2_txs = std::vector{
@@ -86,7 +86,7 @@ const auto chain2_block2_txs = std::vector{
 const auto chain2_block2 = std::make_shared<Block>(
 	0, "0000001616129fcc8a1240972d1e39a8569c7db3e965e38db70ccd4418815efd",
 	"8b0485e1a7823fc2ad3195837146e2b01e860a18f0cf81e524078b0116400430",
-	1501826757, 24, 9223372036864717828, chain2_block2_txs);
+	1501826757, 24, 9223372036864717828ULL, chain2_block2_txs);
 const auto chain2_block3_txs = std::vector{
 	std::make_shared<Tx>(
 		std::vector{
@@ -98,7 +98,7 @@ const auto chain2_block3_txs = std::vector{
 const auto chain2_block3 = std::make_shared<Block>(
 	0, "0000002def15eabb75ecde313f0f1e239592c758362b1f892f80e9c369a23bcc",
 	"8b0485e1a7823fc2ad3195837146e2b01e860a18f0cf81e524078b0116400430",
-	1501826872, 24, 13835058055284619847, chain2_block3_txs);
+	1501826872, 24, 13835058055284619847ULL, chain2_block3_txs);
 const auto chain2_block4_txs = std::vector{
 	std::make_shared<Tx>(
 		std::vector{
@@ -122,7 +122,7 @@ const auto chain2_block5_txs = std::vector{
 const auto chain2_block5 = std::make_shared<Block>(
 	0, "0000002dca22d47151d6cb1a2e60c1af535174c0b2b0d4152c63b76d034edc6d",
 	"8b0485e1a7823fc2ad3195837146e2b01e860a18f0cf81e524078b0116400430",
-	1501827000, 24, 13835058055287732375, chain2_block5_txs);
+	1501827000, 24, 13835058055287732375ULL, chain2_block5_txs);
 const auto chain2 = std::vector{
 	chain1_block1, chain2_block2, chain2_block3, chain2_block4, chain2_block5
 };

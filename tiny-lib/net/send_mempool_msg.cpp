@@ -5,7 +5,7 @@
 #include "core/mempool.hpp"
 #include "net/msg_cache.hpp"
 
-void SendMempoolMsg::handle(const std::shared_ptr<Connection>& con)
+void SendMempoolMsg::handle([[maybe_unused]] const std::shared_ptr<Connection>& con)
 {
 	MsgCache::send_mempool_msg = std::make_shared<SendMempoolMsg>(*this);
 }
