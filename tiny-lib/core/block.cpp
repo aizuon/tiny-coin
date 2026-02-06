@@ -13,8 +13,7 @@ Block::Block(uint64_t version, const std::string& prev_block_hash, const std::st
 Block::Block(const Block& other)
 	: version(other.version), prev_block_hash(other.prev_block_hash), merkle_hash(other.merkle_hash),
 	timestamp(other.timestamp), bits(other.bits), nonce(other.nonce), txs(other.txs)
-{
-}
+{}
 
 Block& Block::operator=(const Block& other)
 {
@@ -36,8 +35,7 @@ Block::Block(Block&& other) noexcept
 	: version(other.version), prev_block_hash(std::move(other.prev_block_hash)),
 	merkle_hash(std::move(other.merkle_hash)), timestamp(other.timestamp),
 	bits(other.bits), nonce(other.nonce), txs(std::move(other.txs))
-{
-}
+{}
 
 Block& Block::operator=(Block&& other) noexcept
 {

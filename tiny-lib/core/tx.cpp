@@ -22,8 +22,7 @@ Tx::Tx(const std::vector<std::shared_ptr<TxIn>>& tx_ins, const std::vector<std::
 
 Tx::Tx(const Tx& other)
 	: tx_ins(other.tx_ins), tx_outs(other.tx_outs), lock_time(other.lock_time)
-{
-}
+{}
 
 Tx& Tx::operator=(const Tx& other)
 {
@@ -39,8 +38,7 @@ Tx& Tx::operator=(const Tx& other)
 
 Tx::Tx(Tx&& other) noexcept
 	: tx_ins(std::move(other.tx_ins)), tx_outs(std::move(other.tx_outs)), lock_time(other.lock_time)
-{
-}
+{}
 
 Tx& Tx::operator=(Tx&& other) noexcept
 {
