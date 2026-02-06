@@ -4,9 +4,8 @@
     {
       "name": "vcpkg",
       "hidden": true,
-      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "toolchainFile": "${sourceDir}/cmake/vcpkg-toolchain.cmake",
       "cacheVariables": {
-        "VCPKG_TARGET_TRIPLET": "x64-windows-static",
         "VCPKG_MANIFEST_MODE": "OFF"
       }
     },
@@ -16,8 +15,7 @@
       "inherits": "vcpkg",
       "binaryDir": "${sourceDir}/build/debug",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDebug"
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
@@ -26,8 +24,7 @@
       "inherits": "vcpkg",
       "binaryDir": "${sourceDir}/build/release",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     }
   ],

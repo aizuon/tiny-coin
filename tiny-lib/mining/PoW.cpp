@@ -1,6 +1,6 @@
 #include "mining/pow.hpp"
 
-#include <exception>
+#include <stdexcept>
 #include <limits>
 #include <boost/bind/bind.hpp>
 #include <boost/thread/thread.hpp>
@@ -66,7 +66,7 @@ std::shared_ptr<Block> PoW::assemble_and_solve_block(const std::string& pay_coin
 	block->merkle_hash = MerkleTree::get_root_of_txs(block->txs)->value;
 
 	if (block->serialize().get_size() > NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES)
-		throw std::exception("Transactions specified create a block too large");
+		throw std::runtime_error("Transactions specified create a block too large");
 
 	LOG_INFO("Start mining block {} with {} fees", block->id(), fees);
 

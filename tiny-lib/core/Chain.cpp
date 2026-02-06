@@ -1,7 +1,7 @@
 #include "core/chain.hpp"
 
 #include <cassert>
-#include <exception>
+#include <stdexcept>
 #include <fstream>
 #include <limits>
 #include <ranges>
@@ -258,7 +258,7 @@ std::shared_ptr<Block> Chain::disconnect_block(const std::shared_ptr<Block>& blo
 
 	auto back = active_chain.back();
 	if (block_id != back->id())
-		throw std::exception("Block being disconnected must be the tip");
+		throw std::runtime_error("Block being disconnected must be the tip");
 
 	for (const auto& tx : block->txs)
 	{

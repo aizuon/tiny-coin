@@ -1,6 +1,6 @@
 #include "crypto/crypto.hpp"
 
-#include <exception>
+#include <stdexcept>
 #include <openssl/evp.h>
 
 #include "crypto/sha256.hpp"
@@ -13,17 +13,17 @@ void Crypto::init()
 {
 	p_default = OSSL_PROVIDER_load(nullptr, "default");
 	if (p_default == nullptr)
-		throw std::exception("Failed to load default OpenSSL provider");
+		throw std::runtime_error("Failed to load default OpenSSL provider");
 	p_legacy = OSSL_PROVIDER_load(nullptr, "legacy");
 	if (p_legacy == nullptr)
-		throw std::exception("Failed to load legacy OpenSSL provider");
+		throw std::runtime_error("Failed to load legacy OpenSSL provider");
 
 	SHA256::md = EVP_MD_fetch(nullptr, "SHA256", nullptr);
 	if (SHA256::md == nullptr)
-		throw std::exception("Failed to load SHA256");
+		throw std::runtime_error("Failed to load SHA256");
 	RIPEMD160::md = EVP_MD_fetch(nullptr, "RIPEMD160", nullptr);
 	if (RIPEMD160::md == nullptr)
-		throw std::exception("Failed to load RIPEMD160");
+		throw std::runtime_error("Failed to load RIPEMD160");
 }
 
 void Crypto::cleanup()

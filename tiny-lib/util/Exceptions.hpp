@@ -1,17 +1,17 @@
 #pragma once
-#include <exception>
+#include <stdexcept>
 #include <memory>
 
 class Tx;
 class Block;
 
-class TxUnlockException : public std::exception
+class TxUnlockException : public std::runtime_error
 {
 public:
 	TxUnlockException(const char* msg);
 };
 
-class TxValidationException : public std::exception
+class TxValidationException : public std::runtime_error
 {
 public:
 	TxValidationException(const char* msg);
@@ -20,7 +20,7 @@ public:
 	std::shared_ptr<Tx> to_orphan;
 };
 
-class BlockValidationException : public std::exception
+class BlockValidationException : public std::runtime_error
 {
 public:
 	BlockValidationException(const char* msg);
