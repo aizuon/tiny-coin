@@ -138,6 +138,9 @@ uint32_t Chain::validate_block(const std::shared_ptr<Block>& block)
 	if (PoW::get_next_work_required(block->prev_block_hash) != block->bits)
 		throw BlockValidationException("Bits incorrect");
 
+	const int64_t block_height = static_cast<int64_t>(active_chain.size());
+	const int64_t block_mtp = get_median_time_past(11);
+
 	Tx::ValidateRequest req;
 	req.siblings_in_block.reserve(block->txs.size() - 1);
 	req.siblings_in_block.assign(block->txs.begin() + 1, block->txs.end());
@@ -146,6 +149,7 @@ uint32_t Chain::validate_block(const std::shared_ptr<Block>& block)
 	{
 		try
 		{
+			non_coinbase_tx->check_lock_time(block_height, block_mtp);
 			non_coinbase_tx->validate(req);
 		}
 		catch (const TxValidationException& ex)

@@ -89,9 +89,44 @@ void Tx::validate_basics(bool coinbase /*= false*/) const
 		throw TxValidationException("Spent value too high");
 }
 
+bool Tx::is_final() const
+{
+	if (lock_time == 0)
+		return true;
+
+	for (const auto& tx_in : tx_ins)
+	{
+		if (tx_in->sequence != TxIn::SEQUENCE_FINAL)
+			return false;
+	}
+	return true;
+}
+
+void Tx::check_lock_time(int64_t block_height, int64_t block_mtp) const
+{
+	if (is_final())
+		return;
+
+	if (lock_time < NetParams::LOCKTIME_THRESHOLD)
+	{
+		if (lock_time > block_height)
+			throw TxValidationException(
+				fmt::format("Transaction lock time {} not reached (current height {})", lock_time, block_height).c_str());
+	}
+	else
+	{
+		if (lock_time > block_mtp)
+			throw TxValidationException(
+				fmt::format("Transaction lock time {} not reached (median time past {})", lock_time, block_mtp).c_str());
+	}
+}
+
 void Tx::validate(const ValidateRequest& req) const
 {
 	validate_basics(req.as_coinbase);
+
+	if (!req.as_coinbase)
+		check_lock_time(Chain::get_current_height(), Chain::get_median_time_past(11));
 
 	uint64_t available_to_spend = 0;
 	for (uint32_t i = 0; i < tx_ins.size(); i++)

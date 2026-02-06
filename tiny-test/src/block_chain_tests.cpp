@@ -429,3 +429,26 @@ TEST(BlockChainTest_LongRunning, MinerTransaction)
 	ASSERT_GT(Wallet::get_balance_miner(receiver_address), 0);
 }
 #endif
+
+TEST(LockTimeTest, IsFinalAndCheckLockTime)
+{
+	auto make_tx = [](int32_t seq, int64_t lock_time)
+	{
+		auto tx_in = std::make_shared<TxIn>(nullptr, std::vector<uint8_t>(), std::vector<uint8_t>(), seq);
+		auto tx_out = std::make_shared<TxOut>(1000, "addr");
+		return std::make_shared<Tx>(std::vector{ tx_in }, std::vector{ tx_out }, lock_time);
+	};
+
+	EXPECT_TRUE(make_tx(0, 0)->is_final());
+	EXPECT_TRUE(make_tx(TxIn::SEQUENCE_FINAL, 100)->is_final());
+	EXPECT_FALSE(make_tx(0, 100)->is_final());
+
+	EXPECT_THROW(make_tx(0, 500)->check_lock_time(499, 0), TxValidationException);
+	EXPECT_NO_THROW(make_tx(0, 500)->check_lock_time(500, 0));
+
+	const int64_t lock_ts = NetParams::LOCKTIME_THRESHOLD + 1000;
+	EXPECT_THROW(make_tx(0, lock_ts)->check_lock_time(0, lock_ts - 1), TxValidationException);
+	EXPECT_NO_THROW(make_tx(0, lock_ts)->check_lock_time(0, lock_ts));
+
+	EXPECT_NO_THROW(make_tx(TxIn::SEQUENCE_FINAL, 999999)->check_lock_time(1, 0));
+}

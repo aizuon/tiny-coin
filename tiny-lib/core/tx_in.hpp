@@ -11,6 +11,8 @@
 class TxIn : public ISerializable, public IDeserializable
 {
 public:
+	static constexpr int32_t SEQUENCE_FINAL = -1;
+
 	TxIn() = default;
 	TxIn(std::shared_ptr<TxOutPoint> to_spend, std::vector<uint8_t> unlock_sig,
 		std::vector<uint8_t> unlock_pub_key, int32_t sequence);
@@ -20,7 +22,7 @@ public:
 	std::vector<uint8_t> unlock_sig;
 	std::vector<uint8_t> unlock_pub_key;
 
-	int32_t sequence = -1;
+	int32_t sequence = SEQUENCE_FINAL;
 
 	BinaryBuffer serialize() const override;
 	bool deserialize(BinaryBuffer& buffer) override;

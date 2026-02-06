@@ -45,6 +45,9 @@ public:
 
 	void validate(const ValidateRequest& req) const;
 
+	bool is_final() const;
+	void check_lock_time(int64_t block_height, int64_t block_mtp) const;
+
 	BinaryBuffer serialize() const override;
 	bool deserialize(BinaryBuffer& buffer) override;
 

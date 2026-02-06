@@ -199,7 +199,6 @@ Test sources live under `tiny-test/src/`:
 ## Roadmap
 
 - [ ] Replace-by-fee (RBF)
-- [ ] Transaction lock time enforcement
 - [ ] Orphan block handling
 - [ ] Chainwork-based best-chain selection
 - [ ] Full node type (combined miner + wallet in a single node)

@@ -20,4 +20,6 @@ public:
 		TIME_BETWEEN_BLOCKS_IN_SECS_TARGET;
 	static constexpr uint8_t INITIAL_DIFFICULTY_BITS = 24;
 	static constexpr uint32_t HALVE_SUBSIDY_AFTER_BLOCKS_NUM = 210000;
+
+	static constexpr int64_t LOCKTIME_THRESHOLD = 500000000;
 };
