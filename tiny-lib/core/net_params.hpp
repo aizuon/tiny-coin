@@ -22,4 +22,7 @@ public:
 	static constexpr uint32_t HALVE_SUBSIDY_AFTER_BLOCKS_NUM = 210000;
 
 	static constexpr int64_t LOCKTIME_THRESHOLD = 500000000;
+
+	static constexpr uint32_t MAX_ORPHAN_BLOCKS = 50;
+	static constexpr int64_t ORPHAN_BLOCK_EXPIRE_SECS = 60 * 60;
 };

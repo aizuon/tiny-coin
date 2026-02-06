@@ -9,6 +9,7 @@
 
 #include "net/block_info_msg.hpp"
 #include "util/exceptions.hpp"
+#include "net/get_block_msg.hpp"
 #include "crypto/hash_checker.hpp"
 #include "util/log.hpp"
 #include "core/mempool.hpp"
@@ -33,7 +34,7 @@ const std::shared_ptr<Block> Chain::genesis_block = std::make_shared<Block>(
 
 std::vector<std::shared_ptr<Block>> Chain::active_chain{ genesis_block };
 std::vector<std::vector<std::shared_ptr<Block>>> Chain::side_branches{};
-std::vector<std::shared_ptr<Block>> Chain::orphan_blocks{};
+std::unordered_multimap<std::string, OrphanBlock> Chain::orphan_blocks{};
 
 std::unordered_map<std::string, uint32_t> Chain::active_chain_index{ { genesis_block->id(), 0 } };
 
@@ -205,7 +206,50 @@ int64_t Chain::connect_block(const std::shared_ptr<Block>& block, bool doing_reo
 		{
 			LOG_INFO("Found orphan block {}", block_id);
 
-			orphan_blocks.push_back(ex.to_orphan);
+			const auto now = Utils::get_unix_timestamp();
+			for (auto it = orphan_blocks.begin(); it != orphan_blocks.end();)
+			{
+				if (now - it->second.added_time > NetParams::ORPHAN_BLOCK_EXPIRE_SECS)
+				{
+					LOG_INFO("Evicting expired orphan block {}", it->second.block->id());
+					it = orphan_blocks.erase(it);
+				}
+				else
+				{
+					++it;
+				}
+			}
+
+			while (orphan_blocks.size() >= NetParams::MAX_ORPHAN_BLOCKS)
+			{
+				auto oldest = orphan_blocks.begin();
+				for (auto it = orphan_blocks.begin(); it != orphan_blocks.end(); ++it)
+				{
+					if (it->second.added_time < oldest->second.added_time)
+						oldest = it;
+				}
+				LOG_INFO("Orphan pool full, evicting block {}", oldest->second.block->id());
+				orphan_blocks.erase(oldest);
+			}
+
+			const auto& orphan_id = ex.to_orphan->id();
+			bool already_orphaned = false;
+			auto range = orphan_blocks.equal_range(ex.to_orphan->prev_block_hash);
+			for (auto it = range.first; it != range.second; ++it)
+			{
+				if (it->second.block->id() == orphan_id)
+				{
+					already_orphaned = true;
+					break;
+				}
+			}
+			if (!already_orphaned)
+			{
+				orphan_blocks.emplace(ex.to_orphan->prev_block_hash,
+					OrphanBlock{ ex.to_orphan, now });
+
+				NetClient::send_msg_random(GetBlockMsg(ex.to_orphan->prev_block_hash));
+			}
 		}
 
 		return -1;
@@ -260,7 +304,36 @@ int64_t Chain::connect_block(const std::shared_ptr<Block>& block, bool doing_reo
 
 	NetClient::send_msg_random(BlockInfoMsg(block));
 
+	if (!doing_reorg)
+		try_connect_orphans(block_id);
+
 	return chain_idx;
+}
+
+void Chain::try_connect_orphans(const std::string& parent_block_id)
+{
+	std::scoped_lock lock(mutex);
+
+	auto range = orphan_blocks.equal_range(parent_block_id);
+	if (range.first == range.second)
+		return;
+
+	std::vector<std::shared_ptr<Block>> candidates;
+	for (auto it = range.first; it != range.second; ++it)
+		candidates.push_back(it->second.block);
+
+	orphan_blocks.erase(range.first, range.second);
+
+	for (const auto& orphan : candidates)
+	{
+		LOG_INFO("Attempting to connect orphan block {}", orphan->id());
+
+		if (connect_block(orphan) >= 0)
+		{
+			LOG_INFO("Orphan block {} connected successfully", orphan->id());
+			Chain::save_to_disk();
+		}
+	}
 }
 
 std::shared_ptr<Block> Chain::disconnect_block(const std::shared_ptr<Block>& block)

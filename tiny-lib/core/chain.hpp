@@ -14,6 +14,12 @@
 #include "core/tx_in.hpp"
 #include "core/tx_out.hpp"
 
+struct OrphanBlock
+{
+	std::shared_ptr<Block> block;
+	int64_t added_time;
+};
+
 class Chain
 {
 public:
@@ -25,7 +31,7 @@ public:
 	static std::vector<std::shared_ptr<Block>> active_chain;
 	static std::vector<std::vector<std::shared_ptr<Block>>> side_branches;
 
-	static std::vector<std::shared_ptr<Block>> orphan_blocks;
+	static std::unordered_multimap<std::string, OrphanBlock> orphan_blocks;
 
 	static std::recursive_mutex mutex;
 
@@ -39,6 +45,7 @@ public:
 	static uint32_t validate_block(const std::shared_ptr<Block>& block);
 
 	static int64_t connect_block(const std::shared_ptr<Block>& block, bool doing_reorg = false);
+	static void try_connect_orphans(const std::string& parent_block_id);
 	static std::shared_ptr<Block> disconnect_block(const std::shared_ptr<Block>& block);
 	static std::vector<std::shared_ptr<Block>> disconnect_to_fork(const std::shared_ptr<Block>& fork_block);
 

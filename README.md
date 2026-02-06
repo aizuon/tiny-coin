@@ -162,17 +162,16 @@ ctest --test-dir build/debug -C Debug --output-on-failure
 
 Test sources live under `tiny-test/src/`:
 
-| File                      | Covers                                           |
-| ------------------------- | ------------------------------------------------ |
-| `binary_buffer_tests.cpp` | Binary serialisation round-trips                 |
-| `block_chain_tests.cpp`   | Block creation, chain connect/disconnect, reorgs |
-| `crypto_tests.cpp`        | SHA-256, RIPEMD-160, ECDSA sign/verify           |
-| `merkle_tree_tests.cpp`   | Merkle root computation                          |
-| `msg_tests.cpp`           | Network message serialise/deserialise            |
-| `rbf_tests.cpp`           | Replace-by-fee signaling and mempool replacement |
-| `serialization_tests.cpp` | Tx/Block binary encoding                         |
-| `utils_tests.cpp`         | Utility helpers                                  |
-| `wallet_tests.cpp`        | Wallet key generation and address derivation     |
+| File                      | Covers                                                               |
+| ------------------------- | -------------------------------------------------------------------- |
+| `binary_buffer_tests.cpp` | Binary serialisation round-trips                                     |
+| `block_chain_tests.cpp`   | Block creation, chain connect/disconnect, reorgs, orphan blocks, RBF |
+| `crypto_tests.cpp`        | SHA-256, RIPEMD-160, ECDSA sign/verify                               |
+| `merkle_tree_tests.cpp`   | Merkle root computation                                              |
+| `msg_tests.cpp`           | Network message serialise/deserialise                                |
+| `serialization_tests.cpp` | Tx/Block binary encoding                                             |
+| `utils_tests.cpp`         | Utility helpers                                                      |
+| `wallet_tests.cpp`        | Wallet key generation and address derivation                         |
 
 ## Architecture Overview
 
@@ -200,7 +199,6 @@ Test sources live under `tiny-test/src/`:
 
 ## Roadmap
 
-- [ ] Orphan block handling
 - [ ] Chainwork-based best-chain selection
 - [ ] Full node type (combined miner + wallet in a single node)
 
