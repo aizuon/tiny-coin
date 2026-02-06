@@ -103,6 +103,7 @@ int main(int argc, char** argv)
 		const std::string balance_address = "balance ";
 		const std::string balance_own = "balance";
 		const std::string send = "send ";
+		const std::string rbf = "rbf ";
 		const std::string tx_status = "tx_status ";
 		while (true)
 		{
@@ -133,10 +134,10 @@ int main(int argc, char** argv)
 				command.erase(0, send.length());
 				std::vector<std::string> send_args;
 				boost::split(send_args, command, boost::is_any_of(" "));
-				if (send_args.size() != 2 && send_args.size() != 3)
+				if (send_args.size() < 2 || send_args.size() > 4)
 				{
 					LOG_ERROR(
-						"Send command requires 2 arguments, receiver address, send value and optionally fee per byte");
+						"Send command requires: address, value, and optionally fee_per_byte and lock_time");
 
 					continue;
 				}
@@ -144,19 +145,33 @@ int main(int argc, char** argv)
 				const auto& send_value = send_args[1];
 				try
 				{
-					if (send_args.size() == 3)
-					{
-						const auto& send_fee = send_args[2];
-						Wallet::send_value(std::stoull(send_value), std::stoull(send_fee), send_address, priv_key);
-					}
-					else
-					{
-						Wallet::send_value(std::stoull(send_value), 100, send_address, priv_key);
-					}
+					const uint64_t fee = send_args.size() >= 3 ? std::stoull(send_args[2]) : 100;
+					const int64_t lock_time = send_args.size() == 4 ? std::stoll(send_args[3]) : 0;
+					Wallet::send_value(std::stoull(send_value), fee, send_address, priv_key, lock_time);
 				}
 				catch (const std::exception&)
 				{
 					LOG_ERROR("Invalid numeric argument for send command");
+				}
+			}
+			else if (command.starts_with(rbf))
+			{
+				command.erase(0, rbf.length());
+				std::vector<std::string> rbf_args;
+				boost::split(rbf_args, command, boost::is_any_of(" "));
+				if (rbf_args.size() != 2)
+				{
+					LOG_ERROR("rbf command requires 2 arguments: tx_id and new_fee_per_byte");
+
+					continue;
+				}
+				try
+				{
+					Wallet::rbf_tx(rbf_args[0], std::stoull(rbf_args[1]), priv_key);
+				}
+				catch (const std::exception&)
+				{
+					LOG_ERROR("Invalid numeric argument for rbf command");
 				}
 			}
 			else if (command.starts_with(tx_status))

@@ -129,13 +129,14 @@ The wallet node syncs the chain from the miner and drops into an interactive she
 
 ### 3. Interactive commands
 
-| Command                                  | Description                              |
-| ---------------------------------------- | ---------------------------------------- |
-| `address <wallet_file>`                  | Show the address for a wallet file       |
-| `balance [<address>]`                    | Show balance (own address if omitted)    |
-| `send <address> <amount> [fee_per_byte]` | Send coins (default fee: 100 coins/byte) |
-| `tx_status <tx_id>`                      | Check whether a transaction is confirmed |
-| `exit` / `quit`                          | Shut down the node                       |
+| Command                                              | Description                                     |
+| ---------------------------------------------------- | ----------------------------------------------- |
+| `address <wallet_file>`                              | Show the address for a wallet file              |
+| `balance [<address>]`                                | Show balance (own address if omitted)           |
+| `send <address> <amount> [fee_per_byte] [lock_time]` | Send coins (default fee: 100 coins/byte)        |
+| `rbf <tx_id> <new_fee_per_byte>`                     | Replace a mempool transaction with a higher fee |
+| `tx_status <tx_id>`                                  | Check whether a transaction is confirmed        |
+| `exit` / `quit`                                      | Shut down the node                              |
 
 **Example session:**
 
@@ -168,6 +169,7 @@ Test sources live under `tiny-test/src/`:
 | `crypto_tests.cpp`        | SHA-256, RIPEMD-160, ECDSA sign/verify           |
 | `merkle_tree_tests.cpp`   | Merkle root computation                          |
 | `msg_tests.cpp`           | Network message serialise/deserialise            |
+| `rbf_tests.cpp`           | Replace-by-fee signaling and mempool replacement |
 | `serialization_tests.cpp` | Tx/Block binary encoding                         |
 | `utils_tests.cpp`         | Utility helpers                                  |
 | `wallet_tests.cpp`        | Wallet key generation and address derivation     |
@@ -198,7 +200,6 @@ Test sources live under `tiny-test/src/`:
 
 ## Roadmap
 
-- [ ] Replace-by-fee (RBF)
 - [ ] Orphan block handling
 - [ ] Chainwork-based best-chain selection
 - [ ] Full node type (combined miner + wallet in a single node)

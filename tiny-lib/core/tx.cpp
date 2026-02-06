@@ -57,6 +57,16 @@ bool Tx::is_coinbase() const
 	return tx_ins.size() == 1 && tx_ins.front()->to_spend == nullptr;
 }
 
+bool Tx::signals_rbf() const
+{
+	for (const auto& tx_in : tx_ins)
+	{
+		if (tx_in->sequence != TxIn::SEQUENCE_FINAL)
+			return true;
+	}
+	return false;
+}
+
 std::string Tx::id() const
 {
 	std::scoped_lock lock(cached_id_mutex_);

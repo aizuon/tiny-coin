@@ -112,8 +112,15 @@ std::shared_ptr<TxIn> Wallet::build_tx_in(const std::vector<uint8_t>& priv_key,
 	const std::shared_ptr<TxOutPoint>& tx_out_point,
 	const std::vector<std::shared_ptr<TxOut>>& tx_outs)
 {
-	int32_t sequence = -1;
+	return build_tx_in(priv_key, pub_key, tx_out_point, tx_outs, TxIn::SEQUENCE_RBF);
+}
 
+std::shared_ptr<TxIn> Wallet::build_tx_in(const std::vector<uint8_t>& priv_key,
+	const std::vector<uint8_t>& pub_key,
+	const std::shared_ptr<TxOutPoint>& tx_out_point,
+	const std::vector<std::shared_ptr<TxOut>>& tx_outs,
+	int32_t sequence)
+{
 	const auto spend_msg = MsgSerializer::build_spend_msg(tx_out_point, pub_key, sequence, tx_outs);
 	auto unlock_sig = ECDSA::sign_msg(spend_msg, priv_key);
 
@@ -121,9 +128,9 @@ std::shared_ptr<TxIn> Wallet::build_tx_in(const std::vector<uint8_t>& priv_key,
 }
 
 std::shared_ptr<Tx> Wallet::send_value_miner(uint64_t value, uint64_t fee, const std::string& address,
-	const std::vector<uint8_t>& priv_key)
+	const std::vector<uint8_t>& priv_key, int64_t lock_time)
 {
-	auto tx = build_tx_miner(value, fee, address, priv_key);
+	auto tx = build_tx_miner(value, fee, address, priv_key, lock_time);
 	if (tx == nullptr)
 		return nullptr;
 	LOG_INFO("Built transaction {}, adding to mempool", tx->id());
@@ -134,9 +141,9 @@ std::shared_ptr<Tx> Wallet::send_value_miner(uint64_t value, uint64_t fee, const
 }
 
 std::shared_ptr<Tx> Wallet::send_value(uint64_t value, uint64_t fee, const std::string& address,
-	const std::vector<uint8_t>& priv_key)
+	const std::vector<uint8_t>& priv_key, int64_t lock_time)
 {
-	auto tx = build_tx(value, fee, address, priv_key);
+	auto tx = build_tx(value, fee, address, priv_key, lock_time);
 	if (tx == nullptr)
 		return nullptr;
 	LOG_INFO("Built transaction {}, broadcasting", tx->id());
@@ -146,6 +153,185 @@ std::shared_ptr<Tx> Wallet::send_value(uint64_t value, uint64_t fee, const std::
 	}
 
 	return tx;
+}
+
+std::shared_ptr<Tx> Wallet::rbf_tx_miner(const std::string& tx_id, uint64_t new_fee_per_byte,
+	const std::vector<uint8_t>& priv_key)
+{
+	std::shared_ptr<Tx> original_tx;
+	{
+		std::scoped_lock lock(Mempool::mutex);
+		const auto it = Mempool::map.find(tx_id);
+		if (it == Mempool::map.end())
+		{
+			LOG_ERROR("Transaction {} not found in mempool", tx_id);
+			return nullptr;
+		}
+		original_tx = it->second;
+	}
+
+	if (!original_tx->signals_rbf())
+	{
+		LOG_ERROR("Transaction {} does not signal RBF", tx_id);
+		return nullptr;
+	}
+
+	const auto pub_key = ECDSA::get_pub_key_from_priv_key(priv_key);
+	auto replacement = build_rbf_replacement(original_tx, new_fee_per_byte, priv_key, pub_key);
+	if (replacement == nullptr)
+		return nullptr;
+
+	LOG_INFO("Built RBF replacement {}, adding to mempool", replacement->id());
+	Mempool::add_tx_to_mempool(replacement);
+	NetClient::send_msg_random(TxInfoMsg(replacement));
+
+	return replacement;
+}
+
+std::shared_ptr<Tx> Wallet::rbf_tx(const std::string& tx_id, uint64_t new_fee_per_byte,
+	const std::vector<uint8_t>& priv_key)
+{
+	MsgCache::set_send_mempool_msg(nullptr);
+
+	if (!NetClient::send_msg_random(GetMempoolMsg()))
+	{
+		LOG_ERROR("No connection to query mempool");
+		return nullptr;
+	}
+
+	const auto start = Utils::get_unix_timestamp();
+	std::shared_ptr<SendMempoolMsg> cached_mempool_msg;
+	while (true)
+	{
+		cached_mempool_msg = MsgCache::get_send_mempool_msg();
+		if (cached_mempool_msg != nullptr)
+			break;
+		if (Utils::get_unix_timestamp() - start > MsgCache::MAX_MSG_AWAIT_TIME_IN_SECS)
+		{
+			LOG_ERROR("Timeout on GetMempoolMsg");
+			return nullptr;
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(16));
+	}
+
+	bool found = false;
+	for (const auto& id : cached_mempool_msg->mempool)
+	{
+		if (id == tx_id)
+		{
+			found = true;
+			break;
+		}
+	}
+
+	if (!found)
+	{
+		LOG_ERROR("Transaction {} not found in remote mempool", tx_id);
+		return nullptr;
+	}
+
+	std::shared_ptr<Tx> original_tx;
+	{
+		std::scoped_lock lock(Mempool::mutex);
+		const auto it = Mempool::map.find(tx_id);
+		if (it != Mempool::map.end())
+			original_tx = it->second;
+	}
+
+	if (original_tx == nullptr)
+	{
+		LOG_ERROR("Transaction {} not available locally for RBF", tx_id);
+		return nullptr;
+	}
+
+	if (!original_tx->signals_rbf())
+	{
+		LOG_ERROR("Transaction {} does not signal RBF", tx_id);
+		return nullptr;
+	}
+
+	const auto pub_key = ECDSA::get_pub_key_from_priv_key(priv_key);
+	auto replacement = build_rbf_replacement(original_tx, new_fee_per_byte, priv_key, pub_key);
+	if (replacement == nullptr)
+		return nullptr;
+
+	LOG_INFO("Built RBF replacement {}, broadcasting", replacement->id());
+	if (!NetClient::send_msg_random(TxInfoMsg(replacement)))
+	{
+		LOG_ERROR("No connection to send replacement transaction");
+	}
+
+	return replacement;
+}
+
+std::shared_ptr<Tx> Wallet::build_rbf_replacement(const std::shared_ptr<Tx>& original_tx,
+	uint64_t new_fee_per_byte, const std::vector<uint8_t>& priv_key,
+	const std::vector<uint8_t>& pub_key)
+{
+	uint64_t total_input = 0;
+	for (const auto& tx_in : original_tx->tx_ins)
+	{
+		const auto utxo = UTXO::find_in_map(tx_in->to_spend);
+		if (utxo == nullptr)
+		{
+			const auto mempool_utxo = Mempool::find_utxo_in_mempool(tx_in->to_spend);
+			if (mempool_utxo == nullptr)
+			{
+				LOG_ERROR("Cannot find UTXO for input {}", tx_in->to_spend->tx_id);
+				return nullptr;
+			}
+			total_input += mempool_utxo->tx_out->value;
+		}
+		else
+		{
+			total_input += utxo->tx_out->value;
+		}
+	}
+
+	uint64_t payment_total = 0;
+	for (uint32_t i = 0; i < original_tx->tx_outs.size(); i++)
+	{
+		if (i < original_tx->tx_outs.size() - 1)
+			payment_total += original_tx->tx_outs[i]->value;
+	}
+
+	const uint32_t size_est = original_tx->serialize().get_size();
+	const uint64_t new_total_fee = static_cast<uint64_t>(size_est) * new_fee_per_byte;
+
+	if (total_input < payment_total + new_total_fee)
+	{
+		LOG_ERROR("Insufficient funds for new fee rate ({} available, {} + {} needed)",
+			total_input, payment_total, new_total_fee);
+		return nullptr;
+	}
+
+	const uint64_t new_change = total_input - payment_total - new_total_fee;
+
+	std::vector<std::shared_ptr<TxOut>> new_tx_outs;
+	new_tx_outs.reserve(original_tx->tx_outs.size());
+	for (uint32_t i = 0; i < original_tx->tx_outs.size(); i++)
+	{
+		if (i < original_tx->tx_outs.size() - 1)
+			new_tx_outs.push_back(std::make_shared<TxOut>(original_tx->tx_outs[i]->value,
+				original_tx->tx_outs[i]->to_address));
+		else
+			new_tx_outs.push_back(std::make_shared<TxOut>(new_change,
+				original_tx->tx_outs[i]->to_address));
+	}
+
+	std::vector<std::shared_ptr<TxIn>> new_tx_ins;
+	new_tx_ins.reserve(original_tx->tx_ins.size());
+	for (const auto& old_in : original_tx->tx_ins)
+	{
+		new_tx_ins.emplace_back(build_tx_in(priv_key, pub_key, old_in->to_spend, new_tx_outs, TxIn::SEQUENCE_RBF));
+	}
+
+	auto replacement = std::make_shared<Tx>(new_tx_ins, new_tx_outs, original_tx->lock_time);
+
+	LOG_INFO("Built RBF replacement {} with {} total fee ({} coins/byte)",
+		replacement->id(), new_total_fee, new_fee_per_byte);
+
+	return replacement;
 }
 
 Wallet::TxStatusResponse Wallet::get_tx_status_miner(const std::string& tx_id)
@@ -325,7 +511,8 @@ void Wallet::print_balance(const std::string& address)
 
 std::shared_ptr<Tx> Wallet::build_tx_from_utxos(std::vector<std::shared_ptr<UTXO>>& utxos, uint64_t value, uint64_t fee,
 	const std::string& address, const std::string& change_address,
-	const std::vector<uint8_t>& priv_key, const std::vector<uint8_t>& pub_key)
+	const std::vector<uint8_t>& priv_key, const std::vector<uint8_t>& pub_key,
+	int64_t lock_time)
 {
 	std::ranges::sort(utxos,
 		[](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
@@ -363,7 +550,7 @@ std::shared_ptr<Tx> Wallet::build_tx_from_utxos(std::vector<std::shared_ptr<UTXO
 	{
 		tx_ins.emplace_back(build_tx_in(priv_key, pub_key, selected_coin->tx_out_point, tx_outs));
 	}
-	auto tx = std::make_shared<Tx>(tx_ins, tx_outs, 0);
+	auto tx = std::make_shared<Tx>(tx_ins, tx_outs, lock_time);
 	const uint32_t tx_size = tx->serialize().get_size();
 	const uint64_t real_fee = static_cast<uint64_t>(tx_size) * fee;
 	LOG_INFO("Built transaction {} with {} total fee ({} coins/byte)", tx->id(), real_fee, fee);
@@ -371,7 +558,7 @@ std::shared_ptr<Tx> Wallet::build_tx_from_utxos(std::vector<std::shared_ptr<UTXO
 }
 
 std::shared_ptr<Tx> Wallet::build_tx_miner(uint64_t value, uint64_t fee, const std::string& address,
-	const std::vector<uint8_t>& priv_key)
+	const std::vector<uint8_t>& priv_key, int64_t lock_time)
 {
 	const auto pub_key = ECDSA::get_pub_key_from_priv_key(priv_key);
 	const auto my_address = pub_key_to_address(pub_key);
@@ -381,11 +568,11 @@ std::shared_ptr<Tx> Wallet::build_tx_miner(uint64_t value, uint64_t fee, const s
 		LOG_ERROR("No coins found");
 		return nullptr;
 	}
-	return build_tx_from_utxos(my_coins, value, fee, address, my_address, priv_key, pub_key);
+	return build_tx_from_utxos(my_coins, value, fee, address, my_address, priv_key, pub_key, lock_time);
 }
 
 std::shared_ptr<Tx> Wallet::build_tx(uint64_t value, uint64_t fee, const std::string& address,
-	const std::vector<uint8_t>& priv_key)
+	const std::vector<uint8_t>& priv_key, int64_t lock_time)
 {
 	const auto pub_key = ECDSA::get_pub_key_from_priv_key(priv_key);
 	const auto my_address = pub_key_to_address(pub_key);
@@ -395,7 +582,7 @@ std::shared_ptr<Tx> Wallet::build_tx(uint64_t value, uint64_t fee, const std::st
 		LOG_ERROR("No coins found");
 		return nullptr;
 	}
-	return build_tx_from_utxos(my_coins, value, fee, address, my_address, priv_key, pub_key);
+	return build_tx_from_utxos(my_coins, value, fee, address, my_address, priv_key, pub_key, lock_time);
 }
 
 std::vector<std::shared_ptr<UTXO>> Wallet::find_utxos_for_address_miner(const std::string& address)

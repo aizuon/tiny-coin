@@ -12,6 +12,7 @@ class TxIn : public ISerializable, public IDeserializable
 {
 public:
 	static constexpr int32_t SEQUENCE_FINAL = -1;
+	static constexpr int32_t SEQUENCE_RBF = -3;
 
 	TxIn() = default;
 	TxIn(std::shared_ptr<TxOutPoint> to_spend, std::vector<uint8_t> unlock_sig,

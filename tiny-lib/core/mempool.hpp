@@ -26,9 +26,14 @@ public:
 
 	static void add_tx_to_mempool(const std::shared_ptr<Tx>& tx);
 
+	static bool try_replace_by_fee(const std::shared_ptr<Tx>& tx);
+
 private:
 	static bool check_block_size(uint32_t current_size);
 
 	static std::shared_ptr<Block> try_add_to_block(std::shared_ptr<Block> block, const std::string& tx_id,
 		std::set<std::string>& added_to_block, uint32_t& current_block_size);
+
+	static std::vector<std::shared_ptr<Tx>> find_conflicting_txs(const std::shared_ptr<Tx>& tx);
+	static std::vector<std::string> find_descendant_tx_ids(const std::string& tx_id);
 };

@@ -29,9 +29,19 @@ public:
 		const std::vector<uint8_t>& pub_key,
 		const std::shared_ptr<TxOutPoint>& tx_out_point,
 		const std::vector<std::shared_ptr<TxOut>>& tx_outs);
+	static std::shared_ptr<TxIn> build_tx_in(const std::vector<uint8_t>& priv_key,
+		const std::vector<uint8_t>& pub_key,
+		const std::shared_ptr<TxOutPoint>& tx_out_point,
+		const std::vector<std::shared_ptr<TxOut>>& tx_outs,
+		int32_t sequence);
 	static std::shared_ptr<Tx> send_value_miner(uint64_t value, uint64_t fee, const std::string& address,
-		const std::vector<uint8_t>& priv_key);
+		const std::vector<uint8_t>& priv_key, int64_t lock_time = 0);
 	static std::shared_ptr<Tx> send_value(uint64_t value, uint64_t fee, const std::string& address,
+		const std::vector<uint8_t>& priv_key, int64_t lock_time = 0);
+
+	static std::shared_ptr<Tx> rbf_tx_miner(const std::string& tx_id, uint64_t new_fee_per_byte,
+		const std::vector<uint8_t>& priv_key);
+	static std::shared_ptr<Tx> rbf_tx(const std::string& tx_id, uint64_t new_fee_per_byte,
 		const std::vector<uint8_t>& priv_key);
 
 	struct TxStatusResponse
@@ -57,12 +67,17 @@ private:
 		uint64_t fee, const std::string& address,
 		const std::string& change_address,
 		const std::vector<uint8_t>& priv_key,
+		const std::vector<uint8_t>& pub_key,
+		int64_t lock_time = 0);
+
+	static std::shared_ptr<Tx> build_rbf_replacement(const std::shared_ptr<Tx>& original_tx,
+		uint64_t new_fee_per_byte, const std::vector<uint8_t>& priv_key,
 		const std::vector<uint8_t>& pub_key);
 
 	static std::shared_ptr<Tx> build_tx_miner(uint64_t value, uint64_t fee, const std::string& address,
-		const std::vector<uint8_t>& priv_key);
+		const std::vector<uint8_t>& priv_key, int64_t lock_time = 0);
 	static std::shared_ptr<Tx> build_tx(uint64_t value, uint64_t fee, const std::string& address,
-		const std::vector<uint8_t>& priv_key);
+		const std::vector<uint8_t>& priv_key, int64_t lock_time = 0);
 
 	static std::vector<std::shared_ptr<UnspentTxOut>> find_utxos_for_address_miner(const std::string& address);
 	static std::vector<std::shared_ptr<UnspentTxOut>> find_utxos_for_address(const std::string& address);

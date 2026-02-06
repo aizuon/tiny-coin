@@ -31,6 +31,7 @@ public:
 	int64_t lock_time = 0;
 
 	bool is_coinbase() const;
+	bool signals_rbf() const;
 
 	std::string id() const;
 
