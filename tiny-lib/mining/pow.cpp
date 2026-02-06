@@ -155,22 +155,73 @@ void PoW::mine_forever()
 			tip_id = Chain::active_chain.back()->id();
 	}
 
-	if (!tip_id.empty() && NetClient::send_msg_random(GetBlockMsg(tip_id)))
+	if (!tip_id.empty())
 	{
-		LOG_INFO("Starting initial block sync");
+		constexpr int64_t STALL_TIMEOUT_SECS = 30;
+		constexpr uint32_t MAX_RETRIES = 3;
+		constexpr int64_t PROGRESS_LOG_INTERVAL_SECS = 10;
 
-		const auto start = Utils::get_unix_timestamp();
-		while (!Chain::initial_block_download_complete)
+		uint32_t retry = 0;
+		while (retry < MAX_RETRIES && !Chain::initial_block_download_complete)
 		{
-			if (Utils::get_unix_timestamp() - start > 60)
+			if (!NetClient::send_msg_random(GetBlockMsg(tip_id)))
 			{
-				//TODO: if sync has started but hasnt finished in time, cancel sync and reset chain
-
-				LOG_ERROR("Timeout on initial block sync");
-
-				break;
+				LOG_WARN("No peers available for initial block sync, retrying ({}/{})", retry + 1, MAX_RETRIES);
+				std::this_thread::sleep_for(std::chrono::seconds(5));
+				++retry;
+				continue;
 			}
-			std::this_thread::sleep_for(std::chrono::milliseconds(16));
+
+			LOG_INFO("Starting initial block sync (attempt {}/{})", retry + 1, MAX_RETRIES);
+
+			uint32_t last_known_height = Chain::get_current_height();
+			auto last_progress_time = Utils::get_unix_timestamp();
+			auto last_log_time = last_progress_time;
+
+			while (!Chain::initial_block_download_complete)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+				const uint32_t current_height = Chain::get_current_height();
+				const auto now = Utils::get_unix_timestamp();
+
+				if (current_height > last_known_height)
+				{
+					last_known_height = current_height;
+					last_progress_time = now;
+				}
+
+				if (now - last_log_time >= PROGRESS_LOG_INTERVAL_SECS)
+				{
+					LOG_INFO("Sync in progress, current chain height: {}", current_height);
+					last_log_time = now;
+				}
+
+				if (now - last_progress_time >= STALL_TIMEOUT_SECS)
+				{
+					LOG_WARN("Sync stalled at height {} for {} seconds",
+						current_height, STALL_TIMEOUT_SECS);
+					break;
+				}
+			}
+
+			if (Chain::initial_block_download_complete)
+				break;
+
+			++retry;
+
+			{
+				std::scoped_lock lock(Chain::mutex);
+				if (!Chain::active_chain.empty())
+					tip_id = Chain::active_chain.back()->id();
+			}
+		}
+
+		if (!Chain::initial_block_download_complete)
+		{
+			LOG_ERROR("Initial block sync failed after {} retries, resetting chain", MAX_RETRIES);
+			Chain::reset();
+			Chain::initial_block_download_complete = true;
 		}
 	}
 
