@@ -32,12 +32,14 @@
     {
       "name": "debug",
       "displayName": "Debug",
-      "configurePreset": "debug"
+      "configurePreset": "debug",
+      "jobs": 0
     },
     {
       "name": "release",
       "displayName": "Release",
-      "configurePreset": "release"
+      "configurePreset": "release",
+      "jobs": 0
     }
   ],
   "testPresets": [
