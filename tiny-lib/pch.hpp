@@ -29,11 +29,11 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#define FMT_UNICODE 0
+
 #include <fmt/format.h>
 
-#include "Log.hpp"
-#include "Random.hpp"
-#include "uint256_t.hpp"
+#include "util/log.hpp"
+#include "util/random.hpp"
+#include "util/uint256_t.hpp"
 
 #endif //PCH_H

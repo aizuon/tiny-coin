@@ -1,0 +1,56 @@
+#pragma once
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <tuple>
+#include <vector>
+
+#include "util/i_deserializable.hpp"
+#include "util/i_serializable.hpp"
+#include "core/tx_in.hpp"
+#include "core/tx_out.hpp"
+
+class UnspentTxOut;
+
+class Tx : public ISerializable, public IDeserializable
+{
+public:
+	Tx() = default;
+	Tx(const std::vector<std::shared_ptr<TxIn>>& tx_ins, const std::vector<std::shared_ptr<TxOut>>& tx_outs,
+		int64_t lock_time);
+
+	std::vector<std::shared_ptr<TxIn>> tx_ins;
+	std::vector<std::shared_ptr<TxOut>> tx_outs;
+
+	int64_t lock_time = 0;
+
+	bool is_coinbase() const;
+
+	std::string id() const;
+
+	void validate_basics(bool coinbase = false) const;
+
+	struct ValidateRequest
+	{
+		bool as_coinbase = false;
+		bool allow_utxo_from_mempool = true;
+		std::vector<std::shared_ptr<Tx>> siblings_in_block;
+	};
+
+	void validate(const ValidateRequest& req) const;
+
+	BinaryBuffer serialize() const override;
+	bool deserialize(BinaryBuffer& buffer) override;
+
+	static std::shared_ptr<Tx> create_coinbase(const std::string& pay_to_addr, uint64_t value, int64_t height);
+
+	bool operator==(const Tx& obj) const;
+
+private:
+	void validate_signature_for_spend(const std::shared_ptr<TxIn>& tx_in, const std::shared_ptr<UnspentTxOut>& utxo) const;
+
+	auto tied() const
+	{
+		return std::tie(lock_time);
+	}
+};
