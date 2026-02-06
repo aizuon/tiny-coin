@@ -401,11 +401,22 @@ std::vector<std::shared_ptr<Block>> Chain::disconnect_to_fork(const std::shared_
 	return disconnected_chain;
 }
 
+uint256_t Chain::get_chain_work(const std::vector<std::shared_ptr<Block>>& chain)
+{
+	uint256_t total_work = 0;
+	for (const auto& block : chain)
+		total_work += PoW::get_block_work(block->bits);
+
+	return total_work;
+}
+
 bool Chain::reorg_if_necessary()
 {
 	std::scoped_lock lock(mutex);
 
 	bool reorged = false;
+
+	const uint256_t active_chain_work = get_chain_work(active_chain);
 
 	const auto frozen_side_branches = side_branches;
 	uint32_t branch_idx = 1;
@@ -413,11 +424,15 @@ bool Chain::reorg_if_necessary()
 	{
 		auto [fork_block, fork_height] = locate_block_in_active_chain(chain[0]->prev_block_hash);
 
-		uint32_t branch_height = static_cast<uint32_t>(chain.size()) + static_cast<uint32_t>(fork_height);
-		if (branch_height > get_current_height())
+		std::vector<std::shared_ptr<Block>> full_branch(active_chain.begin(),
+			active_chain.begin() + fork_height + 1);
+		full_branch.insert(full_branch.end(), chain.begin(), chain.end());
+
+		const uint256_t branch_work = get_chain_work(full_branch);
+		if (branch_work > active_chain_work)
 		{
-			LOG_INFO("Attempting reorg of idx {} to active chain, new height of {} vs. {}", branch_idx, branch_height,
-				fork_height);
+			LOG_INFO("Attempting reorg of idx {} to active chain, branch chainwork {} vs active {}",
+				branch_idx, branch_work.str(), active_chain_work.str());
 
 			if (try_reorg(chain, branch_idx, static_cast<uint32_t>(fork_height)))
 			{

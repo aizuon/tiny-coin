@@ -50,6 +50,13 @@ uint8_t PoW::get_next_work_required(const std::string& prev_block_hash)
 	return new_bits;
 }
 
+uint256_t PoW::get_block_work(uint8_t bits)
+{
+	const uint256_t target = uint256_t(1) << (std::numeric_limits<uint8_t>::max() - bits);
+
+	return (~target / (target + 1)) + 1;
+}
+
 std::shared_ptr<Block> PoW::assemble_and_solve_block(const std::string& pay_coinbase_to_address)
 {
 	return assemble_and_solve_block(pay_coinbase_to_address, {});

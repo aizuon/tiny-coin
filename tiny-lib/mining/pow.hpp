@@ -16,6 +16,8 @@ public:
 
 	static uint8_t get_next_work_required(const std::string& prev_block_hash);
 
+	static uint256_t get_block_work(uint8_t bits);
+
 	static std::shared_ptr<Block> assemble_and_solve_block(const std::string& pay_coinbase_to_address);
 	static std::shared_ptr<Block> assemble_and_solve_block(const std::string& pay_coinbase_to_address,
 		const std::vector<std::shared_ptr<Tx>>& txs);

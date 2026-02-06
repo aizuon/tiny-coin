@@ -252,7 +252,7 @@ TEST_F(BlockChainTest, Reorg)
 	}
 
 	ASSERT_EQ(1, Chain::connect_block(chain2[3]));
-	ASSERT_EQ(1, Chain::connect_block(chain2[4]));
+	ASSERT_EQ(Chain::ACTIVE_CHAIN_IDX, Chain::connect_block(chain2[4]));
 
 	ASSERT_EQ(1, Chain::side_branches.size());
 	ASSERT_EQ(2, Chain::side_branches[0].size());

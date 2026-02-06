@@ -199,7 +199,6 @@ Test sources live under `tiny-test/src/`:
 
 ## Roadmap
 
-- [ ] Chainwork-based best-chain selection
 - [ ] Full node type (combined miner + wallet in a single node)
 
 ## License

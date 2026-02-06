@@ -13,6 +13,7 @@
 #include "core/tx.hpp"
 #include "core/tx_in.hpp"
 #include "core/tx_out.hpp"
+#include "util/uint256_t.hpp"
 
 struct OrphanBlock
 {
@@ -41,6 +42,8 @@ public:
 
 	static uint32_t get_current_height();
 	static int64_t get_median_time_past(uint32_t num_last_blocks);
+
+	static uint256_t get_chain_work(const std::vector<std::shared_ptr<Block>>& chain);
 
 	static uint32_t validate_block(const std::shared_ptr<Block>& block);
 
