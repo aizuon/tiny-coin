@@ -255,6 +255,14 @@ uint64_t PoW::calculate_fees(const std::shared_ptr<Tx>& tx)
 		{
 			spent += utxo->value;
 		}
+		else
+		{
+			const auto mempool_utxo = Mempool::find_utxo_in_mempool(tx_in->to_spend);
+			if (mempool_utxo != nullptr)
+			{
+				spent += mempool_utxo->tx_out->value;
+			}
+		}
 	}
 
 	uint64_t sent = 0;

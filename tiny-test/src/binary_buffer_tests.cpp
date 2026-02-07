@@ -155,3 +155,82 @@ TEST(BinaryBufferTest, GrowthPolicy)
 	auto& buffer_vec = buffer.get_buffer();
 	EXPECT_NE(buffer_vec.size(), buffer_vec.max_size());
 }
+
+TEST(BinaryBufferTest, ReadFromEmptyBufferFails)
+{
+	BinaryBuffer buf;
+
+	uint32_t val = 0;
+	EXPECT_FALSE(buf.read(val));
+
+	std::string str;
+	EXPECT_FALSE(buf.read(str));
+
+	std::vector<uint8_t> vec;
+	EXPECT_FALSE(buf.read(vec));
+}
+
+TEST(BinaryBufferTest, ReadBeyondWrittenDataFails)
+{
+	BinaryBuffer buf;
+	buf.write(static_cast<uint8_t>(42));
+
+	uint8_t val = 0;
+	EXPECT_TRUE(buf.read(val));
+	EXPECT_EQ(42, val);
+
+	uint8_t val2 = 0;
+	EXPECT_FALSE(buf.read(val2));
+}
+
+TEST(BinaryBufferTest, ReadLargerTypeThanAvailable)
+{
+	BinaryBuffer buf;
+	buf.write(static_cast<uint8_t>(1));
+
+	uint32_t val = 0;
+	EXPECT_FALSE(buf.read(val));
+}
+
+TEST(BinaryBufferTest, EqualityOperator)
+{
+	BinaryBuffer a, b;
+	a.write(static_cast<uint32_t>(42));
+	b.write(static_cast<uint32_t>(42));
+
+	EXPECT_EQ(a, b);
+
+	uint32_t val = 0;
+	a.read(val);
+	EXPECT_NE(a, b);
+}
+
+TEST(BinaryBufferTest, WriteRawAndReadRaw)
+{
+	BinaryBuffer writer;
+	std::vector<uint8_t> data{ 0xDE, 0xAD, 0xBE, 0xEF };
+	writer.write_raw(data);
+
+	EXPECT_EQ(4, writer.get_size());
+
+	BinaryBuffer reader(writer.get_buffer());
+
+	uint8_t b1 = 0, b2 = 0, b3 = 0, b4 = 0;
+	EXPECT_TRUE(reader.read(b1));
+	EXPECT_TRUE(reader.read(b2));
+	EXPECT_TRUE(reader.read(b3));
+	EXPECT_TRUE(reader.read(b4));
+	EXPECT_EQ(0xDE, b1);
+	EXPECT_EQ(0xAD, b2);
+	EXPECT_EQ(0xBE, b3);
+	EXPECT_EQ(0xEF, b4);
+}
+
+TEST(BinaryBufferTest, StringOverflowSizeFieldReturnsFailure)
+{
+	BinaryBuffer buf;
+	buf.write(static_cast<uint32_t>(UINT32_MAX));
+
+	std::string out;
+	EXPECT_FALSE(buf.read(out));
+}

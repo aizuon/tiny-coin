@@ -7,6 +7,7 @@
 #include "core/block.hpp"
 #include "core/chain.hpp"
 #include "crypto/ecdsa.hpp"
+#include "util/binary_buffer.hpp"
 #include "util/exceptions.hpp"
 #include "core/mempool.hpp"
 #include "core/net_params.hpp"
@@ -817,3 +818,85 @@ TEST_F(BlockChainTest, CoinbaseSubsidyValidation)
 	}
 }
 #endif
+
+TEST(TxValidationBasicsTest, EmptyOutputsRejected)
+{
+	auto to_spend = std::make_shared<TxOutPoint>("txid", 0);
+	auto tx_in = std::make_shared<TxIn>(to_spend, std::vector<uint8_t>{}, std::vector<uint8_t>{}, -1);
+	auto tx = std::make_shared<Tx>(std::vector{ tx_in }, std::vector<std::shared_ptr<TxOut>>{}, 0);
+
+	EXPECT_THROW(tx->validate_basics(), TxValidationException);
+}
+
+TEST(TxValidationBasicsTest, EmptyInputsNonCoinbaseRejected)
+{
+	auto tx_out = std::make_shared<TxOut>(1000, "addr");
+	auto tx = std::make_shared<Tx>(std::vector<std::shared_ptr<TxIn>>{}, std::vector{ tx_out }, 0);
+
+	EXPECT_THROW(tx->validate_basics(false), TxValidationException);
+}
+
+TEST(TxValidationBasicsTest, EmptyInputsCoinbaseAllowed)
+{
+	auto tx_out = std::make_shared<TxOut>(1000, "addr");
+	auto tx = std::make_shared<Tx>(std::vector<std::shared_ptr<TxIn>>{}, std::vector{ tx_out }, 0);
+
+	EXPECT_NO_THROW(tx->validate_basics(true));
+}
+
+TEST(TxValidationBasicsTest, SingleOutputExceedingMaxMoney)
+{
+	auto tx_in = std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{}, std::vector<uint8_t>{}, -1);
+	auto tx_out = std::make_shared<TxOut>(NetParams::MAX_MONEY + 1, "addr");
+	auto tx = std::make_shared<Tx>(std::vector{ tx_in }, std::vector{ tx_out }, 0);
+
+	EXPECT_THROW(tx->validate_basics(true), TxValidationException);
+}
+
+TEST(TxValidationBasicsTest, TotalOutputsExceedingMaxMoney)
+{
+	auto tx_in = std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{}, std::vector<uint8_t>{}, -1);
+	const uint64_t half_plus_one = NetParams::MAX_MONEY / 2 + 1;
+	auto tx_out1 = std::make_shared<TxOut>(half_plus_one, "addr1");
+	auto tx_out2 = std::make_shared<TxOut>(half_plus_one, "addr2");
+	auto tx = std::make_shared<Tx>(std::vector{ tx_in }, std::vector{ tx_out1, tx_out2 }, 0);
+
+	EXPECT_THROW(tx->validate_basics(true), TxValidationException);
+}
+
+TEST(TxValidationBasicsTest, CreateCoinbaseStructure)
+{
+	auto coinbase = Tx::create_coinbase("1PMycacnJaSqwwJqjawXBErnLsZ7RkXUAs", 5000000000ULL, 100);
+
+	EXPECT_TRUE(coinbase->is_coinbase());
+	EXPECT_EQ(1, coinbase->tx_ins.size());
+	EXPECT_EQ(nullptr, coinbase->tx_ins[0]->to_spend);
+	EXPECT_EQ(1, coinbase->tx_outs.size());
+	EXPECT_EQ(5000000000ULL, coinbase->tx_outs[0]->value);
+	EXPECT_EQ("1PMycacnJaSqwwJqjawXBErnLsZ7RkXUAs", coinbase->tx_outs[0]->to_address);
+	EXPECT_EQ(0, coinbase->lock_time);
+
+	EXPECT_FALSE(coinbase->tx_ins[0]->unlock_sig.empty());
+
+	BinaryBuffer buf(coinbase->tx_ins[0]->unlock_sig);
+	int64_t decoded_height = 0;
+	ASSERT_TRUE(buf.read(decoded_height));
+	EXPECT_EQ(100, decoded_height);
+}
+
+TEST(TxValidationBasicsTest, IsCoinbaseDetection)
+{
+	auto tx_in_cb = std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{}, std::vector<uint8_t>{}, -1);
+	auto tx_out = std::make_shared<TxOut>(100, "addr");
+	auto coinbase_tx = std::make_shared<Tx>(std::vector{ tx_in_cb }, std::vector{ tx_out }, 0);
+	EXPECT_TRUE(coinbase_tx->is_coinbase());
+
+	auto tx_in2 = std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{}, std::vector<uint8_t>{}, -1);
+	auto non_coinbase = std::make_shared<Tx>(std::vector{ tx_in_cb, tx_in2 }, std::vector{ tx_out }, 0);
+	EXPECT_FALSE(non_coinbase->is_coinbase());
+
+	auto outpoint = std::make_shared<TxOutPoint>("txid", 0);
+	auto tx_in_normal = std::make_shared<TxIn>(outpoint, std::vector<uint8_t>{}, std::vector<uint8_t>{}, -1);
+	auto normal_tx = std::make_shared<Tx>(std::vector{ tx_in_normal }, std::vector{ tx_out }, 0);
+	EXPECT_FALSE(normal_tx->is_coinbase());
+}

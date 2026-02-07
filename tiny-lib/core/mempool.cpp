@@ -63,7 +63,7 @@ std::shared_ptr<Block> Mempool::select_from_mempool(const std::shared_ptr<Block>
 			const uint64_t pkg_rate = compute_ancestor_package_fee_rate(tx_id, added_to_block);
 			const uint64_t effective_rate = std::max(entry.fee_rate, pkg_rate);
 
-			if (effective_rate > best_effective_rate)
+			if (effective_rate > best_effective_rate || best_tx_id.empty())
 			{
 				best_effective_rate = effective_rate;
 				best_tx_id = tx_id;

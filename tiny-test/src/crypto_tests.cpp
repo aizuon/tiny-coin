@@ -7,6 +7,7 @@
 #include "crypto/hmac_sha512.hpp"
 #include "crypto/ripemd160.hpp"
 #include "crypto/sha256.hpp"
+#include "crypto/sig_cache.hpp"
 #include "util/utils.hpp"
 #include <gtest/gtest.h>
 
@@ -97,4 +98,79 @@ TEST(CryptoTest, HMACSHA512_BasicVector)
 		"164b7a7bfcf819e2e395fbe73b56e0a387bd64222e831fd610270cd7ea250554"
 		"9758bf75c05a994a6d034f65f8f0e6fdcaeab1a34d4a6b4b636e070a38bce737",
 		hex);
+}
+
+TEST(CryptoTest, SHA256_EmptyInput)
+{
+	auto hash = Utils::byte_array_to_hex_string(SHA256::hash_binary({}));
+	EXPECT_EQ("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", hash);
+}
+
+TEST(CryptoTest, SHA256d_EmptyInput)
+{
+	auto hash = Utils::byte_array_to_hex_string(SHA256::double_hash_binary({}));
+	auto inner = SHA256::hash_binary({});
+	auto expected = Utils::byte_array_to_hex_string(SHA256::hash_binary(inner));
+	EXPECT_EQ(expected, hash);
+}
+
+TEST(CryptoTest, RIPEMD160_EmptyInput)
+{
+	auto hash = Utils::byte_array_to_hex_string(RIPEMD160::hash_binary({}));
+	EXPECT_EQ("9c1185a5c5e9fc54612808977ee8f548b2258d31", hash);
+}
+
+TEST(CryptoTest, Base58_LeadingZeroBytes)
+{
+	std::vector<uint8_t> input{ 0x00, 0x00, 0x01 };
+	auto encoded = Base58::encode(input);
+
+	ASSERT_GE(encoded.size(), 2);
+	EXPECT_EQ('1', encoded[0]);
+	EXPECT_EQ('1', encoded[1]);
+}
+
+class SigCacheTest : public ::testing::Test
+{
+protected:
+	void SetUp() override { SigCache::clear(); }
+	void TearDown() override { SigCache::clear(); }
+};
+
+TEST_F(SigCacheTest, AddAndContains)
+{
+	const std::vector<uint8_t> sig{ 0x30, 0x44, 0x02, 0x20 };
+	const std::vector<uint8_t> msg{ 0xDE, 0xAD, 0xBE, 0xEF };
+	const std::vector<uint8_t> pub{ 0x04, 0x01, 0x02, 0x03 };
+
+	EXPECT_FALSE(SigCache::contains(sig, msg, pub));
+
+	SigCache::add(sig, msg, pub);
+	EXPECT_TRUE(SigCache::contains(sig, msg, pub));
+}
+
+TEST_F(SigCacheTest, DifferentInputsNotFound)
+{
+	const std::vector<uint8_t> sig{ 0x01 };
+	const std::vector<uint8_t> msg{ 0x02 };
+	const std::vector<uint8_t> pub{ 0x03 };
+
+	SigCache::add(sig, msg, pub);
+
+	EXPECT_FALSE(SigCache::contains({ 0xFF }, msg, pub));
+	EXPECT_FALSE(SigCache::contains(sig, { 0xFF }, pub));
+	EXPECT_FALSE(SigCache::contains(sig, msg, { 0xFF }));
+}
+
+TEST_F(SigCacheTest, ClearRemovesEntries)
+{
+	const std::vector<uint8_t> sig{ 0x01 };
+	const std::vector<uint8_t> msg{ 0x02 };
+	const std::vector<uint8_t> pub{ 0x03 };
+
+	SigCache::add(sig, msg, pub);
+	EXPECT_TRUE(SigCache::contains(sig, msg, pub));
+
+	SigCache::clear();
+	EXPECT_FALSE(SigCache::contains(sig, msg, pub));
 }

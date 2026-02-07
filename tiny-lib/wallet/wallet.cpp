@@ -18,6 +18,7 @@
 #include "util/log.hpp"
 #include "core/mempool.hpp"
 #include "net/msg_cache.hpp"
+#include "core/net_params.hpp"
 #include "net/msg_serializer.hpp"
 #include "net/net_client.hpp"
 #include "crypto/ripemd160.hpp"
@@ -731,10 +732,13 @@ std::vector<std::shared_ptr<UTXO>> Wallet::find_utxos_for_address_miner(const st
 	{
 		std::scoped_lock lock(UTXO::mutex);
 
+		const uint32_t current_height = Chain::get_current_height();
 		for (const auto& v : UTXO::map | std::views::values)
 		{
 			if (v->tx_out->to_address == address)
 			{
+				if (v->is_coinbase && current_height - v->height < NetParams::COINBASE_MATURITY)
+					continue;
 				utxos.push_back(v);
 			}
 		}

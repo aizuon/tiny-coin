@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "util/binary_buffer.hpp"
+#include "core/block.hpp"
 #include "core/tx.hpp"
 #include "core/tx_in.hpp"
 #include "core/tx_out.hpp"
@@ -115,4 +116,114 @@ TEST(SerializationTest, UnspentTxOutSerialization)
 
 	EXPECT_EQ(utxo->is_coinbase, utxo2->is_coinbase);
 	EXPECT_EQ(utxo->height, utxo2->height);
+}
+
+TEST(BlockSerializationTest, RoundTrip)
+{
+	auto to_spend = std::make_shared<TxOutPoint>("deadbeef", 0);
+	auto tx_in = std::make_shared<TxIn>(to_spend, std::vector<uint8_t>{0x01, 0x02}, std::vector<uint8_t>{0x03}, -1);
+	auto tx_out = std::make_shared<TxOut>(5000000000ULL, "1PMycacnJaSqwwJqjawXBErnLsZ7RkXUAs");
+	auto tx = std::make_shared<Tx>(std::vector{ tx_in }, std::vector{ tx_out }, 0);
+
+	auto to_spend2 = std::make_shared<TxOutPoint>("cafebabe", 1);
+	auto tx_in2 = std::make_shared<TxIn>(to_spend2, std::vector<uint8_t>{0xAA}, std::vector<uint8_t>{0xBB, 0xCC}, 42);
+	auto tx_out2 = std::make_shared<TxOut>(100, "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa");
+	auto tx2 = std::make_shared<Tx>(std::vector{ tx_in2 }, std::vector{ tx_out2 }, 500);
+
+	Block original(1, "prev_hash_abc", "merkle_hash_xyz", 1609459200, 24, 12345,
+		std::vector<std::shared_ptr<Tx>>{tx, tx2});
+
+	auto serialized = original.serialize();
+
+	Block deserialized;
+	ASSERT_TRUE(deserialized.deserialize(serialized));
+
+	EXPECT_EQ(original.version, deserialized.version);
+	EXPECT_EQ(original.prev_block_hash, deserialized.prev_block_hash);
+	EXPECT_EQ(original.merkle_hash, deserialized.merkle_hash);
+	EXPECT_EQ(original.timestamp, deserialized.timestamp);
+	EXPECT_EQ(original.bits, deserialized.bits);
+	EXPECT_EQ(original.nonce, deserialized.nonce);
+	ASSERT_EQ(original.txs.size(), deserialized.txs.size());
+	for (size_t i = 0; i < original.txs.size(); i++)
+	{
+		EXPECT_EQ(*original.txs[i], *deserialized.txs[i]);
+	}
+	EXPECT_EQ(original, deserialized);
+	EXPECT_EQ(original.id(), deserialized.id());
+}
+
+TEST(BlockSerializationTest, EmptyBlockRoundTrip)
+{
+	Block original(0, "", "", 0, 0, 0, std::vector<std::shared_ptr<Tx>>{});
+
+	auto serialized = original.serialize();
+
+	Block deserialized;
+	ASSERT_TRUE(deserialized.deserialize(serialized));
+
+	EXPECT_EQ(original, deserialized);
+	EXPECT_EQ(original.id(), deserialized.id());
+}
+
+TEST(BlockSerializationTest, DeserializeTruncatedData)
+{
+	auto tx_out = std::make_shared<TxOut>(100, "addr");
+	auto tx_in = std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{}, std::vector<uint8_t>{}, -1);
+	auto tx = std::make_shared<Tx>(std::vector{ tx_in }, std::vector{ tx_out }, 0);
+	Block original(1, "prev", "merkle", 100, 24, 999, std::vector<std::shared_ptr<Tx>>{tx});
+
+	auto serialized = original.serialize();
+	auto& buf = serialized.get_writable_buffer();
+
+	std::vector<uint8_t> truncated(buf.begin(), buf.begin() + buf.size() / 2);
+	BinaryBuffer truncated_buf(std::move(truncated));
+
+	Block deserialized;
+	EXPECT_FALSE(deserialized.deserialize(truncated_buf));
+}
+
+TEST(BlockSerializationTest, HeaderPrefixPlusNonceEqualsHeader)
+{
+	Block block(1, "prev_hash", "merkle_hash", 1609459200, 24, 42,
+		std::vector<std::shared_ptr<Tx>>{});
+
+	auto prefix = block.header_prefix();
+	BinaryBuffer prefix_with_nonce(prefix.get_buffer());
+	prefix_with_nonce.write(block.nonce);
+
+	auto full_header = block.header();
+	EXPECT_EQ(prefix_with_nonce.get_buffer(), full_header.get_buffer());
+
+	const uint64_t override_nonce = 9999;
+	auto header_overridden = block.header(override_nonce);
+	BinaryBuffer prefix_with_override(prefix.get_buffer());
+	prefix_with_override.write(override_nonce);
+	EXPECT_EQ(prefix_with_override.get_buffer(), header_overridden.get_buffer());
+}
+
+TEST(BlockSerializationTest, CopyAndMoveProduceCorrectId)
+{
+	auto tx_out = std::make_shared<TxOut>(100, "addr");
+	auto tx_in = std::make_shared<TxIn>(nullptr, std::vector<uint8_t>{}, std::vector<uint8_t>{}, -1);
+	auto tx = std::make_shared<Tx>(std::vector{ tx_in }, std::vector{ tx_out }, 0);
+	Block original(1, "prev", "merkle", 100, 24, 42, std::vector<std::shared_ptr<Tx>>{tx});
+	const auto original_id = original.id();
+
+	Block copied(original);
+	EXPECT_EQ(original_id, copied.id());
+	EXPECT_EQ(original, copied);
+
+	Block assigned;
+	assigned = original;
+	EXPECT_EQ(original_id, assigned.id());
+
+	Block to_move(original);
+	Block moved(std::move(to_move));
+	EXPECT_EQ(original_id, moved.id());
+
+	Block to_move2(original);
+	Block move_assigned;
+	move_assigned = std::move(to_move2);
+	EXPECT_EQ(original_id, move_assigned.id());
 }
