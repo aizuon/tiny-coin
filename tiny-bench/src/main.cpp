@@ -13,6 +13,11 @@ void benchmark_metal();
 void benchmark_compare();
 #endif
 
+#ifdef TINY_COIN_CUDA
+void benchmark_cuda();
+void benchmark_cuda_compare();
+#endif
+
 int main(int argc, char** argv)
 {
     Log::start_log(false);
@@ -29,8 +34,16 @@ int main(int argc, char** argv)
     benchmark_compare();
 #else
     std::cout << "\n[SKIP] Metal benchmarks not available on this platform" << std::endl;
-    benchmark_correctness();
 #endif
+
+#ifdef TINY_COIN_CUDA
+    benchmark_cuda();
+    benchmark_cuda_compare();
+#else
+    std::cout << "[SKIP] CUDA benchmarks not available on this platform" << std::endl;
+#endif
+
+    benchmark_correctness();
 
     std::cout << "\n=== Benchmark Complete ===" << std::endl;
 

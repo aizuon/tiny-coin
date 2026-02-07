@@ -1,10 +1,24 @@
 {
     "version": "2.0.0",
+    "windows": {
+        "options": {
+            "shell": {
+                "executable": "powershell.exe",
+                "args": [
+                    "-NoProfile",
+                    "-Command"
+                ]
+            }
+        }
+    },
     "tasks": [
         {
             "label": "Configure (Debug)",
             "type": "shell",
             "command": "cmake --preset debug",
+            "windows": {
+                "command": "$pf = [Environment]::GetFolderPath('ProgramFilesX86'); $cmake = & (Join-Path $pf 'Microsoft Visual Studio\\Installer\\vswhere.exe') -latest -find 'Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe'; & $cmake --preset debug"
+            },
             "options": {
                 "cwd": "${workspaceFolder}"
             },
@@ -14,6 +28,9 @@
             "label": "Configure (Release)",
             "type": "shell",
             "command": "cmake --preset release",
+            "windows": {
+                "command": "$pf = [Environment]::GetFolderPath('ProgramFilesX86'); $cmake = & (Join-Path $pf 'Microsoft Visual Studio\\Installer\\vswhere.exe') -latest -find 'Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe'; & $cmake --preset release"
+            },
             "options": {
                 "cwd": "${workspaceFolder}"
             },
@@ -31,7 +48,15 @@
                 "cwd": "${workspaceFolder}"
             },
             "dependsOn": "Configure (Debug)",
-            "problemMatcher": "$msCompile"
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "windows": {
+                "command": "$pf = [Environment]::GetFolderPath('ProgramFilesX86'); $cmake = & (Join-Path $pf 'Microsoft Visual Studio\\Installer\\vswhere.exe') -latest -find 'Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe'; & $cmake --build --preset debug",
+                "problemMatcher": [
+                    "$msCompile"
+                ]
+            }
         },
         {
             "label": "Build All (Release)",
@@ -42,12 +67,23 @@
                 "cwd": "${workspaceFolder}"
             },
             "dependsOn": "Configure (Release)",
-            "problemMatcher": "$msCompile"
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "windows": {
+                "command": "$pf = [Environment]::GetFolderPath('ProgramFilesX86'); $cmake = & (Join-Path $pf 'Microsoft Visual Studio\\Installer\\vswhere.exe') -latest -find 'Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe'; & $cmake --build --preset release",
+                "problemMatcher": [
+                    "$msCompile"
+                ]
+            }
         },
         {
             "label": "Run Tests (Debug)",
             "type": "shell",
             "command": "ctest --test-dir build/debug -C Debug --output-on-failure",
+            "windows": {
+                "command": "$pf = [Environment]::GetFolderPath('ProgramFilesX86'); $ctest = & (Join-Path $pf 'Microsoft Visual Studio\\Installer\\vswhere.exe') -latest -find 'Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\ctest.exe'; & $ctest --test-dir build/debug -C Debug --output-on-failure"
+            },
             "group": {
                 "kind": "test",
                 "isDefault": true
@@ -62,6 +98,9 @@
             "label": "Run Tests (Release)",
             "type": "shell",
             "command": "ctest --test-dir build/release -C Release --output-on-failure",
+            "windows": {
+                "command": "$pf = [Environment]::GetFolderPath('ProgramFilesX86'); $ctest = & (Join-Path $pf 'Microsoft Visual Studio\\Installer\\vswhere.exe') -latest -find 'Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\ctest.exe'; & $ctest --test-dir build/release -C Release --output-on-failure"
+            },
             "group": "test",
             "options": {
                 "cwd": "${workspaceFolder}"

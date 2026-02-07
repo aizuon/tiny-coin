@@ -3,11 +3,6 @@
 #ifndef SPDLOG_FMT_EXTERNAL
 #define SPDLOG_FMT_EXTERNAL
 #endif
-#ifdef _WIN32
-#ifndef SPDLOG_WCHAR_TO_UTF8_SUPPORT
-#define SPDLOG_WCHAR_TO_UTF8_SUPPORT
-#endif
-#endif
 #include <spdlog/spdlog.h>
 
 class Log

@@ -17,6 +17,10 @@
 #include "mining/metal/metal_mining_backend.hpp"
 #endif
 
+#ifdef TINY_COIN_CUDA
+#include "mining/cuda/cuda_mining_backend.hpp"
+#endif
+
 static std::vector<uint8_t> make_test_prefix()
 {
     std::vector<uint8_t> prefix;
@@ -219,6 +223,102 @@ void benchmark_compare()
 }
 #endif
 
+#ifdef TINY_COIN_CUDA
+void benchmark_cuda()
+{
+    std::cout << "--- CUDA GPU Mining Benchmark ---" << std::endl;
+
+    auto prefix = make_test_prefix();
+    constexpr uint8_t bits = 20;
+    auto target = make_target(bits);
+
+    CudaMiningBackend backend;
+    if (!backend.is_available())
+    {
+        std::cout << "  [SKIP] CUDA not available" << std::endl << std::endl;
+        return;
+    }
+
+    std::atomic_bool interrupt = false;
+
+    auto start = std::chrono::high_resolution_clock::now();
+    auto result = backend.mine(prefix, target, interrupt);
+    auto end = std::chrono::high_resolution_clock::now();
+
+    double seconds = std::chrono::duration<double>(end - start).count();
+
+    std::cout << "  Backend:    " << backend.name() << std::endl;
+    std::cout << "  Found:      " << (result.found ? "yes" : "no") << std::endl;
+    std::cout << "  Nonce:      " << result.nonce << std::endl;
+    std::cout << "  Hashes:     " << result.hash_count << std::endl;
+    std::cout << "  Time:       " << std::fixed << std::setprecision(3) << seconds << " s" << std::endl;
+    std::cout << "  Hash rate:  " << std::fixed << std::setprecision(2)
+        << (seconds > 0 ? result.hash_count / seconds / 1000.0 : 0) << " kH/s" << std::endl;
+
+    if (result.found)
+    {
+        bool valid = verify_nonce(prefix, result.nonce, target);
+        std::cout << "  Valid:      " << (valid ? "yes" : "NO - INVALID!") << std::endl;
+        assert(valid && "CUDA mining produced invalid nonce!");
+    }
+
+    std::cout << std::endl;
+}
+
+void benchmark_cuda_compare()
+{
+    std::cout << "--- CPU vs CUDA Comparison ---" << std::endl;
+
+    auto prefix = make_test_prefix();
+    constexpr uint8_t bits = 20;
+    auto target = make_target(bits);
+
+    std::atomic_bool interrupt_cpu = false;
+    CpuMiningBackend cpu_backend;
+
+    auto cpu_start = std::chrono::high_resolution_clock::now();
+    auto cpu_result = cpu_backend.mine(prefix, target, interrupt_cpu);
+    auto cpu_end = std::chrono::high_resolution_clock::now();
+    double cpu_seconds = std::chrono::duration<double>(cpu_end - cpu_start).count();
+    double cpu_hps = cpu_seconds > 0 ? cpu_result.hash_count / cpu_seconds : 0;
+
+    CudaMiningBackend cuda_backend;
+    if (!cuda_backend.is_available())
+    {
+        std::cout << "  [SKIP] CUDA not available for comparison" << std::endl << std::endl;
+        return;
+    }
+
+    std::atomic_bool interrupt_cuda = false;
+
+    auto cuda_start = std::chrono::high_resolution_clock::now();
+    auto cuda_result = cuda_backend.mine(prefix, target, interrupt_cuda);
+    auto cuda_end = std::chrono::high_resolution_clock::now();
+    double cuda_seconds = std::chrono::duration<double>(cuda_end - cuda_start).count();
+    double cuda_hps = cuda_seconds > 0 ? cuda_result.hash_count / cuda_seconds : 0;
+
+    std::cout << "  CPU:  " << std::fixed << std::setprecision(2) << cpu_hps / 1000.0 << " kH/s ("
+        << std::setprecision(3) << cpu_seconds << " s)" << std::endl;
+    std::cout << "  CUDA: " << std::fixed << std::setprecision(2) << cuda_hps / 1000.0 << " kH/s ("
+        << std::setprecision(3) << cuda_seconds << " s)" << std::endl;
+
+    if (cuda_hps > cpu_hps)
+    {
+        double speedup = cuda_hps / cpu_hps;
+        std::cout << "  Result: CUDA is " << std::fixed << std::setprecision(2)
+            << speedup << "x faster than CPU" << std::endl;
+    }
+    else
+    {
+        double factor = cpu_hps > 0 ? cuda_hps / cpu_hps : 0;
+        std::cout << "  Result: CUDA is " << std::fixed << std::setprecision(2)
+            << factor << "x of CPU speed (slower)" << std::endl;
+    }
+
+    std::cout << std::endl;
+}
+#endif
+
 void benchmark_correctness()
 {
     std::cout << "--- Correctness Verification ---" << std::endl;
@@ -251,6 +351,24 @@ void benchmark_correctness()
     else
     {
         std::cout << "  [SKIP] Metal not available" << std::endl;
+    }
+#endif
+
+#ifdef TINY_COIN_CUDA
+    CudaMiningBackend cuda_backend;
+    if (cuda_backend.is_available())
+    {
+        std::atomic_bool interrupt_cuda = false;
+        auto cuda_result = cuda_backend.mine(prefix, target, interrupt_cuda);
+
+        std::cout << "  CUDA found nonce:  " << cuda_result.nonce << " -> "
+            << (verify_nonce(prefix, cuda_result.nonce, target) ? "VALID" : "INVALID") << std::endl;
+        assert(cuda_result.found && "CUDA should find a nonce");
+        assert(verify_nonce(prefix, cuda_result.nonce, target) && "CUDA nonce must be valid");
+    }
+    else
+    {
+        std::cout << "  [SKIP] CUDA not available" << std::endl;
     }
 #endif
 

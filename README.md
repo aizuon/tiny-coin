@@ -10,7 +10,7 @@ A minimal Bitcoin implementation in C++23, built for learning how Proof of Work 
 
 ### Core
 
-- **Proof of Work mining** — multithreaded block mining with automatic difficulty adjustment (retargets every 144 blocks); pluggable backend system with Metal GPU acceleration on Apple Silicon and automatic CPU fallback
+- **Proof of Work mining** — multithreaded block mining with automatic difficulty adjustment (retargets every 144 blocks); pluggable backend system with CUDA GPU acceleration on NVIDIA hardware, Metal GPU acceleration on Apple Silicon, and automatic CPU fallback
 - **UTXO model** — faithful Unspent Transaction Output tracking as in Bitcoin
 - **Transaction engine** — creation, validation, and spending with full ECDSA signature verification
 - **Merkle tree** — block transaction integrity verification
@@ -57,6 +57,7 @@ tiny-coin/
 │   ├── core/               Block, Chain, Tx, Mempool, UTXO types
 │   ├── crypto/             SHA-256, RIPEMD-160, ECDSA, Base58, HMAC-SHA512
 │   ├── mining/             PoW solver, Merkle tree, fee estimator, mining backends
+│   │   ├── cuda/           NVIDIA CUDA GPU compute kernel & backend
 │   │   └── metal/          Apple Metal GPU compute shader & backend
 │   ├── net/                P2P message protocol, opcodes & TCP networking
 │   ├── util/               Binary serialisation, logging, helpers
@@ -75,6 +76,7 @@ tiny-coin/
 | C++ compiler | C++23 support (MSVC 19.44+, GCC 15+, Clang 20+) |
 | Python       | 3.x (build-time shader embedding)               |
 | vcpkg        | latest                                          |
+| CUDA Toolkit | 12.x+ (optional — NVIDIA GPU mining)            |
 
 ### vcpkg packages
 
@@ -103,11 +105,16 @@ cmake --build --preset debug      # or: --preset release
 # Run tests
 ctest --test-dir build/debug -C Debug --output-on-failure
 
-# Run mining benchmark (CPU vs Metal GPU)
+# Run mining benchmark (CPU vs Metal/CUDA GPU)
 ./build/debug/tiny-bench/tiny-bench
 ```
 
-On Apple Silicon the build automatically enables Metal GPU mining. On other platforms the CPU backend is used.
+On Apple Silicon the build automatically enables Metal GPU mining. On Windows/Linux, if the **`CUDA_PATH`** environment variable is set and `nvcc` is found, CUDA GPU mining is enabled automatically. On other platforms or when no GPU toolkit is available, the CPU backend is used.
+
+### GPU Mining
+
+- **NVIDIA (CUDA):** Set the `CUDA_PATH` environment variable to your CUDA Toolkit installation (e.g. `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.x`). The build will detect `nvcc` and compile the CUDA mining kernel automatically.
+- **Apple Silicon (Metal):** No extra setup needed — the Metal backend is enabled automatically on macOS.
 
 
 
@@ -199,7 +206,7 @@ Test sources live under `tiny-test/src/`:
 │  └──────────┘    └──────────────┘     └──────────────────┘  │
 ├─────────────────────────────────────────────────────────────┤
 │                     Mining Backends                         │
-│  CPU (boost::thread) ─ Metal GPU (Apple Silicon)            │
+│  CPU (boost::thread) ─ CUDA GPU (NVIDIA) ─ Metal GPU (Apple)│
 ├─────────────────────────────────────────────────────────────┤
 │                        Core Layer                           │
 │  Chain ─ Block ─ Tx ─ TxIn/TxOut ─ UTXO ─ Mempool           │
@@ -215,7 +222,6 @@ Test sources live under `tiny-test/src/`:
 ## Roadmap
 
 - [ ] Full node type (combined miner + wallet in a single node)
-- [ ] **CUDA mining backend** — GPU mining on NVIDIA hardware via the same pluggable backend interface
 - [ ] **OpenCL mining backend** — cross-platform GPU mining fallback
 
 ### High Priority — Core Consensus & Security

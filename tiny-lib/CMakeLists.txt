@@ -68,6 +68,86 @@ if(APPLE)
     )
 endif()
 
+if(NOT APPLE)
+    find_program(NVCC_EXECUTABLE nvcc PATHS "$ENV{CUDA_PATH}/bin" NO_CACHE)
+
+    if(NVCC_EXECUTABLE)
+        message(STATUS "Found CUDA compiler: ${NVCC_EXECUTABLE}")
+
+        cmake_path(GET NVCC_EXECUTABLE PARENT_PATH _NVCC_BIN_DIR)
+        cmake_path(GET _NVCC_BIN_DIR PARENT_PATH _CUDA_TOOLKIT_ROOT)
+        if(NOT EXISTS "${_CUDA_TOOLKIT_ROOT}/include/cuda_runtime.h")
+            cmake_path(GET _CUDA_TOOLKIT_ROOT PARENT_PATH _CUDA_TOOLKIT_ROOT)
+        endif()
+
+        set(_CUDA_INCLUDE_DIR "${_CUDA_TOOLKIT_ROOT}/include")
+        set(_CUDA_KERNEL_SRC "${CMAKE_CURRENT_SOURCE_DIR}/mining/cuda/mining_kernel.cu")
+        set(_CUDA_KERNEL_OBJ "${CMAKE_CURRENT_BINARY_DIR}/mining_kernel${CMAKE_CXX_OUTPUT_EXTENSION}")
+
+        set(_NVCC_FLAGS -c -DTINY_COIN_CUDA --std=c++17 --allow-unsupported-compiler)
+        list(APPEND _NVCC_FLAGS
+            "$<$<CONFIG:Debug>:-G>"
+            "$<$<CONFIG:Debug>:-g>"
+            "$<$<NOT:$<CONFIG:Debug>>:-O2>"
+        )
+
+        if(MSVC)
+            list(APPEND _NVCC_FLAGS
+                -Xcompiler "/EHsc /W3"
+                -Xcompiler "$<IF:$<CONFIG:Debug>,/MTd,/MT>"
+            )
+        endif()
+
+        add_custom_command(
+            OUTPUT "${_CUDA_KERNEL_OBJ}"
+            COMMAND "${NVCC_EXECUTABLE}" ${_NVCC_FLAGS}
+                -o "${_CUDA_KERNEL_OBJ}"
+                "-I$<JOIN:$<TARGET_PROPERTY:tiny-lib,INCLUDE_DIRECTORIES>,;-I>"
+                "-D$<JOIN:$<TARGET_PROPERTY:tiny-lib,COMPILE_DEFINITIONS>,;-D>"
+                "-I${_CUDA_INCLUDE_DIR}"
+                "${_CUDA_KERNEL_SRC}"
+            DEPENDS "${_CUDA_KERNEL_SRC}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/mining/cuda/cuda_mining_backend.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/mining/i_mining_backend.hpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/util/log.hpp"
+            COMMENT "Compiling CUDA mining kernel"
+            VERBATIM
+            COMMAND_EXPAND_LISTS
+        )
+
+        set_source_files_properties("${_CUDA_KERNEL_OBJ}" PROPERTIES
+            EXTERNAL_OBJECT TRUE
+            GENERATED TRUE
+        )
+        target_sources(tiny-lib PRIVATE "${_CUDA_KERNEL_OBJ}")
+
+        set_source_files_properties("${_CUDA_KERNEL_SRC}" PROPERTIES
+            HEADER_FILE_ONLY TRUE
+        )
+        target_sources(tiny-lib PRIVATE "${_CUDA_KERNEL_SRC}")
+
+        target_compile_definitions(tiny-lib
+            PUBLIC TINY_COIN_CUDA
+            PRIVATE __NV_NO_HOST_COMPILER_CHECK
+        )
+        target_include_directories(tiny-lib PRIVATE "${_CUDA_INCLUDE_DIR}")
+
+        if(WIN32)
+            find_library(_CUDART_STATIC_LIB cudart_static
+                PATHS "${_CUDA_TOOLKIT_ROOT}/lib/x64" NO_DEFAULT_PATH)
+        else()
+            find_library(_CUDART_STATIC_LIB cudart_static
+                PATHS "${_CUDA_TOOLKIT_ROOT}/lib64" NO_DEFAULT_PATH)
+        endif()
+
+        if(_CUDART_STATIC_LIB)
+            target_link_libraries(tiny-lib PUBLIC "${_CUDART_STATIC_LIB}")
+        else()
+            message(WARNING "CUDA runtime library (cudart_static) not found")
+        endif()
+    endif()
+endif()
+
 if(WIN32)
     target_compile_definitions(tiny-lib PUBLIC _WIN32_WINNT=0x0A00)
     target_link_libraries(tiny-lib PUBLIC crypt32 ws2_32)

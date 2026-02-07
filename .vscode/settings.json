@@ -1,0 +1,8 @@
+{
+    "C_Cpp.codeAnalysis.exclude": {
+        "**/*.cu": true
+    },
+    "files.associations": {
+        "*.cu": "cpp"
+    }
+}
