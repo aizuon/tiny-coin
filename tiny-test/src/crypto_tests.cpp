@@ -84,9 +84,6 @@ TEST(CryptoTest, ECDSA_SigningAndVerification)
 	EXPECT_TRUE(ECDSA::verify_sig(sig, msg_arr, pub_key));
 }
 
-// ---------------------------------------------------------------------------
-// HMAC-SHA512 (RFC 4231 Test Case 2)
-// ---------------------------------------------------------------------------
 TEST(CryptoTest, HMACSHA512_BasicVector)
 {
 	const std::string key_str = "Jefe";
