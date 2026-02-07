@@ -1,86 +1,228 @@
-# Tinycoin
+# tiny-coin
 
-## What is it?
+A minimal Bitcoin implementation in C++23, built for learning how Proof of Work cryptocurrencies function under the hood — from mining and transaction validation to peer-to-peer networking.
 
-Tinycoin is a minimal implementation of Bitcoin in C++. It is not designed to be used as a Bitcoin node, but rather to learn how Proof of Work cryptocurrencies function and provide a small example project. 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![C++23](https://img.shields.io/badge/C%2B%2B-23-blue.svg)](https://isocpp.org/)
+[![CMake 3.30+](https://img.shields.io/badge/CMake-3.30%2B-blue.svg)](https://cmake.org/)
+
+## Features
+
+### Core
+
+- **Proof of Work mining** — multithreaded block mining with automatic difficulty adjustment (retargets every 144 blocks)
+- **UTXO model** — faithful Unspent Transaction Output tracking as in Bitcoin
+- **Transaction engine** — creation, validation, and spending with full ECDSA signature verification
+- **Merkle tree** — block transaction integrity verification
+- **Chain management** — side-branch tracking, fork detection, and automatic chain reorganisation
+- **Mempool** — pending transaction pool with fee-based ordering
+- **Chain persistence** — serialises the active chain to disk and restores on startup
+
+### Cryptography
+
+- **SHA-256** double hashing for block and transaction IDs
+- **RIPEMD-160** for address derivation
+- **ECDSA** (secp256k1) key generation and transaction signing via OpenSSL
+- **Base58** encoding for human-readable wallet addresses
+
+### Networking
+
+- **Peer-to-peer** TCP protocol over Boost.Asio
+- **Initial block download** — new nodes sync the full chain from peers
+- **Message types** — block announcements, transaction broadcasts, mempool/UTXO queries, peer discovery
+
+### Wallet
+
+- Key generation and wallet file management
+- Balance queries from the UTXO set
+- Interactive CLI for sending coins and checking transaction status
+
+## Network Parameters
+
+| Parameter                  | Value              |
+| -------------------------- | ------------------ |
+| Block target interval      | 10 minutes         |
+| Difficulty retarget period | 1 day (144 blocks) |
+| Initial difficulty         | 24 bits            |
+| Max block size             | 1 MB               |
+| Max supply                 | 21 000 000 coins   |
+| Coinbase maturity          | 2 blocks           |
+| Subsidy halving interval   | 210 000 blocks     |
+
+## Project Structure
+
+```
+tiny-coin/
+├── tiny-lib/               Core static library
+│   ├── core/               Block, Chain, Tx, Mempool, UTXO types
+│   ├── crypto/             SHA-256, RIPEMD-160, ECDSA, Base58
+│   ├── mining/             Proof of Work solver, Merkle tree
+│   ├── net/                P2P message protocol & TCP networking
+│   ├── util/               Binary serialisation, logging, helpers
+│   └── wallet/             Wallet I/O and node configuration
+├── tiny-sandbox/           CLI node application
+├── tiny-test/              Unit tests (Google Test)
+└── cmake/                  Toolchain & preset files
+```
+
+## Prerequisites
+
+| Dependency   | Version                                         |
+| ------------ | ----------------------------------------------- |
+| CMake        | 3.30+                                           |
+| C++ compiler | C++23 support (MSVC 19.44+, GCC 15+, Clang 20+) |
+| vcpkg        | latest                                          |
+
+### vcpkg packages
+
+Install the following packages via vcpkg:
+
+```
+openssl  boost  fmt  spdlog  gtest
+```
+
+Set the **`VCPKG_ROOT`** environment variable to your vcpkg installation path before configuring.
+
+> **Note:** On macOS/Linux you can install packages without specifying a triplet. On Windows you must install them for the `x64-windows-static` triplet (e.g. `vcpkg install openssl:x64-windows-static`).
 
 ## Building
 
-Windows 11 with Visual Studio 2022 for build environment and vcpkg for library management is strongly suggested. The project depends on the following x64 and x86 static libraries: 
+The project uses **CMake Presets** for a reproducible build:
 
-- openssl
-- boost
-- fmt
-- spdlog
+```bash
+# Configure (pick one)
+cmake --preset debug
+cmake --preset release
 
-## Quick start
+# Build
+cmake --build --preset debug      # or: --preset release
 
-- Run a miner node
-  ```
-  $ tiny-sandbox.exe --port 9901 --node_type miner --wallet miner.dat
-  
-  [ 17:49:24 ] [ tc ] Generating new wallet miner.dat
-  [ 17:49:26 ] [ tc ] Your address is 172eJPtmt5wMq71bnT1fS55FYLHw1syhWB
-  [ 17:49:28 ] [ tc ] Load chain failed, starting from genesis
-  ```
-- Wait for a few blocks to go by
-  ```
-  [ 17:49:28 ] [ tc ] Start mining block 0881dfd39dbc50325850c3992b5c18ba8c30520a4c4fdce588fb899f53d82e44 with 0 fees
-  [ 17:49:47 ] [ tc ] Block found => 19 s, 607 KH/s, 000000245f1ad9e00ba03836316fa2a896b79b08f8e0b3c32fac4da5225ba877, 2877728
-  [ 17:49:47 ] [ tc ] Connecting block 000000245f1ad9e00ba03836316fa2a896b79b08f8e0b3c32fac4da5225ba877 to chain 0
-  [ 17:49:47 ] [ tc ] Adding TxOutPoint 72a1142476ef4c9241545fc02ca6ed48a337fbfd24171127fd1bcbad0a6fc44e to UTXO map
-  [ 17:49:47 ] [ tc ] Block accepted at height 1 with 1 txs
-  [ 17:49:47 ] [ tc ] Saving chain with 2 blocks
-  ...
-  ```
-- Run a wallet node
-  ```
-  $ tiny-sandbox.exe --port 9902 --node_type wallet --wallet miner.dat
-  
-  [ 17:49:48 ] [ tc ] Your address is 172eJPtmt5wMq71bnT1fS55FYLHw1syhW
-  ```
-- Generate an empty wallet
-  ```
-  $ address receiver.dat
+# Run tests
+ctest --test-dir build/debug -C Debug --output-on-failure
+```
 
-  [ 17:50:57 ] [ tc ] Wallet receiver.dat belongs to address 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi
-  ```
-- Send coins from miner wallet to empty wallet
-  ```
-  $ send 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi 50000
-  
-  [ 17:51:23 ] [ tc ] Built transaction a5328f5688ff6b39de25af6a7bab840cc4e1156a26dabb10e2d01b12cbfa9eef with 100 coins/byte fee
-  [ 17:51:23 ] [ tc ] Built transaction a5328f5688ff6b39de25af6a7bab840cc4e1156a26dabb10e2d01b12cbfa9eef, broadcasting
-  ```
-- Wait for transaction to get mined in a block
-  ```
-  ...
-  [ 17:51:23 ] [ tc ] Recieved transaction a5328f5688ff6b39de25af6a7bab840cc4e1156a26dabb10e2d01b12cbfa9eef from peer 127.0.0.1:62256
-  [ 17:51:23 ] [ tc ] Transaction a5328f5688ff6b39de25af6a7bab840cc4e1156a26dabb10e2d01b12cbfa9eef added to mempool
-  ...
-  [ 17:51:44 ] [ tc ] Added transaction a5328f5688ff6b39de25af6a7bab840cc4e1156a26dabb10e2d01b12cbfa9eef to block 1f4fb281eb44989700c3e9aba535191e684657c06911e0f0aed1795f967c88df
-  [ 17:51:44 ] [ tc ] Start mining block ff02250fc300e1b53c40528e9fba7f89df34e7f6cb4a896e8fde84872e23461b with 30000 fees
-  [ 17:52:55 ] [ tc ] Block found => 71 s, 699 KH/s, 000000275c6044cf9f39de8710a1bdf799043d2d634dbcd1584d3591168b5123, 4611686018440151883
-  [ 17:52:55 ] [ tc ] Connecting block 000000275c6044cf9f39de8710a1bdf799043d2d634dbcd1584d3591168b5123 to chain 0
-  [ 17:52:55 ] [ tc ] Adding TxOutPoint bc1d12d2105f55527f359721e5b03e14a094037a36cbda70402a3543d939d3f4 to UTXO map
-  [ 17:52:55 ] [ tc ] Adding TxOutPoint a5328f5688ff6b39de25af6a7bab840cc4e1156a26dabb10e2d01b12cbfa9eef to UTXO map
-  [ 17:52:55 ] [ tc ] Adding TxOutPoint a5328f5688ff6b39de25af6a7bab840cc4e1156a26dabb10e2d01b12cbfa9eef to UTXO map
-  [ 17:52:55 ] [ tc ] Block accepted at height 5 with 2 txs
-  [ 17:52:55 ] [ tc ] Saving chain with 6 blocks
-  ...
-  ```
-- Check balance of receiver wallet
-  ```
-  $ balance 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi
 
-  [ 17:53:11 ] [ tc ] Address 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi holds 50000 coins
-  ```
 
-## TODO
+## Quick Start
 
-- Replace by fee
-- Transaction locking
-- Orphan blocks
-- Chainwork
-- Peer discovery
-- Full node
+### 1. Start a miner node
+
+```
+$ ./tiny-sandbox --port 9901 --node_type miner --wallet miner.dat
+
+[ 17:49:24 ] [ tc ] Generating new wallet miner.dat
+[ 17:49:26 ] [ tc ] Your address is 172eJPtmt5wMq71bnT1fS55FYLHw1syhWB
+[ 17:49:28 ] [ tc ] Load chain failed, starting from genesis
+```
+
+The miner will begin solving blocks immediately. Wait for a few blocks to be mined before continuing.
+
+### 2. Start a wallet node
+
+```
+$ ./tiny-sandbox --port 9902 --node_type wallet --wallet wallet.dat
+
+[ 17:49:48 ] [ tc ] Your address is 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa
+```
+
+The wallet node syncs the chain from the miner and drops into an interactive shell.
+
+### 3. Interactive commands
+
+| Command                                              | Description                                     |
+| ---------------------------------------------------- | ----------------------------------------------- |
+| `address <wallet_file>`                              | Show the address for a wallet file              |
+| `balance [<address>]`                                | Show balance (own address if omitted)           |
+| `send <address> <amount> [fee_per_byte] [lock_time]` | Send coins (default fee: 100 coins/byte)        |
+| `rbf <tx_id> <new_fee_per_byte>`                     | Replace a mempool transaction with a higher fee |
+| `tx_status <tx_id>`                                  | Check whether a transaction is confirmed        |
+| `exit` / `quit`                                      | Shut down the node                              |
+
+**Example session:**
+
+```
+$ address receiver.dat
+[ 17:50:57 ] [ tc ] Wallet receiver.dat belongs to address 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi
+
+$ send 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi 50000
+[ 17:51:23 ] [ tc ] Built transaction a5328f...fa9eef with 100 coins/byte fee
+[ 17:51:23 ] [ tc ] Built transaction a5328f...fa9eef, broadcasting
+
+$ balance 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi
+[ 17:53:11 ] [ tc ] Address 16KHYopvjuY3mVLtEPHDLTzemWbPV6agoi holds 50000 coins
+```
+
+## Tests
+
+The test suite covers core serialisation, cryptographic primitives, chain validation, Merkle trees, message encoding, and wallet operations:
+
+```bash
+ctest --test-dir build/debug -C Debug --output-on-failure
+```
+
+Test sources live under `tiny-test/src/`:
+
+| File                      | Covers                                                               |
+| ------------------------- | -------------------------------------------------------------------- |
+| `binary_buffer_tests.cpp` | Binary serialisation round-trips                                     |
+| `block_chain_tests.cpp`   | Block creation, chain connect/disconnect, reorgs, orphan blocks, RBF |
+| `crypto_tests.cpp`        | SHA-256, RIPEMD-160, ECDSA sign/verify                               |
+| `merkle_tree_tests.cpp`   | Merkle root computation                                              |
+| `msg_tests.cpp`           | Network message serialise/deserialise                                |
+| `serialization_tests.cpp` | Tx/Block binary encoding                                             |
+| `utils_tests.cpp`         | Utility helpers                                                      |
+| `wallet_tests.cpp`        | Wallet key generation and address derivation                         |
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      tiny-sandbox (CLI)                     │
+├─────────────────────────────────────────────────────────────┤
+│  Wallet          Mining (PoW)         Net Client            │
+│  ┌──────────┐    ┌──────────────┐     ┌──────────────────┐  │
+│  │ Key mgmt │    │ Assemble blk │     │ TCP peer-to-peer │  │
+│  │ Send tx  │    │ Solve nonce  │     │ Msg broadcast    │  │
+│  │ Balance  │    │ Difficulty   │     │ Initial block DL │  │
+│  └──────────┘    └──────────────┘     └──────────────────┘  │
+├─────────────────────────────────────────────────────────────┤
+│                        Core Layer                           │
+│  Chain ─ Block ─ Tx ─ TxIn/TxOut ─ UTXO ─ Mempool           │
+├─────────────────────────────────────────────────────────────┤
+│                      Crypto Layer                           │
+│  SHA-256 ─ RIPEMD-160 ─ ECDSA (secp256k1) ─ Base58          │
+├─────────────────────────────────────────────────────────────┤
+│                     Utility Layer                           │
+│  BinaryBuffer ─ Logging (spdlog) ─ Random ─ uint256_t       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Roadmap
+
+- [ ] Full node type (combined miner + wallet in a single node)
+
+### High Priority — Core Consensus & Security
+
+- [ ] **Bitcoin Script interpreter with P2SH** — replace hardcoded P2PKH validation with a stack-based script engine (`OP_DUP OP_HASH160 … OP_EQUALVERIFY OP_CHECKSIG`); extend with Pay-to-Script-Hash for multisig and complex contracts
+- [ ] **Signature standards (BIP62/BIP66 & SIGHASH)** — require low-S values and strict DER encoding to prevent malleability; support `SIGHASH_ALL`, `SIGHASH_NONE`, `SIGHASH_SINGLE`, and `ANYONECANPAY` (currently only implicit `SIGHASH_ALL`)
+- [ ] **Block sigops limit** — count signature operations per block and enforce a maximum, preventing pathologically expensive blocks
+
+### Medium Priority — Protocol & Storage
+
+- [ ] **Headers-first sync** — download and validate block headers before fetching bodies, enabling parallel block downloads and faster initial sync (currently sequential full-block IBD with assume-valid optimisation)
+- [ ] **Persistent UTXO database** — move the UTXO set from an in-memory map to a key-value store (e.g. LevelDB / SQLite) so the node scales to larger chains (UTXO map is rebuilt from disk-persisted chain on startup)
+- [ ] **Transaction index** — maintain a persistent txid → block position index for O(1) transaction lookups without full chain scans
+- [ ] **Peer scoring & DoS protection** — track peer behaviour, score misbehaving nodes, and enforce banning and rate-limiting to prevent resource exhaustion (currently only magic-byte and checksum validation)
+- [ ] **Merkle proofs & SPV verification** — expose proof-path extraction and verification from the existing Merkle tree so light clients can confirm transactions without downloading full blocks
+
+### Lower Priority — Advanced Features
+
+- [ ] **Segregated Witness (SegWit)** — separate witness data from the transaction ID to fix malleability and increase effective block capacity
+- [ ] **Compact block relay (BIP152)** — send only short txid sketches instead of full blocks, reducing propagation latency
+- [ ] **Compact block filters (BIP157/158)** — generate Golomb-coded set filters per block so light clients can determine relevant blocks without downloading full chain data
+- [ ] **BIP39 mnemonic seed phrases** — derive HD wallet seeds from a human-readable word list for easier backup and recovery (BIP32/BIP44 key derivation is already implemented)
+- [ ] **Watch-only wallet** — import xpubs or bare addresses to monitor balances and transaction history without exposing private keys
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).

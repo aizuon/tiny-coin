@@ -1,0 +1,112 @@
+#pragma once
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <tuple>
+#include <vector>
+
+#include "core/enums.hpp"
+#include "core/tx.hpp"
+#include "core/tx_in.hpp"
+#include "core/tx_out.hpp"
+#include "core/tx_out_point.hpp"
+#include "wallet/hd_wallet.hpp"
+
+class UnspentTxOut;
+
+class Wallet
+{
+public:
+	static std::string pub_key_to_address(const std::vector<uint8_t>& pub_key);
+
+	static std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string>
+		get_wallet(const std::string& wallet_path);
+	static void print_wallet_address(const std::string& wallet_path);
+	static std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> init_wallet(
+		const std::string& wallet_path);
+	static std::tuple<std::vector<uint8_t>, std::vector<uint8_t>, std::string> init_wallet();
+
+	static std::shared_ptr<TxIn> build_tx_in(const std::vector<uint8_t>& priv_key,
+		const std::vector<uint8_t>& pub_key,
+		const std::shared_ptr<TxOutPoint>& tx_out_point,
+		const std::vector<std::shared_ptr<TxOut>>& tx_outs);
+	static std::shared_ptr<TxIn> build_tx_in(const std::vector<uint8_t>& priv_key,
+		const std::vector<uint8_t>& pub_key,
+		const std::shared_ptr<TxOutPoint>& tx_out_point,
+		const std::vector<std::shared_ptr<TxOut>>& tx_outs,
+		int32_t sequence);
+	static std::shared_ptr<Tx> send_value_miner(uint64_t value, uint64_t fee, const std::string& address,
+		const std::vector<uint8_t>& priv_key, int64_t lock_time = 0);
+	static std::shared_ptr<Tx> send_value(uint64_t value, uint64_t fee, const std::string& address,
+		const std::vector<uint8_t>& priv_key, int64_t lock_time = 0);
+
+	static std::tuple<std::shared_ptr<HDWallet>, std::string> init_hd_wallet(
+		const std::string& wallet_path);
+	static std::tuple<std::shared_ptr<HDWallet>, std::string> init_hd_wallet();
+
+	static std::shared_ptr<Tx> send_value_hd_miner(uint64_t value, uint64_t fee,
+		const std::string& address, HDWallet& hd_wallet, int64_t lock_time = 0);
+	static std::shared_ptr<Tx> send_value_hd(uint64_t value, uint64_t fee,
+		const std::string& address, HDWallet& hd_wallet, int64_t lock_time = 0);
+
+	static std::shared_ptr<Tx> rbf_tx_miner(const std::string& tx_id, uint64_t new_fee_per_byte,
+		const std::vector<uint8_t>& priv_key);
+	static std::shared_ptr<Tx> rbf_tx(const std::string& tx_id, uint64_t new_fee_per_byte,
+		const std::vector<uint8_t>& priv_key);
+
+	struct TxStatusResponse
+	{
+		TxStatus status = TxStatus::NotFound;
+		std::string block_id;
+		int64_t block_height = -1;
+	};
+
+	static TxStatusResponse get_tx_status_miner(const std::string& tx_id);
+	static TxStatusResponse get_tx_status(const std::string& tx_id);
+	static void print_tx_status(const std::string& tx_id);
+
+	static uint64_t get_balance_miner(const std::string& address);
+	static uint64_t get_balance(const std::string& address);
+	static void print_balance(const std::string& address);
+
+private:
+	static constexpr char DEFAULT_WALLET_PATH[] = "wallet.dat";
+	static constexpr char DEFAULT_HD_WALLET_PATH[] = "hd_wallet.dat";
+	static std::string wallet_path;
+	static std::string hd_wallet_path;
+
+	static std::shared_ptr<Tx> build_tx_from_utxos(std::vector<std::shared_ptr<UnspentTxOut>>& utxos, uint64_t value,
+		uint64_t fee, const std::string& address,
+		const std::string& change_address,
+		const std::vector<uint8_t>& priv_key,
+		const std::vector<uint8_t>& pub_key,
+		int64_t lock_time = 0);
+
+	static std::vector<std::shared_ptr<UnspentTxOut>> branch_and_bound_select(
+		const std::vector<std::shared_ptr<UnspentTxOut>>& utxos,
+		uint64_t target, uint64_t cost_of_change);
+
+	static std::shared_ptr<Tx> build_rbf_replacement(const std::shared_ptr<Tx>& original_tx,
+		uint64_t new_fee_per_byte, const std::vector<uint8_t>& priv_key,
+		const std::vector<uint8_t>& pub_key);
+
+	static std::shared_ptr<Tx> build_tx_miner(uint64_t value, uint64_t fee, const std::string& address,
+		const std::vector<uint8_t>& priv_key, int64_t lock_time = 0);
+	static std::shared_ptr<Tx> build_tx(uint64_t value, uint64_t fee, const std::string& address,
+		const std::vector<uint8_t>& priv_key, int64_t lock_time = 0);
+
+	static std::shared_ptr<Tx> build_tx_hd_miner(uint64_t value, uint64_t fee, const std::string& address,
+		HDWallet& hd_wallet, int64_t lock_time = 0);
+	static std::shared_ptr<Tx> build_tx_hd(uint64_t value, uint64_t fee, const std::string& address,
+		HDWallet& hd_wallet, int64_t lock_time = 0);
+
+	static std::shared_ptr<Tx> build_tx_from_utxos_hd(
+		std::vector<std::shared_ptr<UnspentTxOut>>& utxos, uint64_t value, uint64_t fee,
+		const std::string& address, HDWallet& hd_wallet, int64_t lock_time = 0);
+
+	static std::vector<std::shared_ptr<UnspentTxOut>> find_utxos_for_address_miner(const std::string& address);
+	static std::vector<std::shared_ptr<UnspentTxOut>> find_utxos_for_address(const std::string& address);
+
+	static std::vector<std::shared_ptr<UnspentTxOut>> find_utxos_for_hd_wallet_miner(HDWallet& hd_wallet);
+	static std::vector<std::shared_ptr<UnspentTxOut>> find_utxos_for_hd_wallet(HDWallet& hd_wallet);
+};

@@ -1,0 +1,73 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Configure (Debug)",
+            "type": "shell",
+            "command": "cmake --preset debug",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Configure (Release)",
+            "type": "shell",
+            "command": "cmake --preset release",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build All (Debug)",
+            "type": "shell",
+            "command": "cmake --build --preset debug",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn": "Configure (Debug)",
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Build All (Release)",
+            "type": "shell",
+            "command": "cmake --build --preset release",
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn": "Configure (Release)",
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Run Tests (Debug)",
+            "type": "shell",
+            "command": "ctest --test-dir build/debug -C Debug --output-on-failure",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn": "Build All (Debug)",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Tests (Release)",
+            "type": "shell",
+            "command": "ctest --test-dir build/release -C Release --output-on-failure",
+            "group": "test",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn": "Build All (Release)",
+            "problemMatcher": []
+        }
+    ]
+}

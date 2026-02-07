@@ -1,0 +1,806 @@
+#include "core/chain.hpp"
+
+#include <cassert>
+#include <stdexcept>
+#include <fstream>
+#include <limits>
+#include <ranges>
+#include <unordered_set>
+#include <fmt/format.h>
+
+#include "crypto/sig_cache.hpp"
+#include "net/block_info_msg.hpp"
+#include "util/exceptions.hpp"
+#include "net/get_block_msg.hpp"
+#include "crypto/hash_checker.hpp"
+#include "util/log.hpp"
+#include "core/mempool.hpp"
+#include "mining/merkle_tree.hpp"
+#include "net/net_client.hpp"
+#include "core/net_params.hpp"
+#include "mining/fee_estimator.hpp"
+#include "mining/pow.hpp"
+#include "core/tx_out_point.hpp"
+#include "util/uint256_t.hpp"
+#include "core/unspent_tx_out.hpp"
+#include "util/utils.hpp"
+
+const std::shared_ptr<TxIn> Chain::genesis_tx_in = std::make_shared<TxIn>(nullptr, std::vector<uint8_t>(),
+	std::vector<uint8_t>(), -1);
+const std::shared_ptr<TxOut> Chain::genesis_tx_out = std::make_shared<TxOut>(
+	5000000000, "143UVyz7ooiAv1pMqbwPPpnH4BV9ifJGFF");
+const std::shared_ptr<Tx> Chain::genesis_tx = std::make_shared<Tx>(std::vector{ genesis_tx_in },
+	std::vector{ genesis_tx_out }, 0);
+const std::shared_ptr<Block> Chain::genesis_block = std::make_shared<Block>(
+	0, "", "c45c6454c360034ee25d25b0610736cd6ccd10a501c666b3da360c23dffe8535",
+	1501821412, 24, 2049638230412955202ULL, std::vector{ genesis_tx });
+
+std::vector<std::shared_ptr<Block>> Chain::active_chain{ genesis_block };
+std::vector<std::vector<std::shared_ptr<Block>>> Chain::side_branches{};
+std::unordered_multimap<std::string, OrphanBlock> Chain::orphan_blocks{};
+
+std::unordered_map<std::string, uint32_t> Chain::active_chain_index{ { genesis_block->id(), 0 } };
+
+std::recursive_mutex Chain::mutex;
+
+std::atomic_bool Chain::initial_block_download_complete = false;
+
+std::atomic_bool Chain::assume_valid_pending = !NetParams::ASSUME_VALID_BLOCK_HASH.empty();
+
+uint32_t Chain::last_saved_height = 0;
+
+uint32_t Chain::get_current_height()
+{
+	std::scoped_lock lock(mutex);
+
+	return static_cast<uint32_t>(active_chain.size());
+}
+
+int64_t Chain::get_median_time_past(uint32_t num_last_blocks)
+{
+	std::scoped_lock lock(mutex);
+
+	if (num_last_blocks > active_chain.size())
+		return 0;
+
+	const uint32_t first_idx = static_cast<uint32_t>(active_chain.size()) - num_last_blocks;
+
+	std::vector<int64_t> timestamps;
+	timestamps.reserve(num_last_blocks);
+	for (uint32_t i = first_idx; i < active_chain.size(); i++)
+		timestamps.push_back(active_chain[i]->timestamp);
+	std::ranges::sort(timestamps);
+
+	return timestamps[num_last_blocks / 2];
+}
+
+int64_t Chain::get_median_time_past_at_height(uint32_t height, uint32_t num_last_blocks /*= 11*/)
+{
+	std::scoped_lock lock(mutex);
+
+	if (height >= active_chain.size())
+		return 0;
+
+	const uint32_t count = std::min(num_last_blocks, height + 1);
+	const uint32_t first_idx = height + 1 - count;
+
+	std::vector<int64_t> timestamps;
+	timestamps.reserve(count);
+	for (uint32_t i = first_idx; i <= height; i++)
+		timestamps.push_back(active_chain[i]->timestamp);
+	std::ranges::sort(timestamps);
+
+	return timestamps[count / 2];
+}
+
+uint32_t Chain::validate_block(const std::shared_ptr<Block>& block)
+{
+	std::scoped_lock lock(mutex);
+
+	const auto& txs = block->txs;
+
+	if (txs.empty())
+		throw BlockValidationException("Transactions empty");
+
+	{
+		std::unordered_set<std::string> seen_txids;
+		seen_txids.reserve(txs.size());
+		for (const auto& tx : txs)
+		{
+			const auto tx_id = tx->id();
+			if (!seen_txids.insert(tx_id).second)
+				throw BlockValidationException(
+					fmt::format("Duplicate transaction {} in block", tx_id).c_str());
+		}
+	}
+
+	if (block->timestamp - Utils::get_unix_timestamp() > static_cast<int64_t>(NetParams::MAX_FUTURE_BLOCK_TIME_IN_SECS))
+		throw BlockValidationException("Block timestamp too far in future");
+
+	const uint256_t target_hash = uint256_t(1) << (std::numeric_limits<uint8_t>::max() - block->bits);
+	if (!HashChecker::is_valid(block->id(), target_hash))
+		throw BlockValidationException("Block header does not satisfy bits");
+
+	if (!txs.front()->is_coinbase())
+		throw BlockValidationException("First transaction must be coinbase");
+
+	for (size_t i = 1; i < txs.size(); i++)
+	{
+		if (txs[i]->is_coinbase())
+			throw BlockValidationException("No more than one coinbase allowed");
+	}
+
+	for (uint32_t i = 0; i < txs.size(); i++)
+	{
+		try
+		{
+			txs[i]->validate_basics(i == 0);
+		}
+		catch (const TxValidationException& ex)
+		{
+			LOG_ERROR(ex.what());
+
+			LOG_ERROR("Transaction {} in block {} failed validation", txs[i]->id(), block->id());
+
+			throw BlockValidationException(fmt::format("Transaction {} invalid", txs[i]->id()).c_str());
+		}
+	}
+
+	if (MerkleTree::get_root_of_txs(txs)->value != block->merkle_hash)
+		throw BlockValidationException("Merkle hash invalid");
+
+	if (block->timestamp <= get_median_time_past(11))
+		throw BlockValidationException("timestamp too old");
+
+	uint32_t prev_block_chain_idx;
+	if (block->prev_block_hash.empty())
+	{
+		prev_block_chain_idx = ACTIVE_CHAIN_IDX;
+	}
+	else
+	{
+		auto [prev_block, prev_block_height, prev_block_chain_idx2] = locate_block_in_all_chains(block->prev_block_hash);
+		if (prev_block == nullptr)
+			throw BlockValidationException(
+				fmt::format("Previous block {} not found in any chain", block->prev_block_hash).c_str(), block);
+
+		if (prev_block_chain_idx2 != ACTIVE_CHAIN_IDX)
+			return static_cast<uint32_t>(prev_block_chain_idx2);
+		if (prev_block->id() != active_chain.back()->id())
+			return static_cast<uint32_t>(side_branches.size() + 1);
+
+		prev_block_chain_idx = static_cast<uint32_t>(prev_block_chain_idx2);
+	}
+
+	if (PoW::get_next_work_required(block->prev_block_hash) != block->bits)
+		throw BlockValidationException("Bits incorrect");
+
+	const int64_t block_height = static_cast<int64_t>(active_chain.size());
+	const int64_t block_mtp = get_median_time_past(11);
+
+	Tx::ValidateRequest req;
+	req.siblings_in_block.reserve(block->txs.size() - 1);
+	req.siblings_in_block.assign(block->txs.begin() + 1, block->txs.end());
+	req.allow_utxo_from_mempool = false;
+	req.skip_sig_validation = assume_valid_pending.load();
+	uint64_t total_fees = 0;
+	for (const auto& non_coinbase_tx : req.siblings_in_block)
+	{
+		try
+		{
+			non_coinbase_tx->check_lock_time(block_height, block_mtp);
+			non_coinbase_tx->check_sequence_locks(block_height, block_mtp);
+			non_coinbase_tx->validate(req);
+		}
+		catch (const TxValidationException& ex)
+		{
+			LOG_ERROR(ex.what());
+
+			const std::string msg = fmt::format("Transaction {} failed to validate", non_coinbase_tx->id());
+
+			LOG_ERROR(msg);
+
+			throw BlockValidationException(msg.c_str());
+		}
+
+		total_fees += PoW::calculate_fees(non_coinbase_tx);
+	}
+
+	{
+		const uint32_t halvings = static_cast<uint32_t>(block_height / NetParams::HALVE_SUBSIDY_AFTER_BLOCKS_NUM);
+		const uint64_t subsidy = halvings >= 64 ? 0 : (50 * NetParams::COIN) >> halvings;
+		const uint64_t max_coinbase_value = subsidy + total_fees;
+
+		uint64_t coinbase_value = 0;
+		for (const auto& tx_out : txs.front()->tx_outs)
+			coinbase_value += tx_out->value;
+
+		if (coinbase_value > max_coinbase_value)
+			throw BlockValidationException(
+				fmt::format("Coinbase value {} exceeds subsidy + fees {}", coinbase_value, max_coinbase_value).c_str());
+	}
+
+	return prev_block_chain_idx;
+}
+
+int64_t Chain::connect_block(const std::shared_ptr<Block>& block, bool doing_reorg /*= false*/)
+{
+	std::scoped_lock lock(mutex);
+
+	const auto block_id = block->id();
+
+	std::shared_ptr<Block> located_block;
+	if (!doing_reorg)
+	{
+		auto [located_block2, located_block_height, located_block_chain_idx] = locate_block_in_all_chains(block->id());
+		located_block = located_block2;
+	}
+	else
+	{
+		auto [located_block2, located_block_height] = locate_block_in_active_chain(block->id());
+		located_block = located_block2;
+	}
+	if (located_block != nullptr)
+	{
+		LOG_INFO("Ignore already seen block {}", block_id);
+
+		return -1;
+	}
+
+	uint32_t chain_idx;
+	try
+	{
+		chain_idx = validate_block(block);
+	}
+	catch (const BlockValidationException& ex)
+	{
+		LOG_ERROR(ex.what());
+
+		LOG_ERROR("Block {} failed validation", block_id);
+		if (ex.to_orphan != nullptr)
+		{
+			LOG_INFO("Found orphan block {}", block_id);
+
+			const auto now = Utils::get_unix_timestamp();
+			for (auto it = orphan_blocks.begin(); it != orphan_blocks.end();)
+			{
+				if (now - it->second.added_time > NetParams::ORPHAN_BLOCK_EXPIRE_SECS)
+				{
+					LOG_INFO("Evicting expired orphan block {}", it->second.block->id());
+					it = orphan_blocks.erase(it);
+				}
+				else
+				{
+					++it;
+				}
+			}
+
+			while (orphan_blocks.size() >= NetParams::MAX_ORPHAN_BLOCKS)
+			{
+				auto oldest = orphan_blocks.begin();
+				for (auto it = orphan_blocks.begin(); it != orphan_blocks.end(); ++it)
+				{
+					if (it->second.added_time < oldest->second.added_time)
+						oldest = it;
+				}
+				LOG_INFO("Orphan pool full, evicting block {}", oldest->second.block->id());
+				orphan_blocks.erase(oldest);
+			}
+
+			const auto& orphan_id = ex.to_orphan->id();
+			bool already_orphaned = false;
+			auto range = orphan_blocks.equal_range(ex.to_orphan->prev_block_hash);
+			for (auto it = range.first; it != range.second; ++it)
+			{
+				if (it->second.block->id() == orphan_id)
+				{
+					already_orphaned = true;
+					break;
+				}
+			}
+			if (!already_orphaned)
+			{
+				orphan_blocks.emplace(ex.to_orphan->prev_block_hash,
+					OrphanBlock{ ex.to_orphan, now });
+
+				NetClient::send_msg_random(GetBlockMsg(ex.to_orphan->prev_block_hash));
+			}
+		}
+
+		return -1;
+	}
+
+	if (chain_idx != ACTIVE_CHAIN_IDX && side_branches.size() < chain_idx)
+	{
+		LOG_INFO("Creating a new side branch with idx {} for block {}", chain_idx, block_id);
+
+		side_branches.emplace_back();
+	}
+
+	LOG_INFO("Connecting block {} to chain {}", block_id, chain_idx);
+
+	auto& chain = chain_idx == ACTIVE_CHAIN_IDX ? active_chain : side_branches[chain_idx - 1];
+	chain.push_back(block);
+
+	if (chain_idx == ACTIVE_CHAIN_IDX)
+	{
+		index_block(block, static_cast<uint32_t>(chain.size()) - 1);
+
+		for (const auto& tx : block->txs)
+		{
+			const auto tx_id = tx->id();
+
+			{
+				std::scoped_lock lock_mempool(Mempool::mutex);
+
+				Mempool::remove_entry(tx_id);
+			}
+
+			if (!tx->is_coinbase())
+			{
+				for (const auto& tx_in : tx->tx_ins)
+				{
+					UTXO::remove_from_map(tx_in->to_spend->tx_id, tx_in->to_spend->tx_out_idx);
+				}
+			}
+			for (uint32_t i = 0; i < tx->tx_outs.size(); i++)
+			{
+				UTXO::add_to_map(tx->tx_outs[i], tx_id, i, tx->is_coinbase(), chain.size());
+			}
+		}
+	}
+
+	if (chain_idx == ACTIVE_CHAIN_IDX)
+		FeeEstimator::record_block(block);
+
+	if (assume_valid_pending.load() && block_id == NetParams::ASSUME_VALID_BLOCK_HASH)
+	{
+		LOG_INFO("Assume-valid checkpoint {} reached, enabling full signature checks", block_id);
+		assume_valid_pending = false;
+	}
+
+	if ((!doing_reorg && reorg_if_necessary()) || chain_idx == ACTIVE_CHAIN_IDX)
+	{
+		PoW::mine_interrupt = true;
+
+		LOG_INFO("Block accepted at height {} with {} txs", active_chain.size() - 1, block->txs.size());
+	}
+
+	NetClient::send_msg_random(BlockInfoMsg(block));
+
+	if (!doing_reorg)
+		try_connect_orphans(block_id);
+
+	return chain_idx;
+}
+
+void Chain::try_connect_orphans(const std::string& parent_block_id)
+{
+	std::scoped_lock lock(mutex);
+
+	auto range = orphan_blocks.equal_range(parent_block_id);
+	if (range.first == range.second)
+		return;
+
+	std::vector<std::shared_ptr<Block>> candidates;
+	for (auto it = range.first; it != range.second; ++it)
+		candidates.push_back(it->second.block);
+
+	orphan_blocks.erase(range.first, range.second);
+
+	for (const auto& orphan : candidates)
+	{
+		LOG_INFO("Attempting to connect orphan block {}", orphan->id());
+
+		if (connect_block(orphan) >= 0)
+		{
+			LOG_INFO("Orphan block {} connected successfully", orphan->id());
+			Chain::save_to_disk();
+		}
+	}
+}
+
+std::shared_ptr<Block> Chain::disconnect_block(const std::shared_ptr<Block>& block)
+{
+	std::scoped_lock lock(mutex);
+
+	const auto block_id = block->id();
+
+	auto back = active_chain.back();
+	if (block_id != back->id())
+		throw std::runtime_error("Block being disconnected must be the tip");
+
+	{
+		std::scoped_lock lock_mempool(Mempool::mutex);
+
+		for (const auto& tx : block->txs)
+		{
+			const auto tx_id = tx->id();
+
+			if (!tx->is_coinbase())
+			{
+				Mempool::MempoolEntry entry;
+				entry.tx = tx;
+				entry.serialized_size = tx->serialize().get_size();
+				entry.fee = PoW::calculate_fees(tx);
+				entry.fee_rate = entry.serialized_size > 0 ? entry.fee / entry.serialized_size : 0;
+				entry.insertion_time = std::chrono::steady_clock::now();
+				Mempool::total_size_bytes += entry.serialized_size;
+				Mempool::map[tx_id] = std::move(entry);
+			}
+
+			for (const auto& tx_in : tx->tx_ins)
+			{
+				if (tx_in->to_spend != nullptr)
+				{
+					auto [found_tx_out, source_tx, found_tx_out_idx, found_is_coinbase, found_height] = find_tx_out_for_tx_in_in_active_chain(tx_in);
+
+					UTXO::add_to_map(found_tx_out, tx_in->to_spend->tx_id, found_tx_out_idx, found_is_coinbase, found_height);
+				}
+			}
+			for (uint32_t i = 0; i < tx->tx_outs.size(); i++)
+			{
+				UTXO::remove_from_map(tx_id, i);
+			}
+		}
+	}
+
+	FeeEstimator::unrecord_block(block_id);
+
+	unindex_block(active_chain.back());
+	active_chain.pop_back();
+
+	last_saved_height = 0;
+
+	LOG_INFO("Block {} disconnected", block_id);
+
+	return back;
+}
+
+std::vector<std::shared_ptr<Block>> Chain::disconnect_to_fork(const std::shared_ptr<Block>& fork_block)
+{
+	std::scoped_lock lock(mutex);
+
+	std::vector<std::shared_ptr<Block>> disconnected_chain;
+
+	const auto fork_block_id = fork_block->id();
+	while (active_chain.back()->id() != fork_block_id)
+	{
+		disconnected_chain.emplace_back(disconnect_block(active_chain.back()));
+	}
+
+	std::ranges::reverse(disconnected_chain);
+
+	return disconnected_chain;
+}
+
+uint256_t Chain::get_chain_work(const std::vector<std::shared_ptr<Block>>& chain)
+{
+	uint256_t total_work = 0;
+	for (const auto& block : chain)
+		total_work += PoW::get_block_work(block->bits);
+
+	return total_work;
+}
+
+bool Chain::reorg_if_necessary()
+{
+	std::scoped_lock lock(mutex);
+
+	bool reorged = false;
+
+	const uint256_t active_chain_work = get_chain_work(active_chain);
+
+	const auto frozen_side_branches = side_branches;
+	uint32_t branch_idx = 1;
+	for (const auto& chain : frozen_side_branches)
+	{
+		auto [fork_block, fork_height] = locate_block_in_active_chain(chain[0]->prev_block_hash);
+
+		std::vector<std::shared_ptr<Block>> full_branch(active_chain.begin(),
+			active_chain.begin() + fork_height + 1);
+		full_branch.insert(full_branch.end(), chain.begin(), chain.end());
+
+		const uint256_t branch_work = get_chain_work(full_branch);
+		if (branch_work > active_chain_work)
+		{
+			LOG_INFO("Attempting reorg of idx {} to active chain, branch chainwork {} vs active {}",
+				branch_idx, branch_work.str(), active_chain_work.str());
+
+			if (try_reorg(chain, branch_idx, static_cast<uint32_t>(fork_height)))
+			{
+				reorged = true;
+				break;
+			}
+		}
+		branch_idx++;
+	}
+
+	return reorged;
+}
+
+bool Chain::try_reorg(const std::vector<std::shared_ptr<Block>>& branch, uint32_t branch_idx, uint32_t fork_idx)
+{
+	std::scoped_lock lock(mutex);
+
+	const auto fork_block = active_chain[fork_idx];
+
+	const auto old_active_chain = disconnect_to_fork(fork_block);
+
+	assert(branch.front()->prev_block_hash == active_chain.back()->id());
+
+	for (const auto& block : branch)
+	{
+		if (connect_block(block, true) != ACTIVE_CHAIN_IDX)
+		{
+			rollback_reorg(old_active_chain, fork_block, branch_idx);
+
+			return false;
+		}
+	}
+
+	side_branches.erase(side_branches.begin() + branch_idx - 1);
+	side_branches.push_back(old_active_chain);
+
+	LOG_INFO("Chain reorganized, new height {} with tip {}", active_chain.size(), active_chain.back()->id());
+
+	return true;
+}
+
+void Chain::rollback_reorg(const std::vector<std::shared_ptr<Block>>& old_active_chain,
+	const std::shared_ptr<Block>& fork_block, uint32_t branch_idx)
+{
+	std::scoped_lock lock(mutex);
+
+	LOG_ERROR("Reorg of idx {} to active chain failed", branch_idx);
+
+	disconnect_to_fork(fork_block);
+
+	for (const auto& block : old_active_chain)
+	{
+		const auto connected_block_idx = connect_block(block, true);
+
+		assert(connected_block_idx == ACTIVE_CHAIN_IDX);
+	}
+}
+
+std::pair<std::shared_ptr<Block>, int64_t> Chain::locate_block_in_chain(const std::string& block_hash,
+	const std::vector<std::shared_ptr<Block>>& chain)
+{
+	std::scoped_lock lock(mutex);
+
+	uint32_t height = 0;
+	for (const auto& block : chain)
+	{
+		if (block->id() == block_hash)
+		{
+			return { block, height };
+		}
+
+		height++;
+	}
+
+	return { nullptr, -1 };
+}
+
+std::pair<std::shared_ptr<Block>, int64_t> Chain::locate_block_in_active_chain(const std::string& block_hash)
+{
+	std::scoped_lock lock(mutex);
+
+	const auto it = active_chain_index.find(block_hash);
+	if (it != active_chain_index.end())
+	{
+		return { active_chain[it->second], it->second };
+	}
+
+	return { nullptr, -1 };
+}
+
+std::tuple<std::shared_ptr<Block>, int64_t, int64_t> Chain::locate_block_in_all_chains(const std::string& block_hash)
+{
+	std::scoped_lock lock(mutex);
+
+	uint32_t chain_idx = 0;
+	auto [located_block, located_block_height] = locate_block_in_active_chain(block_hash);
+	if (located_block != nullptr)
+		return { located_block, located_block_height, chain_idx };
+	chain_idx++;
+
+	for (const auto& side_chain : side_branches)
+	{
+		auto [located_block, located_block_height] = locate_block_in_chain(block_hash, side_chain);
+		if (located_block != nullptr)
+			return { located_block, located_block_height, chain_idx };
+		chain_idx++;
+	}
+
+	return { nullptr, -1, -1 };
+}
+
+std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> Chain::find_tx_out_for_tx_in(
+	const std::shared_ptr<TxIn>& tx_in, const std::vector<std::shared_ptr<Block>>& chain)
+{
+	std::scoped_lock lock(mutex);
+
+	for (uint32_t height = 0; height < chain.size(); height++)
+	{
+		for (const auto& tx : chain[height]->txs)
+		{
+			const auto& to_spend = tx_in->to_spend;
+			if (to_spend->tx_id == tx->id())
+			{
+				const auto idx = to_spend->tx_out_idx;
+				if (idx < 0 || static_cast<size_t>(idx) >= tx->tx_outs.size())
+					return { nullptr, nullptr, -1, false, -1 };
+
+				const auto& tx_out = tx->tx_outs[idx];
+
+				return { tx_out, tx, idx, tx->is_coinbase(), static_cast<int64_t>(height) + 1 };
+			}
+		}
+	}
+
+	return { nullptr, nullptr, -1, false, -1 };
+}
+
+std::tuple<std::shared_ptr<TxOut>, std::shared_ptr<Tx>, int64_t, bool, int64_t> Chain::find_tx_out_for_tx_in_in_active_chain(
+	const std::shared_ptr<TxIn>& tx_in)
+{
+	return find_tx_out_for_tx_in(tx_in, active_chain);
+}
+
+void Chain::save_to_disk()
+{
+	std::scoped_lock lock(mutex);
+
+	const uint32_t chain_size = static_cast<uint32_t>(active_chain.size() - 1);
+
+	LOG_INFO("Saving chain with {} blocks", active_chain.size());
+
+	if (last_saved_height > 0 && last_saved_height < chain_size)
+	{
+		std::fstream chain_out(CHAIN_PATH, std::ios::binary | std::ios::in | std::ios::out);
+		if (chain_out)
+		{
+			BinaryBuffer header;
+			header.write_size(chain_size);
+			auto& header_buf = header.get_buffer();
+			chain_out.seekp(0);
+			chain_out.write(reinterpret_cast<const char*>(header_buf.data()), header_buf.size());
+
+			chain_out.seekp(0, std::ios::end);
+			BinaryBuffer new_data;
+			for (uint32_t height = last_saved_height + 1; height < active_chain.size(); height++)
+			{
+				new_data.write_raw(active_chain[height]->serialize().get_buffer());
+			}
+			auto& new_buffer = new_data.get_buffer();
+			chain_out.write(reinterpret_cast<const char*>(new_buffer.data()), new_buffer.size());
+			chain_out.flush();
+			chain_out.close();
+
+			const uint32_t prev_saved = last_saved_height;
+			last_saved_height = chain_size;
+
+			LOG_INFO("Appended {} new blocks to disk", chain_size - prev_saved);
+
+			return;
+		}
+
+		LOG_ERROR("Failed to open {} for appending, falling back to full write", CHAIN_PATH);
+	}
+
+	std::ofstream chain_out(CHAIN_PATH, std::ios::binary | std::ios::trunc);
+	if (!chain_out)
+	{
+		LOG_ERROR("Failed to open {} for writing", CHAIN_PATH);
+		return;
+	}
+	BinaryBuffer chain_data;
+	chain_data.write_size(chain_size);
+	for (uint32_t height = 1; height < active_chain.size(); height++)
+	{
+		chain_data.write_raw(active_chain[height]->serialize().get_buffer());
+	}
+	auto& chain_data_buffer = chain_data.get_buffer();
+	chain_out.write(reinterpret_cast<const char*>(chain_data_buffer.data()), chain_data_buffer.size());
+	chain_out.flush();
+	chain_out.close();
+
+	last_saved_height = chain_size;
+}
+
+bool Chain::load_from_disk()
+{
+	std::scoped_lock lock(mutex);
+
+	std::ifstream chain_in(CHAIN_PATH, std::ios::binary);
+	if (chain_in.good())
+	{
+		BinaryBuffer chain_data(std::vector<uint8_t>(std::istreambuf_iterator(chain_in), {}));
+		uint32_t block_size = 0;
+		if (chain_data.read_size(block_size))
+		{
+			std::vector<std::shared_ptr<Block>> loaded_chain;
+			loaded_chain.reserve(block_size);
+			for (uint32_t i = 0; i < block_size; i++)
+			{
+				auto block = std::make_shared<Block>();
+				if (!block->deserialize(chain_data))
+				{
+					chain_in.close();
+					LOG_ERROR("Load chain failed, starting from genesis");
+
+					return false;
+				}
+				loaded_chain.push_back(block);
+			}
+			for (const auto& block : loaded_chain)
+			{
+				if (connect_block(block) != ACTIVE_CHAIN_IDX)
+				{
+					chain_in.close();
+					active_chain.clear();
+					active_chain.push_back(genesis_block);
+					rebuild_active_chain_index();
+					side_branches.clear();
+					UTXO::map.clear();
+					Mempool::map.clear();
+					Mempool::total_size_bytes = 0;
+
+					LOG_ERROR("Load chain failed, starting from genesis");
+
+					return false;
+				}
+			}
+			chain_in.close();
+
+			last_saved_height = static_cast<uint32_t>(active_chain.size() - 1);
+
+			LOG_INFO("Loaded chain with {} blocks", active_chain.size());
+
+			return true;
+		}
+		LOG_ERROR("Load chain failed, starting from genesis");
+
+		return false;
+	}
+	LOG_ERROR("Load chain failed, starting from genesis");
+
+	return false;
+}
+
+void Chain::reset()
+{
+	std::scoped_lock lock(mutex);
+	active_chain.clear();
+	active_chain_index.clear();
+	side_branches.clear();
+	orphan_blocks.clear();
+	Mempool::map.clear();
+	Mempool::total_size_bytes = 0;
+	UTXO::map.clear();
+	FeeEstimator::reset();
+	SigCache::clear();
+	assume_valid_pending = !NetParams::ASSUME_VALID_BLOCK_HASH.empty();
+	last_saved_height = 0;
+}
+
+void Chain::index_block(const std::shared_ptr<Block>& block, uint32_t height)
+{
+	active_chain_index[block->id()] = height;
+}
+
+void Chain::unindex_block(const std::shared_ptr<Block>& block)
+{
+	active_chain_index.erase(block->id());
+}
+
+void Chain::rebuild_active_chain_index()
+{
+	active_chain_index.clear();
+	for (uint32_t i = 0; i < active_chain.size(); i++)
+	{
+		active_chain_index[active_chain[i]->id()] = i;
+	}
+}
