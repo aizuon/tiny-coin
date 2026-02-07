@@ -10,7 +10,7 @@ A minimal Bitcoin implementation in C++23, built for learning how Proof of Work 
 
 ### Core
 
-- **Proof of Work mining** — multithreaded block mining with automatic difficulty adjustment (retargets every 144 blocks)
+- **Proof of Work mining** — multithreaded block mining with automatic difficulty adjustment (retargets every 144 blocks); pluggable backend system with Metal GPU acceleration on Apple Silicon and automatic CPU fallback
 - **UTXO model** — faithful Unspent Transaction Output tracking as in Bitcoin
 - **Transaction engine** — creation, validation, and spending with full ECDSA signature verification
 - **Merkle tree** — block transaction integrity verification
@@ -55,14 +55,16 @@ A minimal Bitcoin implementation in C++23, built for learning how Proof of Work 
 tiny-coin/
 ├── tiny-lib/               Core static library
 │   ├── core/               Block, Chain, Tx, Mempool, UTXO types
-│   ├── crypto/             SHA-256, RIPEMD-160, ECDSA, Base58
-│   ├── mining/             Proof of Work solver, Merkle tree
-│   ├── net/                P2P message protocol & TCP networking
+│   ├── crypto/             SHA-256, RIPEMD-160, ECDSA, Base58, HMAC-SHA512
+│   ├── mining/             PoW solver, Merkle tree, fee estimator, mining backends
+│   │   └── metal/          Apple Metal GPU compute shader & backend
+│   ├── net/                P2P message protocol, opcodes & TCP networking
 │   ├── util/               Binary serialisation, logging, helpers
-│   └── wallet/             Wallet I/O and node configuration
+│   └── wallet/             HD wallet, key derivation, node configuration
 ├── tiny-sandbox/           CLI node application
 ├── tiny-test/              Unit tests (Google Test)
-└── cmake/                  Toolchain & preset files
+├── tiny-bench/             Mining benchmark (CPU vs GPU)
+└── cmake/                  Toolchain, presets & build scripts
 ```
 
 ## Prerequisites
@@ -71,6 +73,7 @@ tiny-coin/
 | ------------ | ----------------------------------------------- |
 | CMake        | 3.30+                                           |
 | C++ compiler | C++23 support (MSVC 19.44+, GCC 15+, Clang 20+) |
+| Python       | 3.x (build-time shader embedding)               |
 | vcpkg        | latest                                          |
 
 ### vcpkg packages
@@ -99,7 +102,12 @@ cmake --build --preset debug      # or: --preset release
 
 # Run tests
 ctest --test-dir build/debug -C Debug --output-on-failure
+
+# Run mining benchmark (CPU vs Metal GPU)
+./build/debug/tiny-bench/tiny-bench
 ```
+
+On Apple Silicon the build automatically enables Metal GPU mining. On other platforms the CPU backend is used.
 
 
 
@@ -162,16 +170,20 @@ ctest --test-dir build/debug -C Debug --output-on-failure
 
 Test sources live under `tiny-test/src/`:
 
-| File                      | Covers                                                               |
-| ------------------------- | -------------------------------------------------------------------- |
-| `binary_buffer_tests.cpp` | Binary serialisation round-trips                                     |
-| `block_chain_tests.cpp`   | Block creation, chain connect/disconnect, reorgs, orphan blocks, RBF |
-| `crypto_tests.cpp`        | SHA-256, RIPEMD-160, ECDSA sign/verify                               |
-| `merkle_tree_tests.cpp`   | Merkle root computation                                              |
-| `msg_tests.cpp`           | Network message serialise/deserialise                                |
-| `serialization_tests.cpp` | Tx/Block binary encoding                                             |
-| `utils_tests.cpp`         | Utility helpers                                                      |
-| `wallet_tests.cpp`        | Wallet key generation and address derivation                         |
+| File                       | Covers                                                               |
+| -------------------------- | -------------------------------------------------------------------- |
+| `binary_buffer_tests.cpp`  | Binary serialisation round-trips                                     |
+| `block_chain_tests.cpp`    | Block creation, chain connect/disconnect, reorgs, orphan blocks, RBF |
+| `cpfp_tests.cpp`           | Child-Pays-For-Parent package selection and block assembly           |
+| `crypto_tests.cpp`         | SHA-256, RIPEMD-160, ECDSA sign/verify                               |
+| `fee_estimator_tests.cpp`  | Fee rate estimation, priority buckets, mempool percentiles           |
+| `hd_wallet_tests.cpp`      | BIP32 HD key derivation, seed round-trips, address generation        |
+| `mempool_policy_tests.cpp` | Dust filtering, duplicate rejection, mempool UTXO lookup             |
+| `merkle_tree_tests.cpp`    | Merkle root computation                                              |
+| `msg_tests.cpp`            | Network message serialise/deserialise                                |
+| `serialization_tests.cpp`  | Tx/Block binary encoding                                             |
+| `utils_tests.cpp`          | Utility helpers                                                      |
+| `wallet_tests.cpp`         | Wallet key generation and address derivation                         |
 
 ## Architecture Overview
 
@@ -185,6 +197,9 @@ Test sources live under `tiny-test/src/`:
 │  │ Send tx  │    │ Solve nonce  │     │ Msg broadcast    │  │
 │  │ Balance  │    │ Difficulty   │     │ Initial block DL │  │
 │  └──────────┘    └──────────────┘     └──────────────────┘  │
+├─────────────────────────────────────────────────────────────┤
+│                     Mining Backends                         │
+│  CPU (boost::thread) ─ Metal GPU (Apple Silicon)            │
 ├─────────────────────────────────────────────────────────────┤
 │                        Core Layer                           │
 │  Chain ─ Block ─ Tx ─ TxIn/TxOut ─ UTXO ─ Mempool           │
@@ -200,6 +215,8 @@ Test sources live under `tiny-test/src/`:
 ## Roadmap
 
 - [ ] Full node type (combined miner + wallet in a single node)
+- [ ] **CUDA mining backend** — GPU mining on NVIDIA hardware via the same pluggable backend interface
+- [ ] **OpenCL mining backend** — cross-platform GPU mining fallback
 
 ### High Priority — Core Consensus & Security
 

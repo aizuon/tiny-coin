@@ -7,6 +7,7 @@
 
 #include "core/block.hpp"
 #include "core/tx.hpp"
+#include "mining/i_mining_backend.hpp"
 #include "util/uint256_t.hpp"
 
 class PoW
@@ -27,10 +28,11 @@ public:
 
 	static uint64_t calculate_fees(const std::shared_ptr<Tx>& tx);
 
+	static std::vector<uint8_t> target_to_bytes(const uint256_t& target);
+
 private:
-	static void mine_chunk(const BinaryBuffer& header_prefix, const uint256_t& target_hash, uint64_t start,
-		uint64_t chunk_size, std::atomic_bool& found, std::atomic<uint64_t>& found_nonce,
-		std::atomic<uint64_t>& hash_count);
+	static std::unique_ptr<IMiningBackend> mining_backend_;
+	static IMiningBackend& get_backend();
 
 	static uint64_t calculate_fees(const std::shared_ptr<Block>& block);
 	static uint64_t get_block_subsidy();

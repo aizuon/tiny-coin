@@ -3,9 +3,8 @@
 #include <cstring>
 #include <stdexcept>
 #include <limits>
-#include <boost/bind/bind.hpp>
 #include <boost/endian/conversion.hpp>
-#include <boost/thread/thread.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
 
 #include "core/chain.hpp"
 #include "net/get_block_msg.hpp"
@@ -13,6 +12,7 @@
 #include "util/log.hpp"
 #include "core/mempool.hpp"
 #include "mining/merkle_tree.hpp"
+#include "mining/mining_backend_factory.hpp"
 #include "net/net_client.hpp"
 #include "core/net_params.hpp"
 #include "crypto/sha256.hpp"
@@ -20,6 +20,23 @@
 #include "wallet/wallet.hpp"
 
 std::atomic_bool PoW::mine_interrupt = false;
+std::unique_ptr<IMiningBackend> PoW::mining_backend_;
+
+IMiningBackend& PoW::get_backend()
+{
+	if (!mining_backend_)
+		mining_backend_ = MiningBackendFactory::create();
+	return *mining_backend_;
+}
+
+std::vector<uint8_t> PoW::target_to_bytes(const uint256_t& target)
+{
+	std::vector<uint8_t> bytes;
+	boost::multiprecision::export_bits(target, std::back_inserter(bytes), 8, true);
+	if (bytes.size() < 32)
+		bytes.insert(bytes.begin(), 32 - bytes.size(), 0);
+	return bytes;
+}
 
 uint8_t PoW::get_next_work_required(const std::string& prev_block_hash)
 {
@@ -104,25 +121,16 @@ std::shared_ptr<Block> PoW::mine(const std::shared_ptr<Block>& block)
 	auto new_block = std::make_shared<Block>(*block);
 	new_block->nonce = 0;
 	const uint256_t target_hash = uint256_t(1) << (std::numeric_limits<uint8_t>::max() - new_block->bits);
-	int32_t num_threads = static_cast<int32_t>(boost::thread::hardware_concurrency()) - 3;
-	if (num_threads <= 0)
-		num_threads = 1;
-	const uint64_t chunk_size = std::numeric_limits<uint64_t>::max() / num_threads;
-	std::atomic_bool found = false;
-	std::atomic<uint64_t> found_nonce = 0;
-	std::atomic<uint64_t> hash_count = 0;
+	const auto target_bytes = target_to_bytes(target_hash);
 
 	const auto header_prefix = new_block->header_prefix();
+	const auto prefix_bytes = header_prefix.get_buffer();
+
+	auto& backend = get_backend();
+	LOG_INFO("Mining with backend: {}", backend.name());
 
 	const auto start = Utils::get_unix_timestamp();
-	boost::thread_group thread_pool;
-	for (int32_t i = 0; i < num_threads; i++)
-	{
-		thread_pool.create_thread(boost::bind(&PoW::mine_chunk, boost::cref(header_prefix), boost::cref(target_hash),
-			std::numeric_limits<uint64_t>::min() + chunk_size * i, chunk_size,
-			boost::ref(found), boost::ref(found_nonce), boost::ref(hash_count)));
-	}
-	thread_pool.join_all();
+	const auto mine_result = backend.mine(prefix_bytes, target_bytes, mine_interrupt);
 
 	if (mine_interrupt)
 	{
@@ -134,18 +142,18 @@ std::shared_ptr<Block> PoW::mine(const std::shared_ptr<Block>& block)
 		return nullptr;
 	}
 
-	if (!found)
+	if (!mine_result.found)
 	{
 		LOG_ERROR("No nonce satisfies required bits");
 
 		return nullptr;
 	}
 
-	new_block->nonce = found_nonce;
+	new_block->nonce = mine_result.nonce;
 	auto duration = Utils::get_unix_timestamp() - start;
 	if (duration == 0)
 		duration = 1;
-	auto khs = hash_count / duration / 1000;
+	auto khs = mine_result.hash_count / duration / 1000;
 	LOG_INFO("Block found => {} s, {} kH/s, {}, {}", duration, khs, new_block->id(), new_block->nonce);
 
 	return new_block;
@@ -277,52 +285,7 @@ uint64_t PoW::calculate_fees(const std::shared_ptr<Tx>& tx)
 	return spent - sent;
 }
 
-void PoW::mine_chunk(const BinaryBuffer& header_prefix, const uint256_t& target_hash, uint64_t start,
-	uint64_t chunk_size, std::atomic_bool& found, std::atomic<uint64_t>& found_nonce,
-	std::atomic<uint64_t>& hash_count)
-{
-	auto prefix_bytes = header_prefix.get_buffer();
-	const uint32_t nonce_offset = static_cast<uint32_t>(prefix_bytes.size());
-	prefix_bytes.resize(nonce_offset + sizeof(uint64_t));
 
-	uint64_t i = 0;
-	uint64_t local_hash_count = 0;
-	while (true)
-	{
-		uint64_t current_nonce = start + i;
-		if constexpr (Utils::is_little_endian)
-			std::memcpy(prefix_bytes.data() + nonce_offset, &current_nonce, sizeof(uint64_t));
-		else
-		{
-			boost::endian::endian_reverse_inplace(current_nonce);
-			std::memcpy(prefix_bytes.data() + nonce_offset, &current_nonce, sizeof(uint64_t));
-		}
-
-		const auto hash = SHA256::double_hash_binary(prefix_bytes);
-		if (HashChecker::is_valid(hash, target_hash))
-		{
-			found = true;
-			found_nonce = start + i;
-			hash_count += local_hash_count;
-			return;
-		}
-
-		++local_hash_count;
-		i++;
-		if (i % 4096 == 0)
-		{
-			hash_count += local_hash_count;
-			local_hash_count = 0;
-			if (found || mine_interrupt)
-				return;
-		}
-		if (i == chunk_size)
-		{
-			hash_count += local_hash_count;
-			return;
-		}
-	}
-}
 
 uint64_t PoW::calculate_fees(const std::shared_ptr<Block>& block)
 {
