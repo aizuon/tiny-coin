@@ -201,6 +201,28 @@ Test sources live under `tiny-test/src/`:
 
 - [ ] Full node type (combined miner + wallet in a single node)
 
+### High Priority — Core Consensus & Security
+
+- [ ] **Bitcoin Script interpreter with P2SH** — replace hardcoded P2PKH validation with a stack-based script engine (`OP_DUP OP_HASH160 … OP_EQUALVERIFY OP_CHECKSIG`); extend with Pay-to-Script-Hash for multisig and complex contracts
+- [ ] **Signature standards (BIP62/BIP66 & SIGHASH)** — require low-S values and strict DER encoding to prevent malleability; support `SIGHASH_ALL`, `SIGHASH_NONE`, `SIGHASH_SINGLE`, and `ANYONECANPAY` (currently only implicit `SIGHASH_ALL`)
+- [ ] **Block sigops limit** — count signature operations per block and enforce a maximum, preventing pathologically expensive blocks
+
+### Medium Priority — Protocol & Storage
+
+- [ ] **Headers-first sync** — download and validate block headers before fetching bodies, enabling parallel block downloads and faster initial sync (currently sequential full-block IBD with assume-valid optimisation)
+- [ ] **Persistent UTXO database** — move the UTXO set from an in-memory map to a key-value store (e.g. LevelDB / SQLite) so the node scales to larger chains (UTXO map is rebuilt from disk-persisted chain on startup)
+- [ ] **Transaction index** — maintain a persistent txid → block position index for O(1) transaction lookups without full chain scans
+- [ ] **Peer scoring & DoS protection** — track peer behaviour, score misbehaving nodes, and enforce banning and rate-limiting to prevent resource exhaustion (currently only magic-byte and checksum validation)
+- [ ] **Merkle proofs & SPV verification** — expose proof-path extraction and verification from the existing Merkle tree so light clients can confirm transactions without downloading full blocks
+
+### Lower Priority — Advanced Features
+
+- [ ] **Segregated Witness (SegWit)** — separate witness data from the transaction ID to fix malleability and increase effective block capacity
+- [ ] **Compact block relay (BIP152)** — send only short txid sketches instead of full blocks, reducing propagation latency
+- [ ] **Compact block filters (BIP157/158)** — generate Golomb-coded set filters per block so light clients can determine relevant blocks without downloading full chain data
+- [ ] **BIP39 mnemonic seed phrases** — derive HD wallet seeds from a human-readable word list for easier backup and recovery (BIP32/BIP44 key derivation is already implemented)
+- [ ] **Watch-only wallet** — import xpubs or bare addresses to monitor balances and transaction history without exposing private keys
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
