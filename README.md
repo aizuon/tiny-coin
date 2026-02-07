@@ -44,10 +44,21 @@ A minimal Bitcoin implementation in C++23, built for learning how Proof of Work 
 | Block target interval      | 10 minutes         |
 | Difficulty retarget period | 1 day (144 blocks) |
 | Initial difficulty         | 24 bits            |
-| Max block size             | 1 MB               |
+| Max block size             | 1 000 000 bytes    |
 | Max supply                 | 21 000 000 coins   |
+| Coin precision             | 10^8 units / coin  |
 | Coinbase maturity          | 2 blocks           |
 | Subsidy halving interval   | 210 000 blocks     |
+| Max future block time      | 2 hours            |
+| Locktime threshold         | 500 000 000        |
+| Max orphan blocks          | 50                 |
+| Orphan block expiry        | 1 hour             |
+| Incremental relay fee      | 1 000 units        |
+| Max mempool size           | 300 MB             |
+| Max ancestor count         | 25                 |
+| Max descendant count       | 25                 |
+| Dust threshold             | 546 units          |
+| Mempool tx expiry          | 14 days            |
 
 ## Project Structure
 
