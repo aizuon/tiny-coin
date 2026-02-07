@@ -10,6 +10,7 @@
 #include "util/exceptions.hpp"
 #include "core/mempool.hpp"
 #include "core/net_params.hpp"
+#include "mining/merkle_tree.hpp"
 #include "mining/pow.hpp"
 #include "core/tx.hpp"
 #include "core/tx_in.hpp"
@@ -46,6 +47,10 @@ TEST_F(BlockChainTest, MedianTimePast)
 	EXPECT_EQ(90, Chain::get_median_time_past(3));
 	EXPECT_EQ(400, Chain::get_median_time_past(2));
 	EXPECT_EQ(60, Chain::get_median_time_past(5));
+
+	EXPECT_EQ(60, Chain::get_median_time_past_at_height(4, 5));
+	EXPECT_EQ(30, Chain::get_median_time_past_at_height(2, 3));
+	EXPECT_EQ(1, Chain::get_median_time_past_at_height(0, 11));
 }
 
 const auto chain1_block1_txs = std::vector{
@@ -144,6 +149,7 @@ TEST_F(BlockChainTest, Reorg)
 
 	Chain::side_branches.clear();
 	Mempool::map.clear();
+	Mempool::total_size_bytes = 0;
 	UTXO::map.clear();
 
 	for (const auto& block : Chain::active_chain)
@@ -457,6 +463,55 @@ TEST(LockTimeTest, IsFinalAndCheckLockTime)
 	EXPECT_NO_THROW(make_tx(TxIn::SEQUENCE_FINAL, 999999)->check_lock_time(1, 0));
 }
 
+TEST_F(BlockChainTest, CheckSequenceLocks)
+{
+	const auto& genesis_tx = Chain::genesis_tx;
+	const auto genesis_tx_id = genesis_tx->id();
+
+	UTXO::add_to_map(genesis_tx->tx_outs[0], genesis_tx_id, 0, true, 1);
+
+	for (int i = 0; i < 5; i++)
+	{
+		auto blk = std::make_shared<Block>(0, "prev", "merkle",
+			1501821412 + (i + 1) * 600, 24, 0, std::vector<std::shared_ptr<Tx>>());
+		Chain::active_chain.push_back(blk);
+	}
+
+	auto to_spend_blk = std::make_shared<TxOutPoint>(genesis_tx_id, 0);
+
+	auto make_tx_with_seq = [](const std::shared_ptr<TxOutPoint>& outpoint, int32_t seq)
+	{
+		auto tx_in = std::make_shared<TxIn>(outpoint, std::vector<uint8_t>(), std::vector<uint8_t>(), seq);
+		auto tx_out = std::make_shared<TxOut>(1000, "addr");
+		return std::make_shared<Tx>(std::vector{ tx_in }, std::vector{ tx_out }, 0);
+	};
+
+	EXPECT_NO_THROW(make_tx_with_seq(to_spend_blk, TxIn::encode_relative_blocks(3))->check_sequence_locks(6, 0));
+	EXPECT_THROW(make_tx_with_seq(to_spend_blk, TxIn::encode_relative_blocks(10))->check_sequence_locks(6, 0), TxValidationException);
+	EXPECT_NO_THROW(make_tx_with_seq(to_spend_blk, TxIn::SEQUENCE_FINAL)->check_sequence_locks(1, 0));
+
+	UTXO::remove_from_map(genesis_tx_id, 0);
+
+	Chain::active_chain.clear();
+
+	for (int i = 0; i < 12; i++)
+	{
+		auto blk = std::make_shared<Block>(0, "prev", "merkle",
+			static_cast<int64_t>(i) * 600, 24, 0, std::vector<std::shared_ptr<Tx>>());
+		Chain::active_chain.push_back(blk);
+	}
+
+	const std::string tx_id = "abc123";
+	UTXO::add_to_map(std::make_shared<TxOut>(5000, "addr"), tx_id, 0, false, 2);
+
+	auto to_spend_time = std::make_shared<TxOutPoint>(tx_id, 0);
+
+	EXPECT_NO_THROW(make_tx_with_seq(to_spend_time, TxIn::encode_relative_time(5))->check_sequence_locks(12, 3600));
+	EXPECT_THROW(make_tx_with_seq(to_spend_time, TxIn::encode_relative_time(100))->check_sequence_locks(12, 3600), TxValidationException);
+
+	UTXO::remove_from_map(tx_id, 0);
+}
+
 TEST_F(BlockChainTest, OrphanStorageAndResolution)
 {
 	ASSERT_EQ(Chain::ACTIVE_CHAIN_IDX, Chain::connect_block(chain1_block1));
@@ -649,6 +704,116 @@ TEST_F(BlockChainTest, RBFMempoolReplacement)
 		EXPECT_TRUE(Mempool::map.contains(replacement->id()));
 		EXPECT_FALSE(Mempool::map.contains(parent->id()));
 		EXPECT_FALSE(Mempool::map.contains(child->id()));
+	}
+}
+#endif
+
+TEST(TxValidationTest, DuplicateInputRejection)
+{
+	auto outpoint = std::make_shared<TxOutPoint>("deadbeef", 0);
+	auto tx_in1 = std::make_shared<TxIn>(outpoint, std::vector<uint8_t>(), std::vector<uint8_t>(), -1);
+	auto tx_in2 = std::make_shared<TxIn>(outpoint, std::vector<uint8_t>(), std::vector<uint8_t>(), -1);
+	auto tx_out = std::make_shared<TxOut>(1000, "addr");
+	auto tx = std::make_shared<Tx>(std::vector{ tx_in1, tx_in2 }, std::vector{ tx_out }, 0);
+
+	EXPECT_THROW(
+		{
+			try
+			{
+				tx->validate_basics();
+			}
+			catch (const TxValidationException& ex)
+			{
+				EXPECT_STREQ("Duplicate input", ex.what());
+				throw;
+			}
+		},
+		TxValidationException);
+
+	auto outpoint2 = std::make_shared<TxOutPoint>("deadbeef", 1);
+	auto tx_in3 = std::make_shared<TxIn>(outpoint, std::vector<uint8_t>(), std::vector<uint8_t>(), -1);
+	auto tx_in4 = std::make_shared<TxIn>(outpoint2, std::vector<uint8_t>(), std::vector<uint8_t>(), -1);
+	auto tx2 = std::make_shared<Tx>(std::vector{ tx_in3, tx_in4 }, std::vector{ tx_out }, 0);
+	EXPECT_NO_THROW(tx2->validate_basics());
+}
+
+TEST_F(BlockChainTest, DuplicateTxIdInBlock)
+{
+	auto dup_tx = std::make_shared<Tx>(
+		std::vector{
+			std::make_shared<TxIn>(nullptr, std::vector<uint8_t>(), std::vector<uint8_t>(), -1)
+		}, std::vector{
+			std::make_shared<TxOut>(5000000000, "1PMycacnJaSqwwJqjawXBErnLsZ7RkXUAs")
+		}, 0);
+
+	auto block = std::make_shared<Block>(
+		0, "", "merkle", 1501821412, 24, 0,
+		std::vector{ dup_tx, dup_tx });
+	block->merkle_hash = MerkleTree::get_root_of_txs(block->txs)->value;
+
+	EXPECT_THROW(
+		{
+			try
+			{
+				Chain::validate_block(block);
+			}
+			catch (const BlockValidationException& ex)
+			{
+				std::string msg = ex.what();
+				EXPECT_TRUE(msg.find("Duplicate transaction") != std::string::npos);
+				throw;
+			}
+		},
+		BlockValidationException);
+}
+
+#ifdef NDEBUG
+TEST_F(BlockChainTest, CoinbaseSubsidyValidation)
+{
+	auto priv_key = Utils::hex_string_to_byte_array(
+		"18e14a7b6a307f426a94f8114701e7c8e774e7f9a47e2c2035db29a206321725");
+	auto pub_key = ECDSA::get_pub_key_from_priv_key(priv_key);
+	auto address = Wallet::pub_key_to_address(pub_key);
+
+	for (int i = 0; i < NetParams::COINBASE_MATURITY + 2; i++)
+	{
+		auto block = PoW::assemble_and_solve_block(address);
+		if (block == nullptr)
+			FAIL();
+		Chain::connect_block(block);
+	}
+
+	std::string prev_block_hash;
+	{
+		std::scoped_lock lock(Chain::mutex);
+		prev_block_hash = Chain::active_chain.back()->id();
+	}
+	auto bits = PoW::get_next_work_required(prev_block_hash);
+
+	auto inflated_coinbase = Tx::create_coinbase(address, 99999 * NetParams::COIN,
+		Chain::get_current_height());
+	auto inflated_block = std::make_shared<Block>(
+		0, prev_block_hash, "", Utils::get_unix_timestamp(),
+		bits, 0, std::vector{ inflated_coinbase });
+	inflated_block->merkle_hash = MerkleTree::get_root_of_txs(inflated_block->txs)->value;
+
+	auto mined = PoW::mine(inflated_block);
+	if (mined != nullptr)
+	{
+		EXPECT_THROW(
+			{
+				try
+				{
+					Chain::validate_block(mined);
+				}
+				catch (const BlockValidationException& ex)
+				{
+					std::string msg = ex.what();
+					EXPECT_TRUE(msg.find("Coinbase value") != std::string::npos);
+					throw;
+				}
+			},
+			BlockValidationException);
 	}
 }
 #endif

@@ -5,6 +5,21 @@ TxIn::TxIn(std::shared_ptr<TxOutPoint> to_spend, std::vector<uint8_t> unlock_sig
 	: to_spend(std::move(to_spend)), unlock_sig(std::move(unlock_sig)), unlock_pub_key(std::move(unlock_pub_key)), sequence(sequence)
 {}
 
+bool TxIn::has_relative_locktime() const
+{
+	return (static_cast<uint32_t>(sequence) & SEQUENCE_LOCKTIME_DISABLE_FLAG) == 0;
+}
+
+bool TxIn::is_time_based_locktime() const
+{
+	return (static_cast<uint32_t>(sequence) & SEQUENCE_LOCKTIME_TYPE_FLAG) != 0;
+}
+
+uint32_t TxIn::relative_locktime_value() const
+{
+	return static_cast<uint32_t>(sequence) & SEQUENCE_LOCKTIME_MASK;
+}
+
 BinaryBuffer TxIn::serialize() const
 {
 	BinaryBuffer buffer;

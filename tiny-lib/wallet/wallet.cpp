@@ -3,6 +3,7 @@
 #include <chrono>
 #include <fstream>
 #include <iterator>
+#include <limits>
 #include <mutex>
 #include <ranges>
 #include <thread>
@@ -28,8 +29,10 @@
 #include "net/tx_info_msg.hpp"
 #include "core/unspent_tx_out.hpp"
 #include "util/utils.hpp"
+#include "wallet/hd_wallet.hpp"
 
 std::string Wallet::wallet_path = DEFAULT_WALLET_PATH;
+std::string Wallet::hd_wallet_path = DEFAULT_HD_WALLET_PATH;
 
 std::string Wallet::pub_key_to_address(const std::vector<uint8_t>& pub_key)
 {
@@ -167,7 +170,7 @@ std::shared_ptr<Tx> Wallet::rbf_tx_miner(const std::string& tx_id, uint64_t new_
 			LOG_ERROR("Transaction {} not found in mempool", tx_id);
 			return nullptr;
 		}
-		original_tx = it->second;
+		original_tx = it->second.tx;
 	}
 
 	if (!original_tx->signals_rbf())
@@ -235,7 +238,7 @@ std::shared_ptr<Tx> Wallet::rbf_tx(const std::string& tx_id, uint64_t new_fee_pe
 		std::scoped_lock lock(Mempool::mutex);
 		const auto it = Mempool::map.find(tx_id);
 		if (it != Mempool::map.end())
-			original_tx = it->second;
+			original_tx = it->second.tx;
 	}
 
 	if (original_tx == nullptr)
@@ -509,41 +512,178 @@ void Wallet::print_balance(const std::string& address)
 	LOG_INFO("Address {} holds {} coins", address, balance);
 }
 
+std::vector<std::shared_ptr<UTXO>> Wallet::branch_and_bound_select(const std::vector<std::shared_ptr<UTXO>>& utxos,
+	uint64_t target, uint64_t cost_of_change)
+{
+	std::vector<std::shared_ptr<UTXO>> sorted_utxos(utxos.begin(), utxos.end());
+	std::ranges::sort(sorted_utxos,
+		[](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b)
+	{
+		return a->tx_out->value > b->tx_out->value;
+	});
+
+	std::vector<uint64_t> suffix_sums(sorted_utxos.size() + 1, 0);
+	for (int64_t i = static_cast<int64_t>(sorted_utxos.size()) - 1; i >= 0; i--)
+		suffix_sums[i] = suffix_sums[i + 1] + sorted_utxos[i]->tx_out->value;
+
+	uint64_t current_value = 0;
+	std::vector<bool> inclusion(sorted_utxos.size(), false);
+	std::vector<bool> best_selection;
+	uint64_t best_waste = std::numeric_limits<uint64_t>::max();
+
+	constexpr uint32_t MAX_TRIES = 100000;
+	uint32_t tries = 0;
+	size_t depth = 0;
+	bool backtrack = false;
+
+	while (tries < MAX_TRIES)
+	{
+		tries++;
+
+		if (depth >= sorted_utxos.size())
+		{
+			backtrack = true;
+		}
+
+		if (!backtrack)
+		{
+			inclusion[depth] = true;
+			current_value += sorted_utxos[depth]->tx_out->value;
+
+			if (current_value >= target)
+			{
+				uint64_t waste = current_value - target;
+				if (waste < best_waste)
+				{
+					best_waste = waste;
+					best_selection = inclusion;
+					best_selection.resize(sorted_utxos.size(), false);
+				}
+				if (waste == 0)
+					break;
+				backtrack = true;
+			}
+			else if (depth + 1 < sorted_utxos.size() &&
+				current_value + suffix_sums[depth + 1] >= target)
+			{
+				depth++;
+				continue;
+			}
+			else
+			{
+				backtrack = true;
+			}
+		}
+
+		if (backtrack)
+		{
+			if (inclusion[depth])
+			{
+				current_value -= sorted_utxos[depth]->tx_out->value;
+				inclusion[depth] = false;
+			}
+
+			if (depth + 1 < sorted_utxos.size() &&
+				current_value + suffix_sums[depth + 1] >= target)
+			{
+				depth++;
+				backtrack = false;
+				continue;
+			}
+
+			while (depth > 0)
+			{
+				depth--;
+				if (inclusion[depth])
+				{
+					current_value -= sorted_utxos[depth]->tx_out->value;
+					inclusion[depth] = false;
+
+					if (depth + 1 < sorted_utxos.size() &&
+						current_value + suffix_sums[depth + 1] >= target)
+					{
+						depth++;
+						backtrack = false;
+						break;
+					}
+				}
+			}
+
+			if (backtrack)
+				break;
+		}
+	}
+
+	if (best_selection.empty())
+		return {};
+
+	if (best_waste > cost_of_change)
+		return {};
+
+	std::vector<std::shared_ptr<UTXO>> result;
+	for (size_t i = 0; i < sorted_utxos.size(); i++)
+	{
+		if (best_selection[i])
+			result.push_back(sorted_utxos[i]);
+	}
+
+	return result;
+}
+
 std::shared_ptr<Tx> Wallet::build_tx_from_utxos(std::vector<std::shared_ptr<UTXO>>& utxos, uint64_t value, uint64_t fee,
 	const std::string& address, const std::string& change_address,
 	const std::vector<uint8_t>& priv_key, const std::vector<uint8_t>& pub_key,
 	int64_t lock_time)
 {
-	std::ranges::sort(utxos,
-		[](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
-	{
-		if (a->height != b->height)
-			return a->height < b->height;
-		return a->tx_out->value < b->tx_out->value;
-	});
-	std::vector<std::shared_ptr<UTXO>> selected_utxos;
-	uint64_t in_sum = 0;
 	const uint32_t total_size_est = 300;
 	const uint64_t total_fee_est = total_size_est * fee;
-	for (const auto& coin : utxos)
+	const uint64_t target = value + total_fee_est;
+
+	const uint64_t cost_of_change = 34 * fee;
+
+	auto selected_utxos = branch_and_bound_select(utxos, target, cost_of_change);
+	bool exact_match = !selected_utxos.empty();
+
+	if (selected_utxos.empty())
 	{
-		selected_utxos.push_back(coin);
-		in_sum += coin->tx_out->value;
-		if (in_sum > value + total_fee_est)
+		std::vector<std::shared_ptr<UTXO>> sorted_utxos(utxos.begin(), utxos.end());
+		std::ranges::sort(sorted_utxos,
+			[](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
 		{
-			break;
+			return a->tx_out->value > b->tx_out->value;
+		});
+
+		uint64_t in_sum = 0;
+		for (const auto& coin : sorted_utxos)
+		{
+			selected_utxos.push_back(coin);
+			in_sum += coin->tx_out->value;
+			if (in_sum > target)
+				break;
+		}
+		if (in_sum <= target)
+		{
+			LOG_ERROR("Not enough coins");
+
+			return nullptr;
 		}
 	}
-	if (in_sum <= value + total_fee_est)
-	{
-		LOG_ERROR("Not enough coins");
 
-		return nullptr;
-	}
+	uint64_t in_sum = 0;
+	for (const auto& coin : selected_utxos)
+		in_sum += coin->tx_out->value;
+
+	std::vector<std::shared_ptr<TxOut>> tx_outs;
 	const auto tx_out = std::make_shared<TxOut>(value, address);
-	uint64_t change = in_sum - value - total_fee_est;
-	const auto tx_out_change = std::make_shared<TxOut>(change, change_address);
-	std::vector tx_outs{ tx_out, tx_out_change };
+	tx_outs.push_back(tx_out);
+
+	if (!exact_match)
+	{
+		uint64_t change = in_sum - value - total_fee_est;
+		const auto tx_out_change = std::make_shared<TxOut>(change, change_address);
+		tx_outs.push_back(tx_out_change);
+	}
+
 	std::vector<std::shared_ptr<TxIn>> tx_ins;
 	tx_ins.reserve(selected_utxos.size());
 	for (const auto& selected_coin : selected_utxos)
@@ -635,6 +775,241 @@ std::vector<std::shared_ptr<UTXO>> Wallet::find_utxos_for_address(const std::str
 		if (v->tx_out->to_address == address)
 		{
 			utxos.push_back(v);
+		}
+	}
+	return utxos;
+}
+
+std::tuple<std::shared_ptr<HDWallet>, std::string> Wallet::init_hd_wallet(const std::string& wallet_path)
+{
+	Wallet::hd_wallet_path = wallet_path;
+
+	std::shared_ptr<HDWallet> hd_wallet;
+	try
+	{
+		auto loaded = HDWallet::load(wallet_path);
+		hd_wallet = std::make_shared<HDWallet>(std::move(loaded));
+		LOG_INFO("Loaded HD wallet from {}", wallet_path);
+	}
+	catch (const std::exception&)
+	{
+		LOG_INFO("Generating new HD wallet {}", wallet_path);
+		auto created = HDWallet::create();
+		created.save(wallet_path);
+		hd_wallet = std::make_shared<HDWallet>(std::move(created));
+	}
+
+	if (hd_wallet->get_external_index() == 0)
+		hd_wallet->get_new_address();
+
+	const auto address = hd_wallet->get_primary_address();
+
+	static std::once_flag print_flag;
+	std::call_once(print_flag, [&address]()
+	{
+		LOG_INFO("Your HD wallet primary address is {}", address);
+	});
+
+	return { hd_wallet, address };
+}
+
+std::tuple<std::shared_ptr<HDWallet>, std::string> Wallet::init_hd_wallet()
+{
+	return init_hd_wallet(hd_wallet_path);
+}
+
+std::shared_ptr<Tx> Wallet::send_value_hd_miner(uint64_t value, uint64_t fee, const std::string& address,
+	HDWallet& hd_wallet, int64_t lock_time)
+{
+	auto tx = build_tx_hd_miner(value, fee, address, hd_wallet, lock_time);
+	if (tx == nullptr)
+		return nullptr;
+	LOG_INFO("Built HD transaction {}, adding to mempool", tx->id());
+	Mempool::add_tx_to_mempool(tx);
+	NetClient::send_msg_random(TxInfoMsg(tx));
+
+	hd_wallet.save(hd_wallet_path);
+
+	return tx;
+}
+
+std::shared_ptr<Tx> Wallet::send_value_hd(uint64_t value, uint64_t fee, const std::string& address,
+	HDWallet& hd_wallet, int64_t lock_time)
+{
+	auto tx = build_tx_hd(value, fee, address, hd_wallet, lock_time);
+	if (tx == nullptr)
+		return nullptr;
+	LOG_INFO("Built HD transaction {}, broadcasting", tx->id());
+	if (!NetClient::send_msg_random(TxInfoMsg(tx)))
+	{
+		LOG_ERROR("No connection to send transaction");
+	}
+
+	hd_wallet.save(hd_wallet_path);
+
+	return tx;
+}
+
+std::shared_ptr<Tx> Wallet::build_tx_hd_miner(uint64_t value, uint64_t fee, const std::string& address,
+	HDWallet& hd_wallet, int64_t lock_time)
+{
+	auto my_coins = find_utxos_for_hd_wallet_miner(hd_wallet);
+	if (my_coins.empty())
+	{
+		LOG_ERROR("No coins found in HD wallet");
+		return nullptr;
+	}
+	return build_tx_from_utxos_hd(my_coins, value, fee, address, hd_wallet, lock_time);
+}
+
+std::shared_ptr<Tx> Wallet::build_tx_hd(uint64_t value, uint64_t fee, const std::string& address,
+	HDWallet& hd_wallet, int64_t lock_time)
+{
+	auto my_coins = find_utxos_for_hd_wallet(hd_wallet);
+	if (my_coins.empty())
+	{
+		LOG_ERROR("No coins found in HD wallet");
+		return nullptr;
+	}
+	return build_tx_from_utxos_hd(my_coins, value, fee, address, hd_wallet, lock_time);
+}
+
+std::shared_ptr<Tx> Wallet::build_tx_from_utxos_hd(std::vector<std::shared_ptr<UTXO>>& utxos,
+	uint64_t value, uint64_t fee, const std::string& address,
+	HDWallet& hd_wallet, int64_t lock_time)
+{
+	const uint32_t total_size_est = 300;
+	const uint64_t total_fee_est = total_size_est * fee;
+	const uint64_t target = value + total_fee_est;
+
+	const uint64_t cost_of_change = 34 * fee;
+
+	auto selected_utxos = branch_and_bound_select(utxos, target, cost_of_change);
+	bool exact_match = !selected_utxos.empty();
+
+	if (selected_utxos.empty())
+	{
+		std::vector<std::shared_ptr<UTXO>> sorted_utxos(utxos.begin(), utxos.end());
+		std::ranges::sort(sorted_utxos,
+			[](const std::shared_ptr<UTXO>& a, const std::shared_ptr<UTXO>& b) -> bool
+		{
+			return a->tx_out->value > b->tx_out->value;
+		});
+
+		uint64_t in_sum = 0;
+		for (const auto& coin : sorted_utxos)
+		{
+			selected_utxos.push_back(coin);
+			in_sum += coin->tx_out->value;
+			if (in_sum > target)
+				break;
+		}
+		if (in_sum <= target)
+		{
+			LOG_ERROR("Not enough coins");
+			return nullptr;
+		}
+	}
+
+	uint64_t in_sum = 0;
+	for (const auto& coin : selected_utxos)
+		in_sum += coin->tx_out->value;
+
+	const auto change_address = hd_wallet.get_change_address();
+
+	std::vector<std::shared_ptr<TxOut>> tx_outs;
+	const auto tx_out = std::make_shared<TxOut>(value, address);
+	tx_outs.push_back(tx_out);
+
+	if (!exact_match)
+	{
+		uint64_t change = in_sum - value - total_fee_est;
+		const auto tx_out_change = std::make_shared<TxOut>(change, change_address);
+		tx_outs.push_back(tx_out_change);
+	}
+
+	std::vector<std::shared_ptr<TxIn>> tx_ins;
+	tx_ins.reserve(selected_utxos.size());
+	for (const auto& selected_coin : selected_utxos)
+	{
+		const auto& utxo_address = selected_coin->tx_out->to_address;
+
+		std::vector<uint8_t> priv_key;
+		std::vector<uint8_t> pub_key;
+		if (!hd_wallet.get_keys_for_address(utxo_address, priv_key, pub_key))
+		{
+			LOG_ERROR("HD wallet does not own address {} for UTXO", utxo_address);
+			return nullptr;
+		}
+
+		tx_ins.emplace_back(build_tx_in(priv_key, pub_key, selected_coin->tx_out_point, tx_outs));
+	}
+
+	auto tx = std::make_shared<Tx>(tx_ins, tx_outs, lock_time);
+	const uint32_t tx_size = tx->serialize().get_size();
+	const uint64_t real_fee = static_cast<uint64_t>(tx_size) * fee;
+	LOG_INFO("Built HD transaction {} with {} total fee ({} coins/byte)", tx->id(), real_fee, fee);
+	return tx;
+}
+
+std::vector<std::shared_ptr<UTXO>> Wallet::find_utxos_for_hd_wallet_miner(HDWallet& hd_wallet)
+{
+	const auto addresses = hd_wallet.get_all_addresses();
+	std::vector<std::shared_ptr<UTXO>> utxos;
+	{
+		std::scoped_lock lock(UTXO::mutex);
+
+		for (const auto& v : UTXO::map | std::views::values)
+		{
+			for (const auto& addr : addresses)
+			{
+				if (v->tx_out->to_address == addr)
+				{
+					utxos.push_back(v);
+					break;
+				}
+			}
+		}
+	}
+	return utxos;
+}
+
+std::vector<std::shared_ptr<UTXO>> Wallet::find_utxos_for_hd_wallet(HDWallet& hd_wallet)
+{
+	MsgCache::set_send_utxos_msg(nullptr);
+
+	if (!NetClient::send_msg_random(GetUTXOsMsg()))
+	{
+		LOG_ERROR("No connection to ask UTXO set");
+		return {};
+	}
+
+	const auto start = Utils::get_unix_timestamp();
+	std::shared_ptr<SendUTXOsMsg> cached_utxos_msg;
+	while (true)
+	{
+		cached_utxos_msg = MsgCache::get_send_utxos_msg();
+		if (cached_utxos_msg != nullptr)
+			break;
+		if (Utils::get_unix_timestamp() - start > MsgCache::MAX_MSG_AWAIT_TIME_IN_SECS)
+		{
+			LOG_ERROR("Timeout on GetUTXOsMsg");
+			return {};
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(16));
+	}
+
+	const auto addresses = hd_wallet.get_all_addresses();
+	std::vector<std::shared_ptr<UTXO>> utxos;
+	for (const auto& v : cached_utxos_msg->utxo_map | std::views::values)
+	{
+		for (const auto& addr : addresses)
+		{
+			if (v->tx_out->to_address == addr)
+			{
+				utxos.push_back(v);
+				break;
+			}
 		}
 	}
 	return utxos;

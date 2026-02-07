@@ -40,8 +40,12 @@ public:
 
 	static std::atomic_bool initial_block_download_complete;
 
+	static std::atomic_bool assume_valid_pending;
+
 	static uint32_t get_current_height();
 	static int64_t get_median_time_past(uint32_t num_last_blocks);
+
+	static int64_t get_median_time_past_at_height(uint32_t height, uint32_t num_last_blocks = 11);
 
 	static uint256_t get_chain_work(const std::vector<std::shared_ptr<Block>>& chain);
 

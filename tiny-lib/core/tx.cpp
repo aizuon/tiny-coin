@@ -1,10 +1,12 @@
 #include "core/tx.hpp"
 
 #include <ranges>
+#include <unordered_set>
 #include <fmt/format.h>
 
 #include "core/chain.hpp"
 #include "crypto/ecdsa.hpp"
+#include "crypto/sig_cache.hpp"
 #include "util/exceptions.hpp"
 #include "util/log.hpp"
 #include "core/mempool.hpp"
@@ -85,6 +87,20 @@ void Tx::validate_basics(bool coinbase /*= false*/) const
 	if (serialize().get_size() > NetParams::MAX_BLOCK_SERIALIZED_SIZE_IN_BYTES)
 		throw TxValidationException("Too large");
 
+	if (!coinbase && tx_ins.size() > 1)
+	{
+		std::unordered_set<std::string> seen_outpoints;
+		seen_outpoints.reserve(tx_ins.size());
+		for (const auto& tx_in : tx_ins)
+		{
+			if (tx_in->to_spend == nullptr)
+				continue;
+			const auto key = tx_in->to_spend->tx_id + ":" + std::to_string(tx_in->to_spend->tx_out_idx);
+			if (!seen_outpoints.insert(key).second)
+				throw TxValidationException("Duplicate input");
+		}
+	}
+
 	uint64_t total_spent = 0;
 	for (const auto& tx_out : tx_outs)
 	{
@@ -131,12 +147,62 @@ void Tx::check_lock_time(int64_t block_height, int64_t block_mtp) const
 	}
 }
 
+void Tx::check_sequence_locks(int64_t block_height, int64_t block_mtp) const
+{
+	if (is_coinbase())
+		return;
+
+	for (uint32_t i = 0; i < tx_ins.size(); i++)
+	{
+		const auto& tx_in = tx_ins[i];
+
+		if (!tx_in->has_relative_locktime())
+			continue;
+
+		auto utxo = UTXO::find_in_map(tx_in->to_spend);
+		if (utxo == nullptr)
+			continue;
+
+		const int64_t utxo_height = utxo->height;
+
+		if (tx_in->is_time_based_locktime())
+		{
+			const uint32_t utxo_block_idx = static_cast<uint32_t>(utxo_height) - 1;
+			const int64_t start_mtp = (utxo_block_idx > 0)
+				? Chain::get_median_time_past_at_height(utxo_block_idx - 1)
+				: 0;
+
+			const int64_t required_time =
+				start_mtp + (static_cast<int64_t>(tx_in->relative_locktime_value())
+					<< TxIn::SEQUENCE_LOCKTIME_GRANULARITY);
+
+			if (required_time > block_mtp)
+				throw TxValidationException(
+					fmt::format("TxIn {} relative time-lock not satisfied "
+						"(required MTP {}, current MTP {})", i, required_time, block_mtp).c_str());
+		}
+		else
+		{
+			const int64_t required_height =
+				utxo_height + static_cast<int64_t>(tx_in->relative_locktime_value());
+
+			if (required_height > block_height)
+				throw TxValidationException(
+					fmt::format("TxIn {} relative block-lock not satisfied "
+						"(required height {}, current height {})", i, required_height, block_height).c_str());
+		}
+	}
+}
+
 void Tx::validate(const ValidateRequest& req) const
 {
 	validate_basics(req.as_coinbase);
 
 	if (!req.as_coinbase)
+	{
 		check_lock_time(Chain::get_current_height(), Chain::get_median_time_past(11));
+		check_sequence_locks(Chain::get_current_height(), Chain::get_median_time_past(11));
+	}
 
 	uint64_t available_to_spend = 0;
 	for (uint32_t i = 0; i < tx_ins.size(); i++)
@@ -165,15 +231,18 @@ void Tx::validate(const ValidateRequest& req) const
 		if (utxo->is_coinbase && Chain::get_current_height() - utxo->height < NetParams::COINBASE_MATURITY)
 			throw TxValidationException("Coinbase UTXO not ready for spending");
 
-		try
+		if (!req.skip_sig_validation)
 		{
-			validate_signature_for_spend(tx_in, utxo);
-		}
-		catch (const TxUnlockException& ex)
-		{
-			LOG_ERROR(ex.what());
+			try
+			{
+				validate_signature_for_spend(tx_in, utxo);
+			}
+			catch (const TxUnlockException& ex)
+			{
+				LOG_ERROR(ex.what());
 
-			throw TxValidationException(fmt::format("TxIn {} not a valid spend of UTXO", i).c_str());
+				throw TxValidationException(fmt::format("TxIn {} not a valid spend of UTXO", i).c_str());
+			}
 		}
 
 		if (available_to_spend + utxo->tx_out->value < available_to_spend)
@@ -307,10 +376,16 @@ void Tx::validate_signature_for_spend(const std::shared_ptr<TxIn>& tx_in, const 
 		throw TxUnlockException("Public key does not match");
 
 	const auto spend_msg = MsgSerializer::build_spend_msg(tx_in->to_spend, tx_in->unlock_pub_key, tx_in->sequence, tx_outs);
+
+	if (SigCache::contains(tx_in->unlock_sig, spend_msg, tx_in->unlock_pub_key))
+		return;
+
 	if (!ECDSA::verify_sig(tx_in->unlock_sig, spend_msg, tx_in->unlock_pub_key))
 	{
 		LOG_ERROR("Key verification failed");
 
 		throw TxUnlockException("Signature does not match");
 	}
+
+	SigCache::add(tx_in->unlock_sig, spend_msg, tx_in->unlock_pub_key);
 }

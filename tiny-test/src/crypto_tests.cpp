@@ -1,7 +1,10 @@
+#include <cstdint>
 #include <string>
+#include <vector>
 
 #include "crypto/base58.hpp"
 #include "crypto/ecdsa.hpp"
+#include "crypto/hmac_sha512.hpp"
 #include "crypto/ripemd160.hpp"
 #include "crypto/sha256.hpp"
 #include "util/utils.hpp"
@@ -79,4 +82,22 @@ TEST(CryptoTest, ECDSA_SigningAndVerification)
 
 	EXPECT_FALSE(sig.empty());
 	EXPECT_TRUE(ECDSA::verify_sig(sig, msg_arr, pub_key));
+}
+
+// ---------------------------------------------------------------------------
+// HMAC-SHA512 (RFC 4231 Test Case 2)
+// ---------------------------------------------------------------------------
+TEST(CryptoTest, HMACSHA512_BasicVector)
+{
+	const std::string key_str = "Jefe";
+	const std::vector<uint8_t> key(key_str.begin(), key_str.end());
+	const std::string data_str = "what do ya want for nothing?";
+	const std::vector<uint8_t> data(data_str.begin(), data_str.end());
+
+	const auto hex = Utils::byte_array_to_hex_string(HMACSHA512::hash(key, data));
+
+	EXPECT_EQ(
+		"164b7a7bfcf819e2e395fbe73b56e0a387bd64222e831fd610270cd7ea250554"
+		"9758bf75c05a994a6d034f65f8f0e6fdcaeab1a34d4a6b4b636e070a38bce737",
+		hex);
 }

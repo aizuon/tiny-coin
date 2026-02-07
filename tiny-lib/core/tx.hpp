@@ -41,6 +41,7 @@ public:
 	{
 		bool as_coinbase = false;
 		bool allow_utxo_from_mempool = true;
+		bool skip_sig_validation = false;
 		std::vector<std::shared_ptr<Tx>> siblings_in_block;
 	};
 
@@ -48,6 +49,7 @@ public:
 
 	bool is_final() const;
 	void check_lock_time(int64_t block_height, int64_t block_mtp) const;
+	void check_sequence_locks(int64_t block_height, int64_t block_mtp) const;
 
 	BinaryBuffer serialize() const override;
 	bool deserialize(BinaryBuffer& buffer) override;

@@ -5,8 +5,10 @@
 #include <fstream>
 #include <limits>
 #include <ranges>
+#include <unordered_set>
 #include <fmt/format.h>
 
+#include "crypto/sig_cache.hpp"
 #include "net/block_info_msg.hpp"
 #include "util/exceptions.hpp"
 #include "net/get_block_msg.hpp"
@@ -16,6 +18,7 @@
 #include "mining/merkle_tree.hpp"
 #include "net/net_client.hpp"
 #include "core/net_params.hpp"
+#include "mining/fee_estimator.hpp"
 #include "mining/pow.hpp"
 #include "core/tx_out_point.hpp"
 #include "util/uint256_t.hpp"
@@ -41,6 +44,8 @@ std::unordered_map<std::string, uint32_t> Chain::active_chain_index{ { genesis_b
 std::recursive_mutex Chain::mutex;
 
 std::atomic_bool Chain::initial_block_download_complete = false;
+
+std::atomic_bool Chain::assume_valid_pending = !NetParams::ASSUME_VALID_BLOCK_HASH.empty();
 
 uint32_t Chain::last_saved_height = 0;
 
@@ -69,6 +74,25 @@ int64_t Chain::get_median_time_past(uint32_t num_last_blocks)
 	return timestamps[num_last_blocks / 2];
 }
 
+int64_t Chain::get_median_time_past_at_height(uint32_t height, uint32_t num_last_blocks /*= 11*/)
+{
+	std::scoped_lock lock(mutex);
+
+	if (height >= active_chain.size())
+		return 0;
+
+	const uint32_t count = std::min(num_last_blocks, height + 1);
+	const uint32_t first_idx = height + 1 - count;
+
+	std::vector<int64_t> timestamps;
+	timestamps.reserve(count);
+	for (uint32_t i = first_idx; i <= height; i++)
+		timestamps.push_back(active_chain[i]->timestamp);
+	std::ranges::sort(timestamps);
+
+	return timestamps[count / 2];
+}
+
 uint32_t Chain::validate_block(const std::shared_ptr<Block>& block)
 {
 	std::scoped_lock lock(mutex);
@@ -77,6 +101,18 @@ uint32_t Chain::validate_block(const std::shared_ptr<Block>& block)
 
 	if (txs.empty())
 		throw BlockValidationException("Transactions empty");
+
+	{
+		std::unordered_set<std::string> seen_txids;
+		seen_txids.reserve(txs.size());
+		for (const auto& tx : txs)
+		{
+			const auto tx_id = tx->id();
+			if (!seen_txids.insert(tx_id).second)
+				throw BlockValidationException(
+					fmt::format("Duplicate transaction {} in block", tx_id).c_str());
+		}
+	}
 
 	if (block->timestamp - Utils::get_unix_timestamp() > static_cast<int64_t>(NetParams::MAX_FUTURE_BLOCK_TIME_IN_SECS))
 		throw BlockValidationException("Block timestamp too far in future");
@@ -146,11 +182,14 @@ uint32_t Chain::validate_block(const std::shared_ptr<Block>& block)
 	req.siblings_in_block.reserve(block->txs.size() - 1);
 	req.siblings_in_block.assign(block->txs.begin() + 1, block->txs.end());
 	req.allow_utxo_from_mempool = false;
+	req.skip_sig_validation = assume_valid_pending.load();
+	uint64_t total_fees = 0;
 	for (const auto& non_coinbase_tx : req.siblings_in_block)
 	{
 		try
 		{
 			non_coinbase_tx->check_lock_time(block_height, block_mtp);
+			non_coinbase_tx->check_sequence_locks(block_height, block_mtp);
 			non_coinbase_tx->validate(req);
 		}
 		catch (const TxValidationException& ex)
@@ -163,6 +202,22 @@ uint32_t Chain::validate_block(const std::shared_ptr<Block>& block)
 
 			throw BlockValidationException(msg.c_str());
 		}
+
+		total_fees += PoW::calculate_fees(non_coinbase_tx);
+	}
+
+	{
+		const uint32_t halvings = static_cast<uint32_t>(block_height / NetParams::HALVE_SUBSIDY_AFTER_BLOCKS_NUM);
+		const uint64_t subsidy = halvings >= 64 ? 0 : (50 * NetParams::COIN) >> halvings;
+		const uint64_t max_coinbase_value = subsidy + total_fees;
+
+		uint64_t coinbase_value = 0;
+		for (const auto& tx_out : txs.front()->tx_outs)
+			coinbase_value += tx_out->value;
+
+		if (coinbase_value > max_coinbase_value)
+			throw BlockValidationException(
+				fmt::format("Coinbase value {} exceeds subsidy + fees {}", coinbase_value, max_coinbase_value).c_str());
 	}
 
 	return prev_block_chain_idx;
@@ -278,7 +333,7 @@ int64_t Chain::connect_block(const std::shared_ptr<Block>& block, bool doing_reo
 			{
 				std::scoped_lock lock_mempool(Mempool::mutex);
 
-				Mempool::map.erase(tx_id);
+				Mempool::remove_entry(tx_id);
 			}
 
 			if (!tx->is_coinbase())
@@ -293,6 +348,15 @@ int64_t Chain::connect_block(const std::shared_ptr<Block>& block, bool doing_reo
 				UTXO::add_to_map(tx->tx_outs[i], tx_id, i, tx->is_coinbase(), chain.size());
 			}
 		}
+	}
+
+	if (chain_idx == ACTIVE_CHAIN_IDX)
+		FeeEstimator::record_block(block);
+
+	if (assume_valid_pending.load() && block_id == NetParams::ASSUME_VALID_BLOCK_HASH)
+	{
+		LOG_INFO("Assume-valid checkpoint {} reached, enabling full signature checks", block_id);
+		assume_valid_pending = false;
 	}
 
 	if ((!doing_reorg && reorg_if_necessary()) || chain_idx == ACTIVE_CHAIN_IDX)
@@ -355,7 +419,14 @@ std::shared_ptr<Block> Chain::disconnect_block(const std::shared_ptr<Block>& blo
 
 			if (!tx->is_coinbase())
 			{
-				Mempool::map[tx_id] = tx;
+				Mempool::MempoolEntry entry;
+				entry.tx = tx;
+				entry.serialized_size = tx->serialize().get_size();
+				entry.fee = PoW::calculate_fees(tx);
+				entry.fee_rate = entry.serialized_size > 0 ? entry.fee / entry.serialized_size : 0;
+				entry.insertion_time = std::chrono::steady_clock::now();
+				Mempool::total_size_bytes += entry.serialized_size;
+				Mempool::map[tx_id] = std::move(entry);
 			}
 
 			for (const auto& tx_in : tx->tx_ins)
@@ -373,6 +444,8 @@ std::shared_ptr<Block> Chain::disconnect_block(const std::shared_ptr<Block>& blo
 			}
 		}
 	}
+
+	FeeEstimator::unrecord_block(block_id);
 
 	unindex_block(active_chain.back());
 	active_chain.pop_back();
@@ -673,6 +746,7 @@ bool Chain::load_from_disk()
 					side_branches.clear();
 					UTXO::map.clear();
 					Mempool::map.clear();
+					Mempool::total_size_bytes = 0;
 
 					LOG_ERROR("Load chain failed, starting from genesis");
 
@@ -704,7 +778,11 @@ void Chain::reset()
 	side_branches.clear();
 	orphan_blocks.clear();
 	Mempool::map.clear();
+	Mempool::total_size_bytes = 0;
 	UTXO::map.clear();
+	FeeEstimator::reset();
+	SigCache::clear();
+	assume_valid_pending = !NetParams::ASSUME_VALID_BLOCK_HASH.empty();
 	last_saved_height = 0;
 }
 

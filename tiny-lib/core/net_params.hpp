@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <string>
 
 class NetParams
 {
@@ -25,4 +26,17 @@ public:
 
 	static constexpr uint32_t MAX_ORPHAN_BLOCKS = 50;
 	static constexpr int64_t ORPHAN_BLOCK_EXPIRE_SECS = 60 * 60;
+
+	static constexpr uint64_t INCREMENTAL_RELAY_FEE = 1000;
+
+	static constexpr uint64_t MAX_MEMPOOL_SIZE_BYTES = 300 * 1024 * 1024;
+
+	static constexpr uint32_t MAX_ANCESTOR_COUNT = 25;
+	static constexpr uint32_t MAX_DESCENDANT_COUNT = 25;
+
+	static constexpr uint64_t DUST_THRESHOLD = 546;
+
+	static constexpr int64_t MEMPOOL_TX_EXPIRE_SECS = 60 * 60 * 24 * 14;
+
+	static inline const std::string ASSUME_VALID_BLOCK_HASH{};
 };

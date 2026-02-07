@@ -8,6 +8,7 @@
 
 #include "util/log.hpp"
 #include "crypto/crypto.hpp"
+#include "mining/fee_estimator.hpp"
 #include "net/net_client.hpp"
 #include "wallet/node_config.hpp"
 #include "mining/pow.hpp"
@@ -105,6 +106,7 @@ int main(int argc, char** argv)
 		const std::string send = "send ";
 		const std::string rbf = "rbf ";
 		const std::string tx_status = "tx_status ";
+		const std::string fee_estimate = "fee_estimate";
 		while (true)
 		{
 			std::string command;
@@ -145,8 +147,11 @@ int main(int argc, char** argv)
 				const auto& send_value = send_args[1];
 				try
 				{
-					const uint64_t fee = send_args.size() >= 3 ? std::stoull(send_args[2]) : 100;
+					const uint64_t fee = send_args.size() >= 3
+						? std::stoull(send_args[2])
+						: FeeEstimator::estimate_fee_rate(3);
 					const int64_t lock_time = send_args.size() == 4 ? std::stoll(send_args[3]) : 0;
+					LOG_INFO("Using fee rate: {} coins/byte", fee);
 					Wallet::send_value(std::stoull(send_value), fee, send_address, priv_key, lock_time);
 				}
 				catch (const std::exception&)
@@ -178,6 +183,14 @@ int main(int argc, char** argv)
 			{
 				command.erase(0, tx_status.length());
 				Wallet::print_tx_status(command);
+			}
+			else if (command.starts_with(fee_estimate))
+			{
+				const uint64_t high = FeeEstimator::estimate_fee_rate(1);
+				const uint64_t medium = FeeEstimator::estimate_fee_rate(3);
+				const uint64_t low = FeeEstimator::estimate_fee_rate(6);
+				LOG_INFO("Fee estimates (coins/byte): high={} (1 block), medium={} (3 blocks), low={} (6 blocks)",
+					high, medium, low);
 			}
 			else
 			{
